@@ -3,6 +3,7 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import {
   placeHold,
+  releaseHold,
   confirmBooking,
   recognizePhone,
   joinWaitlist,
@@ -76,7 +77,9 @@ export function BookingFlow({
   const loadEarliest = useCallback(
     async (svcId: string) => {
       setSlots(null);
-      const res = await fetch(`/api/b/${slug}/slots?service=${svcId}`);
+      const res = await fetch(`/api/b/${slug}/slots?service=${svcId}`, {
+        cache: "no-store",
+      });
       const body = await res.json();
       setSlots(body.slots ?? []);
       setBookableDays(body.bookableDays ?? []);
@@ -87,7 +90,9 @@ export function BookingFlow({
   const loadDay = useCallback(
     async (svcId: string, date: string) => {
       setDaySlots(null);
-      const res = await fetch(`/api/b/${slug}/slots?service=${svcId}&date=${date}`);
+      const res = await fetch(`/api/b/${slug}/slots?service=${svcId}&date=${date}`, {
+        cache: "no-store",
+      });
       const body = await res.json();
       setDaySlots(body.slots ?? []);
     },
@@ -446,7 +451,14 @@ function DetailsStep({
 
   return (
     <section>
-      <button type="button" onClick={onBack} className="mb-2 text-sm text-stone-500 underline">
+      <button
+        type="button"
+        onClick={() => {
+          if (hold.ok) void releaseHold(hold.holdId);
+          onBack();
+        }}
+        className="mb-2 text-sm text-stone-500 underline"
+      >
         ← {t.client.backToPicker}
       </button>
       <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">

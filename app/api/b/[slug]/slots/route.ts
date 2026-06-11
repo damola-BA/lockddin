@@ -24,14 +24,17 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  // Availability is live data — never let the browser cache it.
+  const headers = { "Cache-Control": "no-store" };
+
   if (date) {
     const slots = await getSlotsForDay(provider, serviceId, date);
-    return NextResponse.json({ slots });
+    return NextResponse.json({ slots }, { headers });
   }
 
   const [slots, bookableDays] = await Promise.all([
     getEarliestSlots(provider, serviceId),
     getBookableDays(provider),
   ]);
-  return NextResponse.json({ slots, bookableDays });
+  return NextResponse.json({ slots, bookableDays }, { headers });
 }

@@ -71,6 +71,18 @@ export async function placeHold(
   };
 }
 
+// Backing out of the details step frees the slot immediately instead of
+// leaving it invisible for the rest of the 5 minutes.
+export async function releaseHold(holdId: string): Promise<void> {
+  if (!holdId) return;
+  const admin = createAdminClient();
+  await admin
+    .from("slot_holds")
+    .update({ status: "expired" })
+    .eq("id", holdId)
+    .eq("status", "active");
+}
+
 // ── Phone recognition + existing-booking detection ───────────────────
 
 export type RecognizeResult = {

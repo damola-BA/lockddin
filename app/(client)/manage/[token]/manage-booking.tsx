@@ -64,7 +64,9 @@ export function ManageBooking({
 
   const loadSlots = useCallback(async () => {
     setSlots(null);
-    const res = await fetch(`/api/b/${slug}/slots?service=${serviceId}`);
+    const res = await fetch(`/api/b/${slug}/slots?service=${serviceId}`, {
+      cache: "no-store",
+    });
     const body = await res.json();
     setSlots(body.slots ?? []);
   }, [slug, serviceId]);
