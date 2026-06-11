@@ -31,3 +31,7 @@ page reads freely.
 DD12: work-photo and service-photo upload UI deferred from onboarding to
 Settings (M5) — BUILD_PLAN M1 scope omits photos, the M1 acceptance list
 doesn't test them, and the bucket + columns are already in place.
+
+DD13: a discreet sign-out link is shown during onboarding — leaving entirely
+is not step navigation, and without it a provider who starts on the wrong
+email is trapped in the forced-linear flow.
