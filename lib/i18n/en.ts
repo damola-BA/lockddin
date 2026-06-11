@@ -186,6 +186,8 @@ export const en = {
     lateBody: "{name} asks for {hours} hours notice. Please contact them directly:",
     serviceChangeNote: "Want a different service? Cancel this booking and book afresh.",
     linkExpired: "This link has expired. Recent emails about your booking have a fresh one.",
+    linkCancelled: "This appointment was cancelled or replaced. If you rescheduled, the newest email has the working link.",
+    linkPast: "This appointment has already taken place.",
     backToPicker: "Back to times",
     prep: "Good to know",
   },

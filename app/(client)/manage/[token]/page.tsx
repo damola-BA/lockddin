@@ -27,12 +27,27 @@ export default async function ManagePage({
     .eq("manage_token", token)
     .maybeSingle();
 
-  if (
-    !booking ||
-    booking.status !== "confirmed" ||
-    booking.starts_at <= new Date().toISOString()
-  ) {
+  if (!booking) {
     return <Shell><p className="text-stone-600">{t.client.linkExpired}</p></Shell>;
+  }
+
+  // Old links resolve to honest states instead of a blunt "expired" (DD21).
+  const slugOf = (booking.providers as unknown as { slug: string }).slug;
+  if (booking.status !== "confirmed") {
+    return (
+      <Shell>
+        <p className="mb-4 text-stone-600">{t.client.linkCancelled}</p>
+        <BookAgain slug={slugOf} />
+      </Shell>
+    );
+  }
+  if (booking.starts_at <= new Date().toISOString()) {
+    return (
+      <Shell>
+        <p className="mb-4 text-stone-600">{t.client.linkPast}</p>
+        <BookAgain slug={slugOf} />
+      </Shell>
+    );
   }
 
   const provider = booking.providers as unknown as {
@@ -70,6 +85,17 @@ export default async function ManagePage({
         cancellationWindowHours={booking.cancellation_window_hours}
       />
     </Shell>
+  );
+}
+
+function BookAgain({ slug }: { slug: string }) {
+  return (
+    <a
+      href={`/b/${slug}`}
+      className="block w-full rounded-xl bg-stone-900 px-4 py-3 text-center font-semibold text-amber-50"
+    >
+      {t.client.bookAgain}
+    </a>
   );
 }
 

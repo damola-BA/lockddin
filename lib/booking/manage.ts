@@ -82,10 +82,12 @@ export async function cancelViaToken(
   }
 
   const admin = createAdminClient();
-  // Rotate the token in the same update — single-use-per-action.
+  // The token stays: single-use is enforced by the status flip (actions
+  // require status='confirmed'), and the kept token lets old links show
+  // an honest "this was cancelled" state instead of "expired" (DD21).
   const { error } = await admin
     .from("bookings")
-    .update({ status: "cancelled_by_client", manage_token: makeManageToken() })
+    .update({ status: "cancelled_by_client" })
     .eq("id", b.id)
     .eq("status", "confirmed");
   if (error) return { ok: false, reason: "gone" };

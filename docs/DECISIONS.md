@@ -67,3 +67,8 @@ DD20: a collapsible "Booked here before?" phone lookup sits at the top of
 the booking page (beta user feedback) — returning clients see their
 appointment instantly, while first-time clients keep the friction-free
 service-first flow; details-step recognition stays as the safety net.
+
+DD21: superseded manage links resolve to honest states ("this appointment
+was cancelled/has passed" + book-again link) instead of a generic
+"expired" (beta user feedback); tokens are no longer rotated on cancel —
+single-use is enforced by the status flip, which blocks all actions.
