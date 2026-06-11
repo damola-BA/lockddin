@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { signOut } from "@/lib/auth/actions";
 import { getDictionary } from "@/lib/i18n";
+import { appUrl } from "@/lib/app-url";
 import { CopyLinkButton } from "./copy-link";
 
 const t = getDictionary();
@@ -19,7 +20,7 @@ export default async function DashboardPage() {
     .eq("id", user!.id)
     .single();
 
-  const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/b/${provider?.slug}`;
+  const bookingUrl = appUrl(`/b/${provider?.slug}`);
 
   return (
     <div className="min-h-dvh bg-stone-950 text-stone-100">

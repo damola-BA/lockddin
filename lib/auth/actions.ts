@@ -5,14 +5,11 @@ import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { sendEmail } from "@/lib/notifications";
+import { appUrl } from "@/lib/app-url";
 
 const SIGNUP_EMAIL_COOKIE = "ld_signup_email";
 
 export type ActionState = { error?: string; ok?: boolean };
-
-function appUrl(path: string): string {
-  return `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}${path}`;
-}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
