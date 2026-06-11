@@ -14,13 +14,6 @@ export default async function SchedulePage() {
     .eq("id", user!.id)
     .single();
 
-  const { data: services } = await supabase
-    .from("services")
-    .select("id, name")
-    .eq("provider_id", user!.id)
-    .eq("is_active", true)
-    .order("sort_order");
-
   const { data: days } = await supabase
     .from("week_template_days")
     .select(
@@ -48,7 +41,6 @@ export default async function SchedulePage() {
       initialType={provider?.schedule_type ?? "regular"}
       emailVerified={Boolean(provider?.email_verified_at)}
       templateDays={dayData}
-      services={services ?? []}
     />
   );
 }

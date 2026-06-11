@@ -145,6 +145,69 @@ export async function saveTemplateDay(
   return { ok: true };
 }
 
+// One-shot week setup (onboarding, DD17): the same hours and recurring
+// blocks applied to every ticked weekday at once. Replaces the whole
+// template — per-day tweaks live in the dashboard editor.
+export async function saveWeekBulk(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+
+  const weekdays = formData
+    .getAll("weekdays")
+    .map(Number)
+    .filter((w) => Number.isInteger(w) && w >= 0 && w <= 6);
+  if (weekdays.length === 0) return { error: "no_days" };
+
+  const start = String(formData.get("start_time") ?? "");
+  const end = String(formData.get("end_time") ?? "");
+  if (!TIME_RE.test(start) || !TIME_RE.test(end) || end <= start) {
+    return { error: "invalid_hours" };
+  }
+
+  const blocks = parseBlocks(String(formData.get("blocks") ?? "[]"));
+  if (!blocks) return { error: "invalid_blocks" };
+
+  // Replace the template wholesale; reserved_blocks cascade with the days.
+  const { error: delError } = await supabase
+    .from("week_template_days")
+    .delete()
+    .eq("provider_id", user.id);
+  if (delError) return { error: "server" };
+
+  const { data: dayRows, error: insError } = await supabase
+    .from("week_template_days")
+    .insert(
+      weekdays.map((weekday) => ({
+        provider_id: user.id,
+        weekday,
+        start_time: start,
+        end_time: end,
+      })),
+    )
+    .select("id");
+  if (insError || !dayRows) return { error: "server" };
+
+  if (blocks.length > 0) {
+    const { error: blockError } = await supabase.from("reserved_blocks").insert(
+      dayRows.flatMap((d) =>
+        blocks.map((b) => ({
+          template_day_id: d.id,
+          start_time: b.start,
+          end_time: b.end,
+          label: b.label || null,
+        })),
+      ),
+    );
+    if (blockError) return { error: "server" };
+  }
+
+  revalidatePath("/onboarding/schedule");
+  revalidatePath("/dashboard/schedule");
+  return { ok: true };
+}
+
 // ── Overrides: preview & apply (consequence cascade) ─────────────────
 
 type OverrideArgs = {

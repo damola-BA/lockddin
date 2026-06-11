@@ -49,3 +49,7 @@ DD16: the onboarding schedule step embeds the real week/days editor (beta
 user feedback): finishing requires ≥1 working day (regular) or ≥1 future
 open day (flexible), so no provider launches an empty booking page and the
 dashboard pages become edit tools, not first-time setup.
+
+DD17: onboarding week setup is one-shot (beta user feedback): one hours
+pair + one set of recurring breaks applied to all ticked weekdays at once;
+per-day variation is a dashboard edit, not an onboarding requirement.

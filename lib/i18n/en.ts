@@ -97,6 +97,11 @@ export const en = {
     finish: "Finish setup",
     needWeek: "Add at least one working day to finish.",
     needDays: "Add at least one available day to finish.",
+    quickWeekTitle: "Your usual week",
+    quickWeekHint: "Tick the days you work and set your usual hours. Day-by-day tweaks are easy later.",
+    quickWeekDays: "Working days",
+    quickWeekBreaks: "Regular breaks (optional)",
+    quickWeekSaved: "Week saved — you can fine-tune individual days from your dashboard anytime.",
   },
   schedule: {
     title: "Your week",

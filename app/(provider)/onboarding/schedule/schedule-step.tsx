@@ -5,11 +5,9 @@ import { completeOnboarding, type ActionState } from "@/lib/onboarding/actions";
 import { resendVerification } from "@/lib/auth/actions";
 import { getDictionary, fill } from "@/lib/i18n";
 import { PageTitle, Hint, PrimaryButton, ErrorText } from "@/components/provider/ui";
-import {
-  TemplateEditor,
-  type TemplateDayData,
-} from "@/app/(provider)/dashboard/schedule/template-editor";
+import type { TemplateDayData } from "@/app/(provider)/dashboard/schedule/template-editor";
 import { FlexibleBatchAdd } from "@/app/(provider)/dashboard/schedule/flexible-batch-add";
+import { QuickWeekSetup } from "./quick-week-setup";
 
 const t = getDictionary();
 
@@ -40,13 +38,11 @@ export function ScheduleStep({
   initialType,
   emailVerified,
   templateDays,
-  services,
 }: {
   email: string;
   initialType: string;
   emailVerified: boolean;
   templateDays: TemplateDayData[];
-  services: { id: string; name: string }[];
 }) {
   const [type, setType] = useState<"regular" | "flexible">(
     initialType === "flexible" ? "flexible" : "regular",
@@ -104,11 +100,17 @@ export function ScheduleStep({
         </label>
       </div>
 
-      {/* The real setup, right here in onboarding (DD16): the dashboard
-          pages stay for emergencies and later edits. */}
-      <div className="mt-6 border-t border-stone-800 pt-2">
+      {/* The real setup, right here in onboarding (DD16/DD17): one set of
+          hours + breaks for the whole week; per-day tweaks and emergency
+          changes live in the dashboard. */}
+      <div className="mt-6 border-t border-stone-800 pt-4">
         {type === "regular" ? (
-          <TemplateEditor days={templateDays} services={services} />
+          <QuickWeekSetup
+            initialWeekdays={templateDays.map((d) => d.weekday)}
+            initialStart={templateDays[0]?.start ?? "09:00"}
+            initialEnd={templateDays[0]?.end ?? "18:00"}
+            initialBlocks={templateDays[0]?.blocks ?? []}
+          />
         ) : (
           <FlexibleBatchAdd />
         )}
