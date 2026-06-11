@@ -178,6 +178,7 @@ export const en = {
     cancelTitle: "Cancel this appointment?",
     cancelConfirm: "Yes, cancel it",
     cancelled: "Your appointment is cancelled.",
+    bookAgain: "Book a new time",
     rescheduleTitle: "Pick a new time",
     rescheduled: "Rescheduled — see you then!",
     keepOriginal: "Keep my original time",

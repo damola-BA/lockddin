@@ -90,7 +90,17 @@ export function ManageBooking({
     (reState.ok === false && reState.reason === "late");
 
   if (cancelState.ok) {
-    return <p className="font-serif text-xl text-stone-900">{t.client.cancelled}</p>;
+    return (
+      <div>
+        <p className="mb-4 font-serif text-xl text-stone-900">{t.client.cancelled}</p>
+        <a
+          href={`/b/${slug}`}
+          className="block w-full rounded-xl bg-stone-900 px-4 py-3 text-center font-semibold text-amber-50"
+        >
+          {t.client.bookAgain}
+        </a>
+      </div>
+    );
   }
   if (reState.ok) {
     return (
@@ -100,6 +110,9 @@ export function ManageBooking({
         <p className="mt-3 text-sm text-stone-500">
           {fill(t.client.confirmationSent, { email: "your inbox" })}
         </p>
+        <a href={`/b/${slug}`} className="mt-4 inline-block text-sm text-stone-600 underline">
+          ← {businessName}
+        </a>
       </div>
     );
   }
