@@ -141,6 +141,7 @@ export async function saveTemplateDay(
   }
 
   revalidatePath("/dashboard/schedule");
+  revalidatePath("/onboarding/schedule"); // editor is embedded there too
   return { ok: true };
 }
 
@@ -270,6 +271,7 @@ export async function applyOverride(
   }
 
   revalidatePath("/dashboard/days");
+  revalidatePath("/onboarding/schedule"); // flexible batch add lives there too
   return { applied: cancelledIds.size };
 }
 

@@ -44,3 +44,8 @@ DD15: provider-cancellation emails from override cascades are written to
 notification_log as status='queued' in M2; the F9 gateway gains the
 template and sends queued rows in M4 — no email leaves before its
 template exists.
+
+DD16: the onboarding schedule step embeds the real week/days editor (beta
+user feedback): finishing requires ≥1 working day (regular) or ≥1 future
+open day (flexible), so no provider launches an empty booking page and the
+dashboard pages become edit tools, not first-time setup.

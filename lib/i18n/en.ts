@@ -95,6 +95,8 @@ export const en = {
     scheduleFlexible: "Flexible",
     scheduleFlexibleHint: "Different every week. You'll open the days you work as you go.",
     finish: "Finish setup",
+    needWeek: "Add at least one working day to finish.",
+    needDays: "Add at least one available day to finish.",
   },
   schedule: {
     title: "Your week",

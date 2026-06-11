@@ -272,6 +272,25 @@ export async function completeOnboarding(
     .single();
   if (!provider?.email_verified_at) return { error: "unverified" };
 
+  // The schedule step now includes real setup (DD16): finishing requires a
+  // usable starting pattern so the booking page never launches empty.
+  if (scheduleType === "regular") {
+    const { count } = await supabase
+      .from("week_template_days")
+      .select("id", { count: "exact", head: true })
+      .eq("provider_id", user.id);
+    if ((count ?? 0) === 0) return { error: "no_week" };
+  } else {
+    const today = new Date().toISOString().slice(0, 10);
+    const { count } = await supabase
+      .from("day_overrides")
+      .select("id", { count: "exact", head: true })
+      .eq("provider_id", user.id)
+      .eq("kind", "open")
+      .gte("date", today);
+    if ((count ?? 0) === 0) return { error: "no_days" };
+  }
+
   const { error } = await supabase
     .from("providers")
     .update({ schedule_type: scheduleType, onboarding_step: "complete" })
