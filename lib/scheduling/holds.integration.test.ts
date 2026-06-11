@@ -136,6 +136,49 @@ d("hold concurrency (real Postgres)", () => {
     const postBooking = await claim();
     expect(postBooking).toBeNull();
   });
+
+  // F5 acceptance: two phones racing for the last slot — exactly one
+  // confirms, the other is told the slot is gone.
+  it("two parallel client confirms on one hold: exactly one books", async () => {
+    const SLOT2 = {
+      startsAt: "2027-01-13T09:00:00.000Z",
+      endsAt: "2027-01-13T10:00:00.000Z",
+      effectiveEndAt: "2027-01-13T10:00:00.000Z",
+    };
+    const { data: holdId, error } = await admin.rpc("claim_slot_hold", {
+      p_provider_id: providerId,
+      p_service_id: serviceId,
+      p_starts_at: SLOT2.startsAt,
+      p_ends_at: SLOT2.endsAt,
+      p_effective_end_at: SLOT2.effectiveEndAt,
+    });
+    if (error) throw new Error(error.message);
+    expect(holdId).not.toBeNull();
+
+    const confirmAs = (phone: string, token: string) =>
+      admin
+        .rpc("confirm_client_booking", {
+          p_hold_id: holdId,
+          p_phone: phone,
+          p_first_name: "Racer",
+          p_email: "racer@lockddin.internal",
+          p_manage_token: token,
+        })
+        .then(({ data, error: e }) => {
+          if (e) throw new Error(e.message);
+          return (data as { booking_id: string | null; error: string | null }[])[0];
+        });
+
+    const [a, b] = await Promise.all([
+      confirmAs("+32400000011", `race-${Date.now()}-a`),
+      confirmAs("+32400000012", `race-${Date.now()}-b`),
+    ]);
+    const winners = [a, b].filter((r) => r.booking_id !== null);
+    const losers = [a, b].filter((r) => r.booking_id === null);
+    expect(winners).toHaveLength(1);
+    expect(losers).toHaveLength(1);
+    expect(losers[0].error).toBe("released"); // hold consumed by the winner
+  });
 });
 
 if (!enabled) {

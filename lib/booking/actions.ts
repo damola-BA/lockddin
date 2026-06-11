@@ -1,0 +1,269 @@
+"use server";
+
+import { formatInTimeZone } from "date-fns-tz";
+import { makeManageToken } from "@/lib/booking/manage-token";
+import { createAdminClient } from "@/lib/db/admin";
+import { claimHold } from "@/lib/scheduling/holds";
+import { getProviderBySlug, getSlotsForDay } from "@/lib/booking/slots";
+import { normalizePhone } from "@/lib/booking/phone";
+import { sendEmail } from "@/lib/notifications";
+import { appUrl } from "@/lib/app-url";
+
+// Public booking actions (F5). Anonymous clients act only through these —
+// no table access from the browser.
+
+function whenText(startsAt: string, timezone: string): string {
+  return formatInTimeZone(
+    new Date(startsAt),
+    timezone,
+    "EEEE d MMMM yyyy 'at' HH:mm",
+  );
+}
+
+// ── Step 3→4: place the 5-minute hold ────────────────────────────────
+
+export type HoldState =
+  | { ok: true; holdId: string; expiresAt: string }
+  | { ok: false; reason: "slot_taken" | "invalid" }
+  | { ok?: undefined };
+
+export async function placeHold(
+  _prev: HoldState,
+  formData: FormData,
+): Promise<HoldState> {
+  const slug = String(formData.get("slug") ?? "");
+  const serviceId = String(formData.get("service_id") ?? "");
+  const startsAt = String(formData.get("starts_at") ?? "");
+  const date = String(formData.get("date") ?? "");
+
+  const provider = await getProviderBySlug(slug);
+  if (!provider || !provider.is_active) return { ok: false, reason: "invalid" };
+
+  // Recompute the day server-side; the slot must still be one the engine
+  // offers — clients never dictate times.
+  const slots = await getSlotsForDay(provider, serviceId, date);
+  const slot = slots.find((s) => s.startsAt === startsAt);
+  if (!slot) return { ok: false, reason: "slot_taken" };
+
+  const admin = createAdminClient();
+  const { data: service } = await admin
+    .from("services")
+    .select("buffer_minutes")
+    .eq("id", serviceId)
+    .single();
+  const buffer = service?.buffer_minutes ?? provider.global_buffer_minutes;
+
+  const ends = new Date(slot.endsAt);
+  const result = await claimHold({
+    providerId: provider.id,
+    serviceId,
+    slot: {
+      startsAt: new Date(slot.startsAt),
+      endsAt: ends,
+      effectiveEndAt: new Date(ends.getTime() + buffer * 60_000),
+    },
+  });
+  if (!result.ok) return { ok: false, reason: "slot_taken" };
+  return {
+    ok: true,
+    holdId: result.holdId,
+    expiresAt: result.expiresAt.toISOString(),
+  };
+}
+
+// ── Phone recognition + existing-booking detection ───────────────────
+
+export type RecognizeResult = {
+  firstName?: string;
+  email?: string;
+  existing?: {
+    serviceName: string;
+    startsAt: string;
+    whenText: string;
+    manageToken: string;
+  };
+};
+
+export async function recognizePhone(
+  slug: string,
+  rawPhone: string,
+): Promise<RecognizeResult> {
+  const phone = normalizePhone(rawPhone);
+  if (!phone) return {};
+  const provider = await getProviderBySlug(slug);
+  if (!provider) return {};
+
+  const admin = createAdminClient();
+  const { data: client } = await admin
+    .from("clients")
+    .select("id, first_name, email")
+    .eq("provider_id", provider.id)
+    .eq("phone", phone)
+    .maybeSingle();
+  if (!client) return {};
+
+  const { data: booking } = await admin
+    .from("bookings")
+    .select("starts_at, manage_token, services (name)")
+    .eq("provider_id", provider.id)
+    .eq("client_id", client.id)
+    .eq("status", "confirmed")
+    .gt("starts_at", new Date().toISOString())
+    .order("starts_at")
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    firstName: client.first_name,
+    email: client.email ?? undefined,
+    existing: booking
+      ? {
+          serviceName:
+            (booking.services as unknown as { name: string } | null)?.name ?? "",
+          startsAt: booking.starts_at,
+          whenText: whenText(booking.starts_at, provider.timezone),
+          manageToken: booking.manage_token,
+        }
+      : undefined,
+  };
+}
+
+// ── Step 5: atomic hold→booking conversion ───────────────────────────
+
+export type ConfirmState =
+  | {
+      ok: true;
+      whenText: string;
+      serviceName: string;
+      locationText: string | null;
+      prepInstructions: string | null;
+      cancellationText: string;
+      email: string;
+    }
+  | { ok: false; reason: "released" | "existing" | "taken" | "invalid" }
+  | { ok?: undefined };
+
+export async function confirmBooking(
+  _prev: ConfirmState,
+  formData: FormData,
+): Promise<ConfirmState> {
+  const slug = String(formData.get("slug") ?? "");
+  const holdId = String(formData.get("hold_id") ?? "");
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const phone = normalizePhone(String(formData.get("phone") ?? ""));
+
+  if (!holdId || !firstName || !phone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, reason: "invalid" };
+  }
+  const provider = await getProviderBySlug(slug);
+  if (!provider) return { ok: false, reason: "invalid" };
+
+  const manageToken = makeManageToken();
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("confirm_client_booking", {
+    p_hold_id: holdId,
+    p_phone: phone,
+    p_first_name: firstName,
+    p_email: email,
+    p_manage_token: manageToken,
+  });
+  if (error) throw new Error(`confirm_client_booking failed: ${error.message}`);
+
+  const row = (data as { booking_id: string | null; error: string | null }[])[0];
+  if (!row?.booking_id) {
+    const reason = (row?.error ?? "invalid") as "released" | "existing" | "taken";
+    return { ok: false, reason };
+  }
+
+  // Booking facts for the confirmation screen + email.
+  const { data: booking } = await admin
+    .from("bookings")
+    .select("starts_at, services (name, prep_instructions)")
+    .eq("id", row.booking_id)
+    .single();
+  const service = booking?.services as unknown as {
+    name: string;
+    prep_instructions: string | null;
+  } | null;
+
+  const when = whenText(booking!.starts_at, provider.timezone);
+  const freeUntil = new Date(
+    new Date(booking!.starts_at).getTime() -
+      provider.cancellation_window_hours * 3_600_000,
+  );
+  const cancellationText = `Free cancellation until ${formatInTimeZone(
+    freeUntil,
+    provider.timezone,
+    "EEEE d MMMM 'at' HH:mm",
+  )}.`;
+
+  try {
+    await sendEmail({
+      to: email,
+      providerId: provider.id,
+      templateKey: "booking.confirmed",
+      payload: {
+        clientFirstName: firstName,
+        businessName: provider.business_name ?? provider.provider_name ?? "",
+        serviceName: service?.name ?? "",
+        whenText: when,
+        locationText: provider.location_text,
+        prepInstructions: service?.prep_instructions ?? null,
+        cancellationText,
+        manageUrl: appUrl(`/manage/${manageToken}`),
+      },
+    });
+  } catch {
+    // Send failure is logged in notification_log; the booking stands.
+  }
+
+  return {
+    ok: true,
+    whenText: when,
+    serviceName: service?.name ?? "",
+    locationText: provider.location_text,
+    prepInstructions: service?.prep_instructions ?? null,
+    cancellationText,
+    email,
+  };
+}
+
+// ── Edge state: waitlist join (rounds land in M7) ────────────────────
+
+export type WaitlistState = { ok?: boolean; error?: string };
+
+export async function joinWaitlist(
+  _prev: WaitlistState,
+  formData: FormData,
+): Promise<WaitlistState> {
+  const slug = String(formData.get("slug") ?? "");
+  const serviceId = String(formData.get("service_id") ?? "");
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const phone = normalizePhone(String(formData.get("phone") ?? ""));
+  const datePreference = String(formData.get("date_preference") ?? "") || null;
+
+  if (!firstName || !phone) return { error: "invalid" };
+  const provider = await getProviderBySlug(slug);
+  if (!provider) return { error: "invalid" };
+
+  const admin = createAdminClient();
+  const { data: client, error: clientError } = await admin
+    .from("clients")
+    .upsert(
+      { provider_id: provider.id, phone, first_name: firstName },
+      { onConflict: "provider_id,phone" },
+    )
+    .select("id")
+    .single();
+  if (clientError) return { error: "server" };
+
+  const { error } = await admin.from("waitlist_entries").insert({
+    provider_id: provider.id,
+    service_id: serviceId,
+    client_id: client.id,
+    date_preference: datePreference,
+  });
+  if (error) return { error: "server" };
+  return { ok: true };
+}

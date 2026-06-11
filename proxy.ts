@@ -20,6 +20,10 @@ const PUBLIC_PATHS = [
   "/reset",
   "/verify",
   "/smoke",
+  "/b", // public booking page (F5)
+  "/api/b",
+  "/manage", // emailed cancel/reschedule links
+  "/privacy",
 ];
 
 export async function proxy(request: NextRequest) {

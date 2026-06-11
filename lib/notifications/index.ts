@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { createAdminClient } from "@/lib/db/admin";
 import { VerifyEmail } from "./templates/verify-email";
 import { ResetPassword } from "./templates/reset-password";
+import { BookingConfirmed } from "./templates/booking-confirmed";
 
 // The single email gateway (hard rule 6). Every send writes a
 // notification_log row first; no ad-hoc Resend calls anywhere else.
@@ -12,7 +13,20 @@ const FROM = "LockdDin <bookings@send.lockddin.com>";
 
 type TemplateInput =
   | { templateKey: "auth.verify_email"; payload: { verifyUrl: string } }
-  | { templateKey: "auth.reset_password"; payload: { resetUrl: string } };
+  | { templateKey: "auth.reset_password"; payload: { resetUrl: string } }
+  | {
+      templateKey: "booking.confirmed";
+      payload: {
+        clientFirstName: string;
+        businessName: string;
+        serviceName: string;
+        whenText: string;
+        locationText: string | null;
+        prepInstructions: string | null;
+        cancellationText: string;
+        manageUrl: string;
+      };
+    };
 
 type SendArgs = TemplateInput & {
   to: string;
@@ -34,6 +48,11 @@ function renderTemplate(input: TemplateInput): {
       return {
         subject: "Reset your LockdDin password",
         react: ResetPassword({ resetUrl: input.payload.resetUrl }),
+      };
+    case "booking.confirmed":
+      return {
+        subject: `Booked: ${input.payload.serviceName} — ${input.payload.whenText}`,
+        react: BookingConfirmed(input.payload),
       };
   }
 }

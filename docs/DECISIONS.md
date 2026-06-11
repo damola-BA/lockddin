@@ -53,3 +53,12 @@ dashboard pages become edit tools, not first-time setup.
 DD17: onboarding week setup is one-shot (beta user feedback): one hours
 pair + one set of recurring breaks applied to all ticked weekdays at once;
 per-day variation is a dashboard edit, not an onboarding requirement.
+
+DD18: phone normalisation is Belgian-first — national 0X… numbers become
++32…, international numbers pass through; anything else is rejected. The
+normalised form is the stored identifier.
+
+DD19: manage tokens are HMAC-signed strings embedding their own 7-day
+expiry; the stored column is the lookup key, so rotating it on every
+action enforces single-use, and reminder emails (M4) re-issue a fresh
+token so links stay usable for far-out bookings.
