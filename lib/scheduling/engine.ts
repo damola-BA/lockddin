@@ -1,0 +1,100 @@
+import type { AvailabilityInput, OccupiedRange, Slot } from "./types";
+import { isDateBookable } from "./booking-window";
+import { buildLocalWindows, effectiveHours, toUtcRange } from "./windows";
+
+// The 8-step availability algorithm (F4) as a pure, deterministic function.
+// No I/O: confirmed bookings + active holds arrive pre-fetched in the input
+// (the caller performs the single injected DB read, step 6).
+
+const MS = 60_000;
+
+export function getAvailableSlots(input: AvailabilityInput): Slot[] {
+  const { provider, service, date, now, templateDay, override, occupied } = input;
+
+  // Step 0 — booking window: calendar boundary in the provider's timezone.
+  if (!isDateBookable(date, provider.bookingWindow, now, provider.timezone)) {
+    return [];
+  }
+
+  // Flexible mode skips the template entirely: only kind='open' override
+  // dates are available.
+  if (provider.scheduleType === "flexible" && override?.kind !== "open") {
+    return [];
+  }
+
+  // Step 1 — availability: is this service allowed on this day?
+  // Service restrictions are a template-day feature; override-driven days
+  // (open/modified hours) inherit the template day's restriction if one
+  // exists, and allow all services otherwise.
+  if (templateDay?.serviceIds && !templateDay.serviceIds.includes(service.id)) {
+    return [];
+  }
+
+  // Step 2 — capacity: daily cap reached by confirmed bookings → stop.
+  // (The fetch already happened, so the count is free.)
+  const cap = override?.dailyCap ?? templateDay?.dailyCap ?? null;
+  if (cap !== null && occupied.confirmedBookings.length >= cap) {
+    return [];
+  }
+
+  const bufferMinutes = service.bufferMinutes ?? provider.globalBufferMinutes;
+  const neededMinutes = service.durationMinutes + bufferMinutes;
+
+  // Steps 3+5 — build candidate windows (working hours − recurring blocks
+  // − one-off blocks) and keep only windows that can mathematically fit
+  // duration + buffer.
+  const hours = effectiveHours(templateDay, override);
+  if (!hours) return [];
+
+  const reserved = override?.kind === "open" ? [] : (templateDay?.reservedBlocks ?? []);
+  const blocks = [...reserved, ...(override?.extraBlocks ?? [])];
+  const windows = buildLocalWindows(hours, blocks).filter(
+    (w) => w.endMin - w.startMin >= neededMinutes,
+  );
+  if (windows.length === 0) return []; // step 3 fail: nothing can fit
+
+  // Step 4 — lead time boundary: hide slots starting before now + lead.
+  const leadBoundary = new Date(now.getTime() + provider.minLeadTimeMinutes * MS);
+
+  // Step 6 — merge confirmed bookings + active holds into occupied ranges.
+  const ranges: OccupiedRange[] = [
+    ...occupied.confirmedBookings,
+    ...occupied.activeHolds,
+  ].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+
+  // Step 7 — walk the gaps. Every gap ≥ duration + buffer yields ONE slot
+  // at the gap start (no 15-minute subdivision). All math in UTC ms so DST
+  // days stay 60/90-minute-accurate.
+  const slots: Slot[] = [];
+  for (const window of windows) {
+    const range = toUtcRange(date, window, provider.timezone);
+    let cursor = range.start.getTime();
+    const windowEnd = range.end.getTime();
+
+    const overlapping = ranges.filter(
+      (r) => r.effectiveEndAt.getTime() > cursor && r.startsAt.getTime() < windowEnd,
+    );
+
+    for (const occ of overlapping) {
+      maybePushSlot(cursor, occ.startsAt.getTime());
+      cursor = Math.max(cursor, occ.effectiveEndAt.getTime());
+      if (cursor >= windowEnd) break;
+    }
+    maybePushSlot(cursor, windowEnd);
+
+    function maybePushSlot(gapStart: number, gapEnd: number) {
+      const clippedEnd = Math.min(gapEnd, windowEnd);
+      if (clippedEnd - gapStart < neededMinutes * MS) return;
+      if (gapStart < leadBoundary.getTime()) return; // step 4
+      slots.push({
+        startsAt: new Date(gapStart),
+        endsAt: new Date(gapStart + service.durationMinutes * MS),
+        effectiveEndAt: new Date(gapStart + neededMinutes * MS),
+      });
+    }
+  }
+
+  // Step 8 — chronological order (windows are already ordered, but holds
+  // spanning window edges keep this cheap and certain).
+  return slots.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+}

@@ -44,6 +44,21 @@ export default async function DashboardPage() {
           <p className="mb-3 break-all text-amber-300">{bookingUrl}</p>
           <CopyLinkButton url={bookingUrl} />
         </div>
+
+        <nav className="mt-6 grid grid-cols-2 gap-3">
+          <a
+            href="/dashboard/schedule"
+            className="rounded-lg border border-stone-700 bg-stone-900 p-4 text-center text-sm text-stone-200"
+          >
+            {t.schedule.title}
+          </a>
+          <a
+            href="/dashboard/days"
+            className="rounded-lg border border-stone-700 bg-stone-900 p-4 text-center text-sm text-stone-200"
+          >
+            {t.schedule.daysTitle}
+          </a>
+        </nav>
       </main>
     </div>
   );

@@ -35,3 +35,12 @@ doesn't test them, and the bucket + columns are already in place.
 DD13: a discreet sign-out link is shown during onboarding — leaving entirely
 is not step navigation, and without it a provider who starts on the wrong
 email is trapped in the forced-linear flow.
+
+DD14: "affected by override" uses effective_end_at (duration + buffer),
+consistent with the slot engine — a booking the engine would not have
+offered under the new hours is treated as conflicting.
+
+DD15: provider-cancellation emails from override cascades are written to
+notification_log as status='queued' in M2; the F9 gateway gains the
+template and sends queued rows in M4 — no email leaves before its
+template exists.

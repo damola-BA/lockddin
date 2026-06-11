@@ -1,0 +1,83 @@
+"use client";
+
+import { useState } from "react";
+import { getDictionary } from "@/lib/i18n";
+
+const t = getDictionary();
+
+export type Block = { start: string; end: string; label: string };
+
+// Shared time-block editor: keeps blocks in state, serialises them into a
+// hidden input the server action parses (used for recurring reserved
+// blocks and one-off override blocks alike).
+export function BlocksEditor({
+  name,
+  initial,
+  showLabel,
+}: {
+  name: string;
+  initial: Block[];
+  showLabel: boolean;
+}) {
+  const [blocks, setBlocks] = useState<Block[]>(initial);
+  const [draft, setDraft] = useState<Block>({ start: "", end: "", label: "" });
+
+  return (
+    <div className="space-y-2">
+      <input type="hidden" name={name} value={JSON.stringify(blocks)} />
+      {blocks.map((b, i) => (
+        <div
+          key={`${b.start}-${b.end}-${i}`}
+          className="flex items-center justify-between rounded border border-stone-700 bg-stone-900 px-3 py-2 text-sm"
+        >
+          <span>
+            {b.start}–{b.end}
+            {b.label && <span className="ml-2 text-stone-500">{b.label}</span>}
+          </span>
+          <button
+            type="button"
+            onClick={() => setBlocks(blocks.filter((_, j) => j !== i))}
+            className="text-red-400 underline"
+          >
+            {t.schedule.removeBlock}
+          </button>
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="time"
+          value={draft.start}
+          onChange={(e) => setDraft({ ...draft, start: e.target.value })}
+          className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-sm text-stone-100"
+        />
+        <span className="text-stone-500">–</span>
+        <input
+          type="time"
+          value={draft.end}
+          onChange={(e) => setDraft({ ...draft, end: e.target.value })}
+          className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-sm text-stone-100"
+        />
+        {showLabel && (
+          <input
+            type="text"
+            placeholder={t.schedule.blockLabel}
+            value={draft.label}
+            onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+            className="w-32 rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-sm text-stone-100 placeholder:text-stone-600"
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            if (!draft.start || !draft.end || draft.end <= draft.start) return;
+            setBlocks([...blocks, draft]);
+            setDraft({ start: "", end: "", label: "" });
+          }}
+          className="text-sm text-amber-400 underline"
+        >
+          + {t.schedule.addBlock}
+        </button>
+      </div>
+    </div>
+  );
+}
