@@ -20,6 +20,9 @@ server routes (service role) — no client-side table access for anonymous users
 - is_active boolean not null default true            -- inactive → closed state on booking page
 - onboarding_step text not null default 'profile'    -- forced linear flow resume point
 - work_photos jsonb not null default '[]'
+- email_verified_at timestamptz null                  -- DD09: own verification, not Supabase's
+- email_verify_token uuid not null default gen_random_uuid()
+- language text not null default 'en'                 -- DD10
 - created_at timestamptz
 
 ## services
@@ -110,6 +113,11 @@ server routes (service role) — no client-side table access for anonymous users
 - recipient_email text, template_key text, payload jsonb
 - status enum('queued','sent','failed','suppressed')
 - created_at, sent_at
+
+## signup_leads          (DD08 — abandoned-signup contact capture)
+- id uuid PK, email text unique not null
+- created_at timestamptz, converted_at timestamptz null
+- Service-role access only (RLS enabled, no policies).
 
 ## Indexes that matter
 - bookings (provider_id, starts_at) — dashboard views & slot engine reads
