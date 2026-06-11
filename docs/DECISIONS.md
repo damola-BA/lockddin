@@ -62,3 +62,8 @@ DD19: manage tokens are HMAC-signed strings embedding their own 7-day
 expiry; the stored column is the lookup key, so rotating it on every
 action enforces single-use, and reminder emails (M4) re-issue a fresh
 token so links stay usable for far-out bookings.
+
+DD20: a collapsible "Booked here before?" phone lookup sits at the top of
+the booking page (beta user feedback) — returning clients see their
+appointment instantly, while first-time clients keep the friction-free
+service-first flow; details-step recognition stays as the safety net.

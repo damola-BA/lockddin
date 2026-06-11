@@ -143,6 +143,10 @@ export const en = {
   },
   client: {
     pickService: "What would you like to book?",
+    returningTitle: "Booked here before?",
+    returningHint: "Enter your phone number to see your appointment.",
+    returningCta: "Find my appointment",
+    returningNone: "No upcoming appointment for this number — pick a service below to book.",
     minutes: "{n} min",
     nextSlots: "Next available",
     chooseDifferentDay: "Choose a different day",

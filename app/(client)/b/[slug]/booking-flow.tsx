@@ -112,6 +112,7 @@ export function BookingFlow({
   if (!service) {
     return (
       <section>
+        <ReturningClientLookup slug={slug} />
         <h2 className="mb-4 font-serif text-xl text-stone-900">
           {t.client.pickService}
         </h2>
@@ -257,6 +258,75 @@ export function BookingFlow({
         </button>
       )}
     </section>
+  );
+}
+
+// ── returning client lookup (DD20): phone first, schedule instantly ──
+
+function ReturningClientLookup({ slug }: { slug: string }) {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [result, setResult] = useState<RecognizeResult | "none" | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <span className="font-serif text-stone-900">{t.client.returningTitle}</span>
+        <span className="font-mono text-stone-400">{open ? "−" : "+"}</span>
+      </button>
+
+      {open && result === null && (
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            const r = await recognizePhone(slug, phone);
+            setResult(r.existing ? r : "none");
+            setBusy(false);
+          }}
+        >
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder={t.client.phone}
+            required
+            autoFocus
+            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="shrink-0 rounded-lg bg-stone-900 px-3 py-2.5 text-sm font-semibold text-amber-50 disabled:opacity-50"
+          >
+            {busy ? "…" : t.client.returningCta}
+          </button>
+        </form>
+      )}
+
+      {result === "none" && (
+        <p className="mt-3 text-sm text-stone-600">{t.client.returningNone}</p>
+      )}
+
+      {result !== null && result !== "none" && result.existing && (
+        <div className="mt-3">
+          <p className="font-serif text-stone-900">{result.existing.serviceName}</p>
+          <p className="font-mono text-sm text-stone-700">{result.existing.whenText}</p>
+          <a
+            href={`/manage/${result.existing.manageToken}`}
+            className="mt-3 block w-full rounded-xl bg-stone-900 px-4 py-3 text-center font-semibold text-amber-50"
+          >
+            {t.client.manageBooking}
+          </a>
+        </div>
+      )}
+    </div>
   );
 }
 
