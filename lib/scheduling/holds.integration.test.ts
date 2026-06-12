@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getDayAvailability } from "./availability";
 
 // F4 required test: two parallel hold claims for the same slot — exactly
 // one wins. Runs against REAL Postgres (the live Supabase project), never
@@ -71,6 +72,16 @@ d("hold concurrency (real Postgres)", () => {
       .single();
     if (svcError) throw new Error(svcError.message);
     serviceId = svc.id;
+
+    // 2027-01-12 is a Tuesday (weekday 1 in 0=Mon convention); the loader
+    // regression test needs a working day around the SLOT fixture.
+    const { error: dayError } = await admin.from("week_template_days").insert({
+      provider_id: providerId,
+      weekday: 1,
+      start_time: "09:00",
+      end_time: "18:00",
+    });
+    if (dayError) throw new Error(dayError.message);
   });
 
   afterAll(async () => {
@@ -135,6 +146,34 @@ d("hold concurrency (real Postgres)", () => {
     // against the now-confirmed booking.
     const postBooking = await claim();
     expect(postBooking).toBeNull();
+  });
+
+  // REGRESSION (the "engine and bookings out of sync" bug): the loader's
+  // day window once collapsed to zero width ("T24:00:00" parsed as same-day
+  // midnight), so the engine never saw confirmed bookings and displayed
+  // already-booked times. The conversion test above left a confirmed
+  // booking at 09:00–10:00 UTC on 2027-01-12 — availability for that day
+  // must exclude it.
+  it("availability excludes the confirmed booking (loader day window)", async () => {
+    const slots = await getDayAvailability({
+      providerId,
+      serviceId,
+      date: "2027-01-12",
+      now: new Date("2026-12-30T12:00:00Z"),
+    });
+    expect(slots.length).toBeGreaterThan(0);
+    const bookedStart = new Date(SLOT.startsAt).getTime();
+    const bookedEnd = new Date(SLOT.effectiveEndAt).getTime();
+    for (const slot of slots) {
+      const overlaps =
+        slot.startsAt.getTime() < bookedEnd &&
+        slot.effectiveEndAt.getTime() > bookedStart;
+      expect(overlaps).toBe(false);
+    }
+    // The gap right after the booking is offered (10:00Z = 11:00 local).
+    expect(slots.some((s) => s.startsAt.toISOString() === SLOT.effectiveEndAt)).toBe(
+      true,
+    );
   });
 
   // F5 acceptance: two phones racing for the last slot — exactly one

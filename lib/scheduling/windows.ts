@@ -80,7 +80,18 @@ export function localInstant(
   minutes: number,
   timeZone: string,
 ): Date {
-  const h = String(Math.floor(minutes / 60)).padStart(2, "0");
-  const m = String(minutes % 60).padStart(2, "0");
-  return fromZonedTime(`${date}T${h}:${m}:00`, timeZone);
+  // Roll day overflow forward: fromZonedTime silently reads "T24:00:00" as
+  // 00:00 of the SAME day, which once collapsed the availability loader's
+  // day window to zero width and hid every booking from the engine.
+  const dayOffset = Math.floor(minutes / 1440);
+  const rem = ((minutes % 1440) + 1440) % 1440;
+  let day = date;
+  if (dayOffset !== 0) {
+    const d = new Date(`${date}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + dayOffset);
+    day = d.toISOString().slice(0, 10);
+  }
+  const h = String(Math.floor(rem / 60)).padStart(2, "0");
+  const m = String(rem % 60).padStart(2, "0");
+  return fromZonedTime(`${day}T${h}:${m}:00`, timeZone);
 }

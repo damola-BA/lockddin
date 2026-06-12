@@ -79,3 +79,11 @@ recomputed slot list — gap-start slots shift whenever a hold expires or a
 booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
+
+DD23: localInstant rolls minute-1440 to the NEXT local midnight —
+date-fns-tz silently parses "T24:00:00" as 00:00 of the same day, which
+collapsed the availability loader's day window to zero width and hid all
+bookings/holds from the engine (booked times kept displaying; the DB
+claim transaction was the only thing preventing double-bookings). The
+loader now has its own integration regression test — pure-engine tests
+alone cannot catch assembly-layer bugs.

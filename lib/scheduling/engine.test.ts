@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fromZonedTime } from "date-fns-tz";
 import { canOfferInterval, getAvailableSlots } from "./engine";
+import { localInstant } from "./windows";
 import type {
   AvailabilityInput,
   EngineProvider,
@@ -226,6 +227,37 @@ describe("8-step semantics", () => {
       }),
     );
     expect(startTimes(slots)).toEqual([local("2026-07-14", "09:00")]);
+  });
+});
+
+// ── localInstant day-boundary regression ─────────────────────────────
+// fromZonedTime reads "T24:00:00" as 00:00 of the SAME day; minute 1440
+// must mean midnight of the NEXT day or the loader's day window collapses
+// to zero width and every booking becomes invisible to the engine.
+
+describe("localInstant", () => {
+  it("minute 1440 is the next local midnight, 24h after minute 0", () => {
+    const start = localInstant("2026-06-15", 0, TZ);
+    const end = localInstant("2026-06-15", 1440, TZ);
+    expect(end.getTime() - start.getTime()).toBe(24 * 3_600_000);
+    expect(end.toISOString()).toBe("2026-06-15T22:00:00.000Z"); // CEST midnight
+  });
+
+  it("DST days are 23/25 real hours wide", () => {
+    const springWidth =
+      localInstant("2026-03-29", 1440, TZ).getTime() -
+      localInstant("2026-03-29", 0, TZ).getTime();
+    expect(springWidth).toBe(23 * 3_600_000);
+    const fallWidth =
+      localInstant("2026-10-25", 1440, TZ).getTime() -
+      localInstant("2026-10-25", 0, TZ).getTime();
+    expect(fallWidth).toBe(25 * 3_600_000);
+  });
+
+  it("rolls month boundaries correctly", () => {
+    expect(localInstant("2026-06-30", 1440, TZ).toISOString()).toBe(
+      localInstant("2026-07-01", 0, TZ).toISOString(),
+    );
   });
 });
 
