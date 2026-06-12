@@ -54,7 +54,7 @@ export async function submitPassword(
   if (password.length < 8) return { error: "too_short" };
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) {
     if (/already|registered|exists/i.test(error.message)) {
       return { error: "email_taken" };
@@ -63,6 +63,23 @@ export async function submitPassword(
   }
 
   const admin = createAdminClient();
+
+  // Email verification is OURS (DD09); Supabase-level confirmation must
+  // never gate onboarding. If the dashboard's "Confirm email" toggle is on,
+  // signUp returns no session — auto-confirm and sign in so the flow is
+  // immune to that setting.
+  if (!data.session && data.user) {
+    const { error: confirmError } = await admin.auth.admin.updateUserById(
+      data.user.id,
+      { email_confirm: true },
+    );
+    if (confirmError) return { error: "server" };
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInError) return { error: "server" };
+  }
   await admin
     .from("signup_leads")
     .update({ converted_at: new Date().toISOString() })
