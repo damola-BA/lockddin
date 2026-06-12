@@ -62,9 +62,11 @@ export function getAvailableSlots(input: AvailabilityInput): Slot[] {
     ...occupied.activeHolds,
   ].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 
-  // Step 7 — walk the gaps. Every gap ≥ duration + buffer yields ONE slot
-  // at the gap start (no 15-minute subdivision). All math in UTC ms so DST
-  // days stay 60/90-minute-accurate.
+  // Step 7 — walk the gaps. Each gap yields back-to-back starts anchored
+  // at the gap start and stepped by duration + buffer (DD24): clients see
+  // every bookable time, and because steps are exact service lengths no
+  // dead fragments form. Still no 15-minute subdivision. All math in UTC
+  // ms so DST days stay 60/90-minute-accurate.
   const slots: Slot[] = [];
   for (const window of windows) {
     const range = toUtcRange(date, window, provider.timezone);
@@ -76,21 +78,23 @@ export function getAvailableSlots(input: AvailabilityInput): Slot[] {
     );
 
     for (const occ of overlapping) {
-      maybePushSlot(cursor, occ.startsAt.getTime());
+      pushGapSlots(cursor, occ.startsAt.getTime());
       cursor = Math.max(cursor, occ.effectiveEndAt.getTime());
       if (cursor >= windowEnd) break;
     }
-    maybePushSlot(cursor, windowEnd);
+    pushGapSlots(cursor, windowEnd);
 
-    function maybePushSlot(gapStart: number, gapEnd: number) {
+    function pushGapSlots(gapStart: number, gapEnd: number) {
       const clippedEnd = Math.min(gapEnd, windowEnd);
-      if (clippedEnd - gapStart < neededMinutes * MS) return;
-      if (gapStart < leadBoundary.getTime()) return; // step 4
-      slots.push({
-        startsAt: new Date(gapStart),
-        endsAt: new Date(gapStart + service.durationMinutes * MS),
-        effectiveEndAt: new Date(gapStart + neededMinutes * MS),
-      });
+      const needed = neededMinutes * MS;
+      for (let t = gapStart; t + needed <= clippedEnd; t += needed) {
+        if (t < leadBoundary.getTime()) continue; // step 4
+        slots.push({
+          startsAt: new Date(t),
+          endsAt: new Date(t + service.durationMinutes * MS),
+          effectiveEndAt: new Date(t + needed),
+        });
+      }
     }
   }
 

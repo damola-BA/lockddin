@@ -80,6 +80,12 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD24: slot generation steps through each gap by duration + buffer instead
+of one slot per gap (beta user feedback): clients see every bookable time
+of a day, and exact-length steps still leave no dead fragments; the
+"next available" list shows whole days (all of the earliest day before
+the next one starts). Amends the master spec's one-slot-per-gap rule.
+
 DD23: localInstant rolls minute-1440 to the NEXT local midnight —
 date-fns-tz silently parses "T24:00:00" as 00:00 of the same day, which
 collapsed the availability loader's day window to zero width and hid all

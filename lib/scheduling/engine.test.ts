@@ -109,8 +109,11 @@ describe("worked example: Balayage 180min", () => {
         },
       }),
     );
-    // 10:30–18:00 = 450 → one slot at 10:30
-    expect(startTimes(slots)).toEqual([local("2026-07-14", "10:30")]);
+    // 10:30–18:00 = 450 → stepped starts at 10:30 and 13:30 (DD24)
+    expect(startTimes(slots)).toEqual([
+      local("2026-07-14", "10:30"),
+      local("2026-07-14", "13:30"),
+    ]);
   });
 
   it("buffer is invisible to the client but occupies the calendar", () => {
@@ -166,15 +169,18 @@ describe("8-step semantics", () => {
     expect(slots).toEqual([]);
   });
 
-  it("step 4: lead time hides slots starting before now+lead", () => {
+  it("step 4: lead time hides starts before now+lead, keeps later ones", () => {
     const slots = getAvailableSlots(
       input({
         provider: { ...baseProvider, minLeadTimeMinutes: 120 },
         now: local("2026-07-14", "08:00"),
       }),
     );
-    // gap starts at 09:00 < 10:00 lead boundary → the 09:00 slot is hidden
-    expect(slots).toEqual([]);
+    // 09:00 start is inside the 10:00 lead boundary; stepped starts from
+    // 10:00 remain (DD24)
+    expect(startTimes(slots)[0]).toEqual(local("2026-07-14", "10:00"));
+    expect(startTimes(slots)).not.toContainEqual(local("2026-07-14", "09:00"));
+    expect(slots).toHaveLength(8); // 10:00..17:00
   });
 
   it("slot exactly at closing time fits; one minute more does not", () => {
@@ -213,7 +219,10 @@ describe("8-step semantics", () => {
         },
       }),
     );
-    expect(startTimes(slots)).toEqual([local("2026-07-14", "10:00")]);
+    expect(startTimes(slots)).toEqual([
+      local("2026-07-14", "10:00"),
+      local("2026-07-14", "11:00"),
+    ]);
   });
 
   it("flexible mode: only kind='open' override dates are available", () => {
@@ -226,7 +235,11 @@ describe("8-step semantics", () => {
         override: { kind: "open", start: "09:00", end: "12:00", extraBlocks: [], dailyCap: null },
       }),
     );
-    expect(startTimes(slots)).toEqual([local("2026-07-14", "09:00")]);
+    expect(startTimes(slots)).toEqual([
+      local("2026-07-14", "09:00"),
+      local("2026-07-14", "10:00"),
+      local("2026-07-14", "11:00"),
+    ]);
   });
 });
 
@@ -267,25 +280,23 @@ describe("localInstant", () => {
 // shape — not just current list members.
 
 describe("canOfferInterval", () => {
-  it("REGRESSION: displayed 10:00 stays bookable after the 09:00 booking vanishes", () => {
-    // With a 09:00–10:00 booking, the engine offers 10:00 (gap start).
+  it("REGRESSION: displayed 10:30 stays bookable after the 09:30 booking vanishes", () => {
+    // With a 09:30–10:30 booking, stepped starts resume at 10:30.
     const withBooking = input({
       occupied: {
-        confirmedBookings: [range("2026-07-14", "09:00", "10:00")],
+        confirmedBookings: [range("2026-07-14", "09:30", "10:30")],
         activeHolds: [],
       },
     });
-    expect(startTimes(getAvailableSlots(withBooking))).toEqual([
-      local("2026-07-14", "10:00"),
-    ]);
+    const shown = startTimes(getAvailableSlots(withBooking));
+    expect(shown).toContainEqual(local("2026-07-14", "10:30"));
 
-    // The booking is cancelled: the list now says 09:00 only…
+    // The booking is cancelled: the grid re-anchors to 09:00/10:00/11:00…
     const freed = input();
-    expect(startTimes(getAvailableSlots(freed))).toEqual([
-      local("2026-07-14", "09:00"),
-    ]);
-    // …but the client who was shown 10:00 must still be able to take it.
-    expect(canOfferInterval(freed, local("2026-07-14", "10:00"))).toBe(true);
+    const freedTimes = startTimes(getAvailableSlots(freed));
+    expect(freedTimes).not.toContainEqual(local("2026-07-14", "10:30"));
+    // …but the client who was shown 10:30 must still be able to take it.
+    expect(canOfferInterval(freed, local("2026-07-14", "10:30"))).toBe(true);
   });
 
   it("accepts a listed slot (display and claim agree on the common path)", () => {
@@ -412,7 +423,8 @@ describe("DST", () => {
         templateDay: day({ start: "00:30", end: "05:30" }),
       }),
     );
-    expect(slots).toHaveLength(1);
+    // 4 real hours exist in the 00:30–05:30 face window (02:00→03:00 vanishes)
+    expect(slots).toHaveLength(4);
     for (const slot of slots) {
       expect(slot.endsAt.getTime() - slot.startsAt.getTime()).toBe(60 * 60_000);
     }

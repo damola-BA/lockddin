@@ -121,27 +121,26 @@ export async function getSlotsForDay(
   return publicSlots(slots);
 }
 
-/** Default picker view: the 5 earliest slots across the window (DD05). */
+/** Default picker view (DD05 + DD24): whole days at a time — every slot of
+ *  the earliest day with availability is shown before the next day starts,
+ *  and we stop once at least `minimum` slots are listed. */
 export async function getEarliestSlots(
   provider: PublicProvider,
   serviceId: string,
-  limit = 5,
+  minimum = 5,
   now = new Date(),
 ): Promise<PublicSlot[]> {
   const days = await getBookableDays(provider, now);
   const out: PublicSlot[] = [];
   for (const date of days) {
-    if (out.length >= limit) break;
+    if (out.length >= minimum) break;
     const slots = await getDayAvailability({
       providerId: provider.id,
       serviceId,
       date,
       now,
     });
-    for (const slot of publicSlots(slots)) {
-      out.push(slot);
-      if (out.length >= limit) break;
-    }
+    out.push(...publicSlots(slots)); // never truncate mid-day
   }
   return out;
 }

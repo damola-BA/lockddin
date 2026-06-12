@@ -232,18 +232,31 @@ export function BookingFlow({
           <p className="text-sm text-stone-500">{t.client.noSlotsDay}</p>
         ) : null
       ) : (
-        <div className="space-y-2">
-          {visibleSlots.map((slot) => (
-            <button
-              key={slot.startsAt}
-              type="button"
-              onClick={() => setPicked(slot)}
-              className="flex w-full items-baseline justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm"
-            >
-              <span className="font-serif text-stone-900">{slotDay(slot.startsAt)}</span>
-              <span className="font-mono text-stone-700">{slotTime(slot.startsAt)}</span>
-            </button>
-          ))}
+        // All of a day's times together, earliest day first (DD24).
+        <div className="space-y-4">
+          {[...new Set(visibleSlots.map((s) => localDateOf(s.startsAt)))].map(
+            (day) => (
+              <div key={day}>
+                <p className="mb-2 font-serif text-stone-900">
+                  {slotDay(`${day}T12:00:00Z`)}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {visibleSlots
+                    .filter((s) => localDateOf(s.startsAt) === day)
+                    .map((slot) => (
+                      <button
+                        key={slot.startsAt}
+                        type="button"
+                        onClick={() => setPicked(slot)}
+                        className="rounded-lg border border-stone-200 bg-white px-3.5 py-2 font-mono text-stone-800 shadow-sm"
+                      >
+                        {slotTime(slot.startsAt)}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ),
+          )}
         </div>
       )}
 
