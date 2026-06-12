@@ -72,3 +72,10 @@ DD21: superseded manage links resolve to honest states ("this appointment
 was cancelled/has passed" + book-again link) instead of a generic
 "expired" (beta user feedback); tokens are no longer rotated on cancel —
 single-use is enforced by the status flip, which blocks all actions.
+
+DD22: claim-time validation checks the picked INTERVAL (fits windows, lead
+time, window, cap, no known overlap) rather than exact membership in a
+recomputed slot list — gap-start slots shift whenever a hold expires or a
+booking is cancelled, which made perfectly free times fail with a false
+"slot taken". Races remain settled by the claim transaction + EXCLUDE
+constraints.

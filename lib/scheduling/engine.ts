@@ -98,3 +98,56 @@ export function getAvailableSlots(input: AvailabilityInput): Slot[] {
   // spanning window edges keep this cheap and certain).
   return slots.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 }
+
+// Can this exact interval be booked? Used at claim time (DD22): slot lists
+// shift whenever a hold expires or a booking is cancelled (one slot per
+// gap, at the gap start), so a picked time must not be validated by exact
+// list membership. The interval is valid when it fits the day's SHAPE
+// (window, lead time, cap, candidate windows) and overlaps nothing the
+// engine knows about — the DB EXCLUDE constraints stay the final word on
+// races.
+export function canOfferInterval(
+  input: AvailabilityInput,
+  startsAt: Date,
+): boolean {
+  const { provider, service, date, now, templateDay, override, occupied } = input;
+
+  if (!isDateBookable(date, provider.bookingWindow, now, provider.timezone)) {
+    return false;
+  }
+  if (provider.scheduleType === "flexible" && override?.kind !== "open") {
+    return false;
+  }
+  if (templateDay?.serviceIds && !templateDay.serviceIds.includes(service.id)) {
+    return false;
+  }
+  const cap = override?.dailyCap ?? templateDay?.dailyCap ?? null;
+  if (cap !== null && occupied.confirmedBookings.length >= cap) {
+    return false;
+  }
+
+  const bufferMinutes = service.bufferMinutes ?? provider.globalBufferMinutes;
+  const neededMinutes = service.durationMinutes + bufferMinutes;
+  const start = startsAt.getTime();
+  const end = start + neededMinutes * MS;
+
+  if (start < now.getTime() + provider.minLeadTimeMinutes * MS) return false;
+
+  const hours = effectiveHours(templateDay, override);
+  if (!hours) return false;
+  const reserved = override?.kind === "open" ? [] : (templateDay?.reservedBlocks ?? []);
+  const blocks = [...reserved, ...(override?.extraBlocks ?? [])];
+
+  const fitsWindow = buildLocalWindows(hours, blocks).some((w) => {
+    const range = toUtcRange(date, w, provider.timezone);
+    return start >= range.start.getTime() && end <= range.end.getTime();
+  });
+  if (!fitsWindow) return false;
+
+  for (const r of [...occupied.confirmedBookings, ...occupied.activeHolds]) {
+    if (start < r.effectiveEndAt.getTime() && end > r.startsAt.getTime()) {
+      return false;
+    }
+  }
+  return true;
+}

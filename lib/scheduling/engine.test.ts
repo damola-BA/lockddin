@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fromZonedTime } from "date-fns-tz";
-import { getAvailableSlots } from "./engine";
+import { canOfferInterval, getAvailableSlots } from "./engine";
 import type {
   AvailabilityInput,
   EngineProvider,
@@ -226,6 +226,85 @@ describe("8-step semantics", () => {
       }),
     );
     expect(startTimes(slots)).toEqual([local("2026-07-14", "09:00")]);
+  });
+});
+
+// ── canOfferInterval (DD22 regression) ───────────────────────────────
+// Gap-start slots shift when a hold expires or a booking is cancelled, so
+// claim-time validation must accept any free interval that fits the day's
+// shape — not just current list members.
+
+describe("canOfferInterval", () => {
+  it("REGRESSION: displayed 10:00 stays bookable after the 09:00 booking vanishes", () => {
+    // With a 09:00–10:00 booking, the engine offers 10:00 (gap start).
+    const withBooking = input({
+      occupied: {
+        confirmedBookings: [range("2026-07-14", "09:00", "10:00")],
+        activeHolds: [],
+      },
+    });
+    expect(startTimes(getAvailableSlots(withBooking))).toEqual([
+      local("2026-07-14", "10:00"),
+    ]);
+
+    // The booking is cancelled: the list now says 09:00 only…
+    const freed = input();
+    expect(startTimes(getAvailableSlots(freed))).toEqual([
+      local("2026-07-14", "09:00"),
+    ]);
+    // …but the client who was shown 10:00 must still be able to take it.
+    expect(canOfferInterval(freed, local("2026-07-14", "10:00"))).toBe(true);
+  });
+
+  it("accepts a listed slot (display and claim agree on the common path)", () => {
+    const i = input();
+    for (const slot of getAvailableSlots(i)) {
+      expect(canOfferInterval(i, slot.startsAt)).toBe(true);
+    }
+  });
+
+  it("rejects an interval overlapping a confirmed booking or active hold", () => {
+    const i = input({
+      occupied: {
+        confirmedBookings: [range("2026-07-14", "09:00", "10:00")],
+        activeHolds: [range("2026-07-14", "14:00", "15:00")],
+      },
+    });
+    expect(canOfferInterval(i, local("2026-07-14", "09:30"))).toBe(false);
+    expect(canOfferInterval(i, local("2026-07-14", "14:30"))).toBe(false);
+    expect(canOfferInterval(i, local("2026-07-14", "10:00"))).toBe(true);
+  });
+
+  it("rejects intervals outside hours, over blocks, or past closing", () => {
+    const i = input({
+      templateDay: day({ reservedBlocks: [{ start: "12:00", end: "13:00" }] }),
+    });
+    expect(canOfferInterval(i, local("2026-07-14", "08:00"))).toBe(false);
+    expect(canOfferInterval(i, local("2026-07-14", "12:30"))).toBe(false); // in block
+    expect(canOfferInterval(i, local("2026-07-14", "11:30"))).toBe(false); // runs into block
+    expect(canOfferInterval(i, local("2026-07-14", "17:30"))).toBe(false); // past close
+    expect(canOfferInterval(i, local("2026-07-14", "17:00"))).toBe(true); // exact fit
+  });
+
+  it("respects lead time, booking window, and daily cap", () => {
+    const lead = input({
+      provider: { ...baseProvider, minLeadTimeMinutes: 120 },
+      now: local("2026-07-14", "08:30"),
+    });
+    expect(canOfferInterval(lead, local("2026-07-14", "10:00"))).toBe(false);
+    expect(canOfferInterval(lead, local("2026-07-14", "10:30"))).toBe(true);
+
+    const outside = input({ date: "2026-10-01" });
+    expect(canOfferInterval(outside, local("2026-10-01", "09:00"))).toBe(false);
+
+    const capped = input({
+      templateDay: day({ dailyCap: 1 }),
+      occupied: {
+        confirmedBookings: [range("2026-07-14", "09:00", "10:00")],
+        activeHolds: [],
+      },
+    });
+    expect(canOfferInterval(capped, local("2026-07-14", "11:00"))).toBe(false);
   });
 });
 

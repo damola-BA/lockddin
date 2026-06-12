@@ -4,7 +4,9 @@ import { formatInTimeZone } from "date-fns-tz";
 import { makeManageToken } from "@/lib/booking/manage-token";
 import { createAdminClient } from "@/lib/db/admin";
 import { claimHold } from "@/lib/scheduling/holds";
-import { getProviderBySlug, getSlotsForDay } from "@/lib/booking/slots";
+import { canOfferInterval } from "@/lib/scheduling/engine";
+import { getAvailabilityInput } from "@/lib/scheduling/availability";
+import { getProviderBySlug } from "@/lib/booking/slots";
 import { normalizePhone } from "@/lib/booking/phone";
 import { sendEmail } from "@/lib/notifications";
 import { appUrl } from "@/lib/app-url";
@@ -39,28 +41,34 @@ export async function placeHold(
   const provider = await getProviderBySlug(slug);
   if (!provider || !provider.is_active) return { ok: false, reason: "invalid" };
 
-  // Recompute the day server-side; the slot must still be one the engine
-  // offers — clients never dictate times.
-  const slots = await getSlotsForDay(provider, serviceId, date);
-  const slot = slots.find((s) => s.startsAt === startsAt);
-  if (!slot) return { ok: false, reason: "slot_taken" };
+  const starts = new Date(startsAt);
+  if (Number.isNaN(starts.getTime())) return { ok: false, reason: "invalid" };
 
-  const admin = createAdminClient();
-  const { data: service } = await admin
-    .from("services")
-    .select("buffer_minutes")
-    .eq("id", serviceId)
-    .single();
-  const buffer = service?.buffer_minutes ?? provider.global_buffer_minutes;
+  // Validate the INTERVAL, not exact slot-list membership (DD22): gap-start
+  // slots shift whenever a hold expires or a booking is cancelled, so a
+  // time the engine offered seconds ago can vanish from the list while the
+  // range itself is still perfectly free. The engine checks the day's
+  // shape; the claim transaction + EXCLUDE constraints settle races.
+  const input = await getAvailabilityInput({
+    providerId: provider.id,
+    serviceId,
+    date,
+  });
+  if (!input) return { ok: false, reason: "invalid" };
+  if (!canOfferInterval(input, starts)) {
+    return { ok: false, reason: "slot_taken" };
+  }
 
-  const ends = new Date(slot.endsAt);
+  const durationMs = input.service.durationMinutes * 60_000;
+  const bufferMs =
+    (input.service.bufferMinutes ?? input.provider.globalBufferMinutes) * 60_000;
   const result = await claimHold({
     providerId: provider.id,
     serviceId,
     slot: {
-      startsAt: new Date(slot.startsAt),
-      endsAt: ends,
-      effectiveEndAt: new Date(ends.getTime() + buffer * 60_000),
+      startsAt: starts,
+      endsAt: new Date(starts.getTime() + durationMs),
+      effectiveEndAt: new Date(starts.getTime() + durationMs + bufferMs),
     },
   });
   if (!result.ok) return { ok: false, reason: "slot_taken" };

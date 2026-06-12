@@ -14,6 +14,19 @@ export async function getDayAvailability(args: {
   date: string; // local "YYYY-MM-DD"
   now?: Date;
 }): Promise<Slot[]> {
+  const input = await getAvailabilityInput(args);
+  return input ? getAvailableSlots(input) : [];
+}
+
+/** Assemble the engine input for one provider/service/date — the single
+ *  injected DB read (F4 step 6). Returns null when provider or service is
+ *  missing/inactive. */
+export async function getAvailabilityInput(args: {
+  providerId: string;
+  serviceId: string;
+  date: string; // local "YYYY-MM-DD"
+  now?: Date;
+}): Promise<AvailabilityInput | null> {
   const { providerId, serviceId, date } = args;
   const now = args.now ?? new Date();
   const admin = createAdminClient();
@@ -33,7 +46,7 @@ export async function getDayAvailability(args: {
       .single(),
   ]);
   if (!provider || !provider.is_active || !service || !service.is_active) {
-    return [];
+    return null;
   }
 
   // weekday convention: 0=Mon..6=Sun; JS getDay(): 0=Sun..6=Sat
@@ -129,5 +142,5 @@ export async function getDayAvailability(args: {
     },
   };
 
-  return getAvailableSlots(input);
+  return input;
 }
