@@ -10,6 +10,7 @@ import { getProviderBySlug } from "@/lib/booking/slots";
 import { normalizePhone } from "@/lib/booking/phone";
 import { sendEmail } from "@/lib/notifications";
 import { appUrl } from "@/lib/app-url";
+import { inngest } from "@/lib/inngest/client";
 
 // Public booking actions (F5). Anonymous clients act only through these —
 // no table access from the browser.
@@ -218,14 +219,19 @@ export async function confirmBooking(
     "EEEE d MMMM 'at' HH:mm",
   )}.`;
 
+  const businessName =
+    provider.business_name ?? provider.provider_name ?? "";
   try {
     await sendEmail({
       to: email,
       providerId: provider.id,
+      bookingId: row.booking_id,
+      fromName: businessName,
+      replyTo: provider.email,
       templateKey: "booking.confirmed",
       payload: {
         clientFirstName: firstName,
-        businessName: provider.business_name ?? provider.provider_name ?? "",
+        businessName,
         serviceName: service?.name ?? "",
         whenText: when,
         locationText: provider.location_text,
@@ -237,6 +243,12 @@ export async function confirmBooking(
   } catch {
     // Send failure is logged in notification_log; the booking stands.
   }
+
+  // Provider notification (5-min delay, AD10) + 6h reminder live in Inngest.
+  await inngest.send({
+    name: "booking/confirmed",
+    data: { bookingId: row.booking_id },
+  });
 
   return {
     ok: true,

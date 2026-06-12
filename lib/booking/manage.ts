@@ -4,7 +4,9 @@ import { formatInTimeZone } from "date-fns-tz";
 import { createAdminClient } from "@/lib/db/admin";
 import { checkManageToken, makeManageToken } from "@/lib/booking/manage-token";
 import { sendEmail } from "@/lib/notifications";
+import { getBookingFacts } from "@/lib/notifications/booking-facts";
 import { appUrl } from "@/lib/app-url";
+import { inngest } from "@/lib/inngest/client";
 
 // Manage-link actions (F5): cancel / reschedule via emailed token.
 // Inside the cancellation window there is no self-service — the attempt is
@@ -92,23 +94,34 @@ export async function cancelViaToken(
     .eq("status", "confirmed");
   if (error) return { ok: false, reason: "gone" };
 
-  // Cancellation email is queued for the F9 sender (DD15); waitlist rounds
-  // fire from M7.
-  const { data: client } = await admin
-    .from("clients")
-    .select("email, first_name")
-    .eq("id", b.client_id)
-    .single();
-  if (client?.email) {
-    await admin.from("notification_log").insert({
-      provider_id: b.provider_id,
-      booking_id: b.id,
-      recipient_email: client.email,
-      template_key: "booking.cancelled_by_client",
-      payload: { clientFirstName: client.first_name, startsAt: b.starts_at },
-      status: "queued",
-    });
+  // Client gets immediate confirmation; the provider hears after 20 min
+  // (suppressed if the client rebooks). Waitlist rounds fire from M7.
+  const facts = await getBookingFacts(b.id);
+  if (facts?.clientEmail) {
+    try {
+      await sendEmail({
+        to: facts.clientEmail,
+        providerId: facts.providerId,
+        bookingId: facts.bookingId,
+        fromName: facts.businessName,
+        replyTo: facts.providerEmail,
+        templateKey: "booking.cancelled_by_client",
+        payload: {
+          clientFirstName: facts.clientFirstName,
+          businessName: facts.businessName,
+          serviceName: facts.serviceName,
+          whenText: facts.whenText,
+          locationText: facts.locationText,
+        },
+      });
+    } catch {
+      // failure is logged in notification_log; the cancellation stands
+    }
   }
+  await inngest.send({
+    name: "booking/cancelled.by_client",
+    data: { bookingId: b.id },
+  });
   return { ok: true };
 }
 
@@ -152,7 +165,7 @@ export async function rescheduleViaToken(
     await Promise.all([
       admin
         .from("providers")
-        .select("business_name, provider_name, location_text, timezone")
+        .select("email, business_name, provider_name, location_text, timezone")
         .eq("id", b.provider_id)
         .single(),
       admin.from("clients").select("first_name, email").eq("id", b.client_id).single(),
@@ -163,6 +176,13 @@ export async function rescheduleViaToken(
         .single(),
       admin.from("bookings").select("starts_at").eq("id", row.booking_id).single(),
     ]);
+
+  // Schedules the new booking's 6h reminder; no provider email for
+  // reschedules (F9 table).
+  await inngest.send({
+    name: "booking/rescheduled",
+    data: { bookingId: row.booking_id },
+  });
 
   const when = formatInTimeZone(
     new Date(created!.starts_at),
@@ -178,6 +198,9 @@ export async function rescheduleViaToken(
       await sendEmail({
         to: client.email,
         providerId: b.provider_id,
+        bookingId: row.booking_id,
+        fromName: provider!.business_name ?? provider!.provider_name ?? "",
+        replyTo: provider!.email,
         templateKey: "booking.confirmed",
         payload: {
           clientFirstName: client.first_name,

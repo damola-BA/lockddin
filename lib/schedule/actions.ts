@@ -2,8 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { formatInTimeZone } from "date-fns-tz";
 import { createServerSupabase } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
+import { sendEmail } from "@/lib/notifications";
+import { appUrl } from "@/lib/app-url";
 
 // F4 dashboard-side actions: template editing (never cancels bookings),
 // day overrides + range closure (consequence preview, atomic apply),
@@ -311,26 +314,47 @@ export async function applyOverride(
   );
   if (error) return { error: "server" };
 
-  // One cancellation email per affected client — queued now, sent when the
-  // F9 template lands in M4 (DD15).
+  // One cancellation email per affected client (F9: reason + apology +
+  // rebook link), sent immediately through the gateway.
   const cancelledIds = new Set((cancelled ?? []) as string[]);
-  const rows = ((affected ?? []) as AffectedBooking[])
-    .filter((b) => cancelledIds.has(b.booking_id) && b.client_email)
-    .map((b) => ({
-      provider_id: user.id,
-      booking_id: b.booking_id,
-      recipient_email: b.client_email!,
-      template_key: "booking.cancelled_by_provider",
-      payload: {
-        clientFirstName: b.client_first_name,
-        serviceName: b.service_name,
-        startsAt: b.starts_at,
-        reason,
-      },
-      status: "queued",
-    }));
-  if (rows.length > 0) {
-    await admin.from("notification_log").insert(rows);
+  const toEmail = ((affected ?? []) as AffectedBooking[]).filter(
+    (b) => cancelledIds.has(b.booking_id) && b.client_email,
+  );
+  if (toEmail.length > 0) {
+    const { data: provider } = await admin
+      .from("providers")
+      .select("email, business_name, provider_name, timezone, slug, location_text")
+      .eq("id", user.id)
+      .single();
+    const businessName =
+      provider?.business_name ?? provider?.provider_name ?? "";
+    for (const b of toEmail) {
+      try {
+        await sendEmail({
+          to: b.client_email!,
+          providerId: user.id,
+          bookingId: b.booking_id,
+          fromName: businessName,
+          replyTo: provider?.email,
+          templateKey: "booking.cancelled_by_provider",
+          payload: {
+            clientFirstName: b.client_first_name,
+            businessName,
+            serviceName: b.service_name,
+            whenText: formatInTimeZone(
+              new Date(b.starts_at),
+              provider?.timezone ?? "Europe/Brussels",
+              "EEEE d MMMM yyyy 'at' HH:mm",
+            ),
+            locationText: provider?.location_text ?? null,
+            reason,
+            rebookUrl: appUrl(`/b/${provider?.slug}`),
+          },
+        });
+      } catch {
+        // failure stays visible in notification_log; the override stands
+      }
+    }
   }
 
   revalidatePath("/dashboard/days");

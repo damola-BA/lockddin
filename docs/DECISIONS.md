@@ -80,6 +80,11 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD25: the F9 reschedule email reuses the booking.confirmed template (new
+time + fresh manage link is exactly its content); the reminder job listens
+to both booking/confirmed and booking/rescheduled events, and a reschedule
+sends no provider email per the F9 table.
+
 DD24: slot generation steps through each gap by duration + buffer instead
 of one slot per gap (beta user feedback): clients see every bookable time
 of a day, and exact-length steps still leave no dead fragments; the
