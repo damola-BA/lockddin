@@ -58,7 +58,7 @@ export default async function BookingDetailPage({
           <BookingActions
             bookingId={booking.id}
             providerId={provider.id}
-            serviceId={booking.serviceId}
+            serviceIds={booking.serviceIds}
             slug={provider.slug}
             clientName={booking.clientName}
             businessName={provider.businessName}

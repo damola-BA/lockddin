@@ -18,7 +18,7 @@ type Mode = "menu" | "cancel" | "reschedule";
 export function BookingActions({
   bookingId,
   providerId,
-  serviceId,
+  serviceIds,
   clientName,
   businessName,
   serviceName,
@@ -28,7 +28,7 @@ export function BookingActions({
 }: {
   bookingId: string;
   providerId: string;
-  serviceId: string;
+  serviceIds: string[];
   slug: string;
   clientName: string;
   businessName: string;
@@ -65,7 +65,7 @@ export function BookingActions({
       <RescheduleForm
         bookingId={bookingId}
         providerId={providerId}
-        serviceId={serviceId}
+        serviceIds={serviceIds}
         onBack={() => setMode("menu")}
       />
     );
@@ -226,12 +226,12 @@ function CancelForm({
 function RescheduleForm({
   bookingId,
   providerId,
-  serviceId,
+  serviceIds,
   onBack,
 }: {
   bookingId: string;
   providerId: string;
-  serviceId: string;
+  serviceIds: string[];
   onBack: () => void;
 }) {
   const [state, action, pending] = useActionState<DashActionState, FormData>(
@@ -241,18 +241,19 @@ function RescheduleForm({
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState<{ startsAt: string; label: string }[] | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
+  const serviceCsv = serviceIds.join(",");
 
   useEffect(() => {
     if (!date) return;
     setSlots(null);
     setPicked(null);
-    rescheduleSlots(providerId, serviceId, date).then(setSlots);
-  }, [date, providerId, serviceId]);
+    rescheduleSlots(providerId, serviceIds, date).then(setSlots);
+  }, [date, providerId, serviceCsv]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <form action={action} className="mt-6 space-y-4">
       <input type="hidden" name="booking_id" value={bookingId} />
-      <input type="hidden" name="service_id" value={serviceId} />
+      <input type="hidden" name="service_ids" value={serviceCsv} />
       <input type="hidden" name="date" value={date} />
       <input type="hidden" name="starts_at" value={picked ?? ""} />
 

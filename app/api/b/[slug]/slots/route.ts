@@ -13,9 +13,13 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const serviceId = request.nextUrl.searchParams.get("service");
+  // One or more services in a single visit, comma-separated.
+  const serviceIds = (request.nextUrl.searchParams.get("service") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const date = request.nextUrl.searchParams.get("date");
-  if (!serviceId) {
+  if (serviceIds.length === 0) {
     return NextResponse.json({ error: "service required" }, { status: 400 });
   }
 
@@ -28,12 +32,12 @@ export async function GET(
   const headers = { "Cache-Control": "no-store" };
 
   if (date) {
-    const slots = await getSlotsForDay(provider, serviceId, date);
+    const slots = await getSlotsForDay(provider, serviceIds, date);
     return NextResponse.json({ slots }, { headers });
   }
 
   const [slots, bookableDays] = await Promise.all([
-    getEarliestSlots(provider, serviceId),
+    getEarliestSlots(provider, serviceIds),
     getBookableDays(provider),
   ]);
   return NextResponse.json({ slots, bookableDays }, { headers });

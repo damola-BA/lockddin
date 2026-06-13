@@ -1,6 +1,7 @@
 import "server-only";
 import { formatInTimeZone } from "date-fns-tz";
 import { createAdminClient } from "@/lib/db/admin";
+import { resolveServiceSet } from "@/lib/booking/service-set";
 
 // Everything the notification jobs need to know about one booking,
 // loaded in a single query.
@@ -31,9 +32,8 @@ export async function getBookingFacts(
   const { data } = await admin
     .from("bookings")
     .select(
-      `id, status, starts_at, created_at, cancellation_window_hours, manage_token, client_id,
+      `id, status, starts_at, created_at, cancellation_window_hours, manage_token, client_id, service_ids,
        clients (first_name, email),
-       services (name, prep_instructions),
        providers (id, email, business_name, provider_name, location_text, timezone, slug)`,
     )
     .eq("id", bookingId)
@@ -44,10 +44,6 @@ export async function getBookingFacts(
     first_name: string;
     email: string | null;
   };
-  const service = data.services as unknown as {
-    name: string;
-    prep_instructions: string | null;
-  };
   const provider = data.providers as unknown as {
     id: string;
     email: string;
@@ -57,6 +53,8 @@ export async function getBookingFacts(
     timezone: string;
     slug: string;
   };
+
+  const services = await resolveServiceSet(provider.id, data.service_ids ?? []);
 
   return {
     bookingId: data.id,
@@ -72,8 +70,8 @@ export async function getBookingFacts(
     manageToken: data.manage_token,
     clientFirstName: client.first_name,
     clientEmail: client.email,
-    serviceName: service.name,
-    prepInstructions: service.prep_instructions,
+    serviceName: services.label,
+    prepInstructions: services.prepInstructions,
     providerId: provider.id,
     providerEmail: provider.email,
     businessName: provider.business_name ?? provider.provider_name ?? "Your provider",

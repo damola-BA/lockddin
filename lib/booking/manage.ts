@@ -160,23 +160,6 @@ export async function rescheduleViaToken(
     return { ok: false, reason };
   }
 
-  // Fresh confirmation email with the new manage link.
-  const [{ data: provider }, { data: client }, { data: service }, { data: created }] =
-    await Promise.all([
-      admin
-        .from("providers")
-        .select("email, business_name, provider_name, location_text, timezone")
-        .eq("id", b.provider_id)
-        .single(),
-      admin.from("clients").select("first_name, email").eq("id", b.client_id).single(),
-      admin
-        .from("services")
-        .select("name, prep_instructions")
-        .eq("id", b.service_id)
-        .single(),
-      admin.from("bookings").select("starts_at").eq("id", row.booking_id).single(),
-    ]);
-
   // Schedules the new booking's 6h reminder; no provider email for
   // reschedules (F9 table).
   await inngest.send({
@@ -184,34 +167,31 @@ export async function rescheduleViaToken(
     data: { bookingId: row.booking_id },
   });
 
-  const when = formatInTimeZone(
-    new Date(created!.starts_at),
-    provider!.timezone,
-    "EEEE d MMMM yyyy 'at' HH:mm",
-  );
-  if (client?.email) {
+  // Fresh confirmation email (all services) with the new manage link.
+  const facts = await getBookingFacts(row.booking_id);
+  if (facts?.clientEmail) {
     const freeUntil = new Date(
-      new Date(created!.starts_at).getTime() -
-        b.cancellation_window_hours * 3_600_000,
+      new Date(facts.startsAt).getTime() -
+        facts.cancellationWindowHours * 3_600_000,
     );
     try {
       await sendEmail({
-        to: client.email,
-        providerId: b.provider_id,
-        bookingId: row.booking_id,
-        fromName: provider!.business_name ?? provider!.provider_name ?? "",
-        replyTo: provider!.email,
+        to: facts.clientEmail,
+        providerId: facts.providerId,
+        bookingId: facts.bookingId,
+        fromName: facts.businessName,
+        replyTo: facts.providerEmail,
         templateKey: "booking.confirmed",
         payload: {
-          clientFirstName: client.first_name,
-          businessName: provider!.business_name ?? provider!.provider_name ?? "",
-          serviceName: service?.name ?? "",
-          whenText: when,
-          locationText: provider!.location_text,
-          prepInstructions: service?.prep_instructions ?? null,
+          clientFirstName: facts.clientFirstName,
+          businessName: facts.businessName,
+          serviceName: facts.serviceName,
+          whenText: facts.whenText,
+          locationText: facts.locationText,
+          prepInstructions: facts.prepInstructions,
           cancellationText: `Free cancellation until ${formatInTimeZone(
             freeUntil,
-            provider!.timezone,
+            "Europe/Brussels",
             "EEEE d MMMM 'at' HH:mm",
           )}.`,
           manageUrl: appUrl(`/manage/${newToken}`),
@@ -221,5 +201,5 @@ export async function rescheduleViaToken(
       /* logged in notification_log */
     }
   }
-  return { ok: true, whenText: when };
+  return { ok: true, whenText: facts?.whenText ?? "" };
 }

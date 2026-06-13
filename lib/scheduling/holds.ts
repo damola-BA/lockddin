@@ -13,13 +13,13 @@ export type ClaimResult =
 
 export async function claimHold(args: {
   providerId: string;
-  serviceId: string;
+  serviceIds: string[];
   slot: Slot;
 }): Promise<ClaimResult> {
   const admin = createAdminClient();
   const { data: holdId, error } = await admin.rpc("claim_slot_hold", {
     p_provider_id: args.providerId,
-    p_service_id: args.serviceId,
+    p_service_ids: args.serviceIds,
     p_starts_at: args.slot.startsAt.toISOString(),
     p_ends_at: args.slot.endsAt.toISOString(),
     p_effective_end_at: args.slot.effectiveEndAt.toISOString(),

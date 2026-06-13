@@ -1,6 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { createAdminClient } from "@/lib/db/admin";
 import { checkManageToken } from "@/lib/booking/manage-token";
+import { resolveServiceSet } from "@/lib/booking/service-set";
 import { getDictionary } from "@/lib/i18n";
 import { ManageBooking } from "./manage-booking";
 
@@ -22,7 +23,7 @@ export default async function ManagePage({
   const { data: booking } = await admin
     .from("bookings")
     .select(
-      "id, starts_at, status, cancellation_window_hours, services (id, name, duration_minutes, price_cents), providers (slug, business_name, provider_name, email, timezone, location_text), clients (first_name)",
+      "id, starts_at, status, cancellation_window_hours, provider_id, service_ids, providers (slug, business_name, provider_name, email, timezone, location_text), clients (first_name)",
     )
     .eq("manage_token", token)
     .maybeSingle();
@@ -58,13 +59,9 @@ export default async function ManagePage({
     timezone: string;
     location_text: string | null;
   };
-  const service = booking.services as unknown as {
-    id: string;
-    name: string;
-    duration_minutes: number;
-    price_cents: number;
-  };
   const client = booking.clients as unknown as { first_name: string };
+  const serviceIds = (booking.service_ids as string[]) ?? [];
+  const services = await resolveServiceSet(booking.provider_id as string, serviceIds);
 
   return (
     <Shell>
@@ -74,8 +71,8 @@ export default async function ManagePage({
         businessName={provider.business_name ?? provider.provider_name ?? ""}
         providerEmail={provider.email}
         clientFirstName={client.first_name}
-        serviceId={service.id}
-        serviceName={service.name}
+        serviceIds={serviceIds}
+        serviceName={services.label}
         startsAt={booking.starts_at}
         whenText={formatInTimeZone(
           new Date(booking.starts_at),

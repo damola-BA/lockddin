@@ -10,7 +10,7 @@ import type { AvailabilityInput, Slot } from "./types";
 
 export async function getDayAvailability(args: {
   providerId: string;
-  serviceId: string;
+  serviceIds: string[];
   date: string; // local "YYYY-MM-DD"
   now?: Date;
 }): Promise<Slot[]> {
@@ -18,20 +18,23 @@ export async function getDayAvailability(args: {
   return input ? getAvailableSlots(input) : [];
 }
 
-/** Assemble the engine input for one provider/service/date — the single
- *  injected DB read (F4 step 6). Returns null when provider or service is
- *  missing/inactive. */
+/** Assemble the engine input for one provider, a set of services done in a
+ *  single visit, and a date — the single injected DB read (F4 step 6).
+ *  The combined block is duration = sum, buffer = max (DD27). Returns null
+ *  when the provider/services are missing/inactive or the day restricts a
+ *  chosen service. */
 export async function getAvailabilityInput(args: {
   providerId: string;
-  serviceId: string;
+  serviceIds: string[];
   date: string; // local "YYYY-MM-DD"
   now?: Date;
 }): Promise<AvailabilityInput | null> {
-  const { providerId, serviceId, date } = args;
+  const { providerId, serviceIds, date } = args;
   const now = args.now ?? new Date();
   const admin = createAdminClient();
+  if (serviceIds.length === 0) return null;
 
-  const [{ data: provider }, { data: service }] = await Promise.all([
+  const [{ data: provider }, { data: services }] = await Promise.all([
     admin
       .from("providers")
       .select(
@@ -42,12 +45,24 @@ export async function getAvailabilityInput(args: {
     admin
       .from("services")
       .select("id, duration_minutes, buffer_minutes, is_active")
-      .eq("id", serviceId)
-      .single(),
+      .eq("provider_id", providerId)
+      .in("id", serviceIds),
   ]);
-  if (!provider || !provider.is_active || !service || !service.is_active) {
+  if (
+    !provider ||
+    !provider.is_active ||
+    !services ||
+    services.length !== serviceIds.length ||
+    services.some((s) => !s.is_active)
+  ) {
     return null;
   }
+
+  // Combined block: total duration, largest applicable buffer once at the end.
+  const durationMinutes = services.reduce((sum, s) => sum + s.duration_minutes, 0);
+  const bufferMinutes = Math.max(
+    ...services.map((s) => s.buffer_minutes ?? provider.global_buffer_minutes),
+  );
 
   // weekday convention: 0=Mon..6=Sun; JS getDay(): 0=Sun..6=Sat
   const local = toZonedTime(localInstant(date, 720, provider.timezone), provider.timezone);
@@ -91,6 +106,12 @@ export async function getAvailabilityInput(args: {
   const template = templateRes.data;
   const override = overrideRes.data;
 
+  // Per-day service restriction applies to a combined booking only if EVERY
+  // chosen service is allowed that day. Validated here; the engine then runs
+  // on the synthetic combined service with the restriction cleared.
+  const allowed = template?.service_ids as string[] | null | undefined;
+  if (allowed && !serviceIds.every((id) => allowed.includes(id))) return null;
+
   const input: AvailabilityInput = {
     provider: {
       timezone: provider.timezone,
@@ -100,9 +121,9 @@ export async function getAvailabilityInput(args: {
       scheduleType: provider.schedule_type,
     },
     service: {
-      id: service.id,
-      durationMinutes: service.duration_minutes,
-      bufferMinutes: service.buffer_minutes,
+      id: "__combined__",
+      durationMinutes,
+      bufferMinutes,
     },
     date,
     now,
@@ -112,7 +133,7 @@ export async function getAvailabilityInput(args: {
           start: template.start_time.slice(0, 5),
           end: template.end_time.slice(0, 5),
           dailyCap: template.daily_cap,
-          serviceIds: template.service_ids,
+          serviceIds: null, // restriction already validated above
           reservedBlocks: (template.reserved_blocks ?? []).map((b) => ({
             start: b.start_time.slice(0, 5),
             end: b.end_time.slice(0, 5),

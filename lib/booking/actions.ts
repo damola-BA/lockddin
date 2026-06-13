@@ -8,6 +8,7 @@ import { canOfferInterval } from "@/lib/scheduling/engine";
 import { getAvailabilityInput } from "@/lib/scheduling/availability";
 import { getProviderBySlug } from "@/lib/booking/slots";
 import { normalizePhone } from "@/lib/booking/phone";
+import { resolveServiceSet } from "@/lib/booking/service-set";
 import { sendEmail } from "@/lib/notifications";
 import { appUrl } from "@/lib/app-url";
 import { inngest } from "@/lib/inngest/client";
@@ -35,9 +36,13 @@ export async function placeHold(
   formData: FormData,
 ): Promise<HoldState> {
   const slug = String(formData.get("slug") ?? "");
-  const serviceId = String(formData.get("service_id") ?? "");
+  const serviceIds = String(formData.get("service_ids") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const startsAt = String(formData.get("starts_at") ?? "");
   const date = String(formData.get("date") ?? "");
+  if (serviceIds.length === 0) return { ok: false, reason: "invalid" };
 
   const provider = await getProviderBySlug(slug);
   if (!provider || !provider.is_active) return { ok: false, reason: "invalid" };
@@ -52,7 +57,7 @@ export async function placeHold(
   // shape; the claim transaction + EXCLUDE constraints settle races.
   const input = await getAvailabilityInput({
     providerId: provider.id,
-    serviceId,
+    serviceIds,
     date,
   });
   if (!input) return { ok: false, reason: "invalid" };
@@ -65,7 +70,7 @@ export async function placeHold(
     (input.service.bufferMinutes ?? input.provider.globalBufferMinutes) * 60_000;
   const result = await claimHold({
     providerId: provider.id,
-    serviceId,
+    serviceIds,
     slot: {
       startsAt: starts,
       endsAt: new Date(starts.getTime() + durationMs),
@@ -125,7 +130,7 @@ export async function recognizePhone(
 
   const { data: booking } = await admin
     .from("bookings")
-    .select("starts_at, manage_token, services (name)")
+    .select("starts_at, manage_token, service_ids")
     .eq("provider_id", provider.id)
     .eq("client_id", client.id)
     .eq("status", "confirmed")
@@ -134,13 +139,16 @@ export async function recognizePhone(
     .limit(1)
     .maybeSingle();
 
+  const services = booking
+    ? await resolveServiceSet(provider.id, (booking.service_ids as string[]) ?? [])
+    : null;
+
   return {
     firstName: client.first_name,
     email: client.email ?? undefined,
     existing: booking
       ? {
-          serviceName:
-            (booking.services as unknown as { name: string } | null)?.name ?? "",
+          serviceName: services!.label,
           startsAt: booking.starts_at,
           whenText: whenText(booking.starts_at, provider.timezone),
           manageToken: booking.manage_token,
@@ -197,16 +205,13 @@ export async function confirmBooking(
     return { ok: false, reason };
   }
 
-  // Booking facts for the confirmation screen + email.
+  // Booking facts for the confirmation screen + email — all services.
   const { data: booking } = await admin
     .from("bookings")
-    .select("starts_at, services (name, prep_instructions)")
+    .select("starts_at, service_ids")
     .eq("id", row.booking_id)
     .single();
-  const service = booking?.services as unknown as {
-    name: string;
-    prep_instructions: string | null;
-  } | null;
+  const services = await resolveServiceSet(provider.id, booking!.service_ids ?? []);
 
   const when = whenText(booking!.starts_at, provider.timezone);
   const freeUntil = new Date(
@@ -232,10 +237,10 @@ export async function confirmBooking(
       payload: {
         clientFirstName: firstName,
         businessName,
-        serviceName: service?.name ?? "",
+        serviceName: services.label,
         whenText: when,
         locationText: provider.location_text,
-        prepInstructions: service?.prep_instructions ?? null,
+        prepInstructions: services.prepInstructions,
         cancellationText,
         manageUrl: appUrl(`/manage/${manageToken}`),
       },
@@ -253,9 +258,9 @@ export async function confirmBooking(
   return {
     ok: true,
     whenText: when,
-    serviceName: service?.name ?? "",
+    serviceName: services.label,
     locationText: provider.location_text,
-    prepInstructions: service?.prep_instructions ?? null,
+    prepInstructions: services.prepInstructions,
     cancellationText,
     email,
   };

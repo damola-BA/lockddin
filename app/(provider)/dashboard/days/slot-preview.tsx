@@ -14,7 +14,7 @@ export async function SlotPreview({
   date: string;
   serviceId: string;
 }) {
-  const slots = await getDayAvailability({ providerId, serviceId, date });
+  const slots = await getDayAvailability({ providerId, serviceIds: [serviceId], date });
   const service = services.find((s) => s.id === serviceId);
 
   return (

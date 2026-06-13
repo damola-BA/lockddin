@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { buildLocalWindows, localInstant, toMinutes } from "@/lib/scheduling/windows";
 import { lastBookableDate } from "@/lib/scheduling/booking-window";
+import { combineServices, getProviderServiceMap } from "@/lib/booking/service-set";
 
 // Read side of the provider dashboard (F7) + client records (F10). Runs as
 // the signed-in provider under RLS; confirmed/no-show bookings only — active
@@ -67,20 +68,23 @@ export async function getDayBookings(
   const dayEnd = localInstant(date, 1440, provider.timezone).toISOString();
   const nowIso = new Date().toISOString();
 
-  const { data } = await supabase
-    .from("bookings")
-    .select(
-      "id, starts_at, ends_at, effective_end_at, status, source, services (name, price_cents), clients (id, first_name)",
-    )
-    .eq("provider_id", provider.id)
-    .in("status", ["confirmed", "no_show"])
-    .gte("starts_at", dayStart)
-    .lt("starts_at", dayEnd)
-    .order("starts_at");
+  const [{ data }, serviceMap] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select(
+        "id, starts_at, ends_at, effective_end_at, status, source, service_ids, clients (id, first_name)",
+      )
+      .eq("provider_id", provider.id)
+      .in("status", ["confirmed", "no_show"])
+      .gte("starts_at", dayStart)
+      .lt("starts_at", dayEnd)
+      .order("starts_at"),
+    getProviderServiceMap(provider.id),
+  ]);
 
   return (data ?? []).map((b) => {
-    const service = b.services as unknown as { name: string; price_cents: number };
     const client = b.clients as unknown as { id: string; first_name: string };
+    const services = combineServices((b.service_ids as string[]) ?? [], serviceMap);
     return {
       id: b.id,
       startsAt: b.starts_at,
@@ -88,8 +92,8 @@ export async function getDayBookings(
       timeText: `${formatInTimeZone(new Date(b.starts_at), provider.timezone, "HH:mm")}–${formatInTimeZone(new Date(b.ends_at), provider.timezone, "HH:mm")}`,
       status: b.status,
       source: b.source,
-      serviceName: service.name,
-      priceCents: service.price_cents,
+      serviceName: services.label,
+      priceCents: services.priceCents,
       clientId: client.id,
       clientName: client.first_name,
       isPast: b.ends_at <= nowIso,
@@ -291,13 +295,16 @@ export async function getWeekSummary(
   });
   const end = localInstant(days[6], 1440, provider.timezone);
 
-  const { data } = await supabase
-    .from("bookings")
-    .select("starts_at, services (price_cents)")
-    .eq("provider_id", provider.id)
-    .in("status", ["confirmed", "no_show"])
-    .gte("starts_at", start.toISOString())
-    .lt("starts_at", end.toISOString());
+  const [{ data }, serviceMap] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("starts_at, service_ids")
+      .eq("provider_id", provider.id)
+      .in("status", ["confirmed", "no_show"])
+      .gte("starts_at", start.toISOString())
+      .lt("starts_at", end.toISOString()),
+    getProviderServiceMap(provider.id),
+  ]);
 
   const byDay = new Map<string, { count: number; valueCents: number }>();
   for (const d of days) byDay.set(d, { count: 0, valueCents: 0 });
@@ -306,7 +313,7 @@ export async function getWeekSummary(
     const cell = byDay.get(local);
     if (cell) {
       cell.count += 1;
-      cell.valueCents += (b.services as unknown as { price_cents: number }).price_cents;
+      cell.valueCents += combineServices((b.service_ids as string[]) ?? [], serviceMap).priceCents;
     }
   }
   return days.map((date) => ({ date, ...byDay.get(date)! }));
@@ -353,7 +360,7 @@ export type BookingDetail = {
   whenText: string;
   status: string;
   source: string;
-  serviceId: string;
+  serviceIds: string[];
   serviceName: string;
   priceCents: number;
   durationMinutes: number;
@@ -373,23 +380,20 @@ export async function getBookingDetail(
   const { data } = await supabase
     .from("bookings")
     .select(
-      "id, starts_at, ends_at, status, source, cancellation_window_hours, service_id, services (name, price_cents, duration_minutes), clients (id, first_name, phone)",
+      "id, starts_at, ends_at, status, source, cancellation_window_hours, service_ids, clients (id, first_name, phone)",
     )
     .eq("provider_id", provider.id)
     .eq("id", bookingId)
     .maybeSingle();
   if (!data) return null;
 
-  const service = data.services as unknown as {
-    name: string;
-    price_cents: number;
-    duration_minutes: number;
-  };
   const client = data.clients as unknown as {
     id: string;
     first_name: string;
     phone: string;
   };
+  const serviceIds = (data.service_ids as string[]) ?? [];
+  const services = combineServices(serviceIds, await getProviderServiceMap(provider.id));
 
   const { count } = await supabase
     .from("bookings")
@@ -408,10 +412,10 @@ export async function getBookingDetail(
     ),
     status: data.status,
     source: data.source,
-    serviceId: data.service_id,
-    serviceName: service.name,
-    priceCents: service.price_cents,
-    durationMinutes: service.duration_minutes,
+    serviceIds,
+    serviceName: services.label,
+    priceCents: services.priceCents,
+    durationMinutes: services.durationMinutes,
     clientId: client.id,
     clientName: client.first_name,
     clientPhone: client.phone,
@@ -485,20 +489,22 @@ export async function getClientDetail(
     .maybeSingle();
   if (!client) return null;
 
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select("id, starts_at, status, services (name, price_cents)")
-    .eq("provider_id", provider.id)
-    .eq("client_id", clientId)
-    .order("starts_at", { ascending: false });
+  const [{ data: bookings }, serviceMap] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("id, starts_at, status, service_ids")
+      .eq("provider_id", provider.id)
+      .eq("client_id", clientId)
+      .order("starts_at", { ascending: false }),
+    getProviderServiceMap(provider.id),
+  ]);
 
   const rows = bookings ?? [];
+  const combined = (ids: unknown) =>
+    combineServices((ids as string[]) ?? [], serviceMap);
   const totalValueCents = rows
     .filter((b) => ["confirmed", "no_show"].includes(b.status))
-    .reduce(
-      (sum, b) => sum + (b.services as unknown as { price_cents: number }).price_cents,
-      0,
-    );
+    .reduce((sum, b) => sum + combined(b.service_ids).priceCents, 0);
 
   return {
     id: client.id,
@@ -515,7 +521,7 @@ export async function getClientDetail(
         provider.timezone,
         "d MMM yyyy 'at' HH:mm",
       ),
-      serviceName: (b.services as unknown as { name: string }).name,
+      serviceName: combined(b.service_ids).label,
       status: b.status,
     })),
   };

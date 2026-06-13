@@ -15,6 +15,7 @@ const d = describe.runIf(enabled);
 let admin: SupabaseClient;
 let providerId: string;
 let serviceId: string;
+let serviceId2: string;
 let userId: string;
 
 const SLOT = {
@@ -26,7 +27,7 @@ const SLOT = {
 async function claim(): Promise<string | null> {
   const { data, error } = await admin.rpc("claim_slot_hold", {
     p_provider_id: providerId,
-    p_service_id: serviceId,
+    p_service_ids: [serviceId],
     p_starts_at: SLOT.startsAt,
     p_ends_at: SLOT.endsAt,
     p_effective_end_at: SLOT.effectiveEndAt,
@@ -72,6 +73,20 @@ d("hold concurrency (real Postgres)", () => {
       .single();
     if (svcError) throw new Error(svcError.message);
     serviceId = svc.id;
+
+    const { data: svc2, error: svc2Error } = await admin
+      .from("services")
+      .insert({
+        provider_id: providerId,
+        name: "Second service",
+        duration_minutes: 30,
+        price_cents: 3000,
+        sort_order: 2,
+      })
+      .select("id")
+      .single();
+    if (svc2Error) throw new Error(svc2Error.message);
+    serviceId2 = svc2.id;
 
     // 2027-01-12 is a Tuesday (weekday 1 in 0=Mon convention); the loader
     // regression test needs a working day around the SLOT fixture.
@@ -157,7 +172,7 @@ d("hold concurrency (real Postgres)", () => {
   it("availability excludes the confirmed booking (loader day window)", async () => {
     const slots = await getDayAvailability({
       providerId,
-      serviceId,
+      serviceIds: [serviceId],
       date: "2027-01-12",
       now: new Date("2026-12-30T12:00:00Z"),
     });
@@ -176,6 +191,56 @@ d("hold concurrency (real Postgres)", () => {
     );
   });
 
+  // Multi-service (DD27): a combined booking sums the durations. Two
+  // services of 60 + 30 minutes must yield 90-minute slots.
+  it("combined availability sums service durations", async () => {
+    const slots = await getDayAvailability({
+      providerId,
+      serviceIds: [serviceId, serviceId2],
+      date: "2027-01-19", // a later free Tuesday
+      now: new Date("2026-12-30T12:00:00Z"),
+    });
+    expect(slots.length).toBeGreaterThan(0);
+    for (const slot of slots) {
+      expect(slot.endsAt.getTime() - slot.startsAt.getTime()).toBe(90 * 60_000);
+    }
+  });
+
+  it("a multi-service hold converts to a booking carrying both services", async () => {
+    const start = "2027-01-26T09:00:00.000Z";
+    const { data: holdId } = await admin.rpc("claim_slot_hold", {
+      p_provider_id: providerId,
+      p_service_ids: [serviceId, serviceId2],
+      p_starts_at: start,
+      p_ends_at: "2027-01-26T10:30:00.000Z",
+      p_effective_end_at: "2027-01-26T10:30:00.000Z",
+    });
+    expect(holdId).not.toBeNull();
+
+    const { data: client } = await admin
+      .from("clients")
+      .insert({ provider_id: providerId, phone: "+32400000099", first_name: "Multi" })
+      .select("id")
+      .single();
+
+    const { data: result } = await admin.rpc("convert_hold_to_booking", {
+      p_hold_id: holdId,
+      p_client_id: client!.id,
+      p_cancellation_window_hours: 12,
+      p_manage_token: `multi-${Date.now()}`,
+      p_source: "client",
+    });
+    expect(result).not.toBeNull();
+
+    const { data: booking } = await admin
+      .from("bookings")
+      .select("service_ids, service_id")
+      .eq("id", result as string)
+      .single();
+    expect(booking!.service_ids).toEqual([serviceId, serviceId2]);
+    expect(booking!.service_id).toBe(serviceId); // primary = first
+  });
+
   // F5 acceptance: two phones racing for the last slot — exactly one
   // confirms, the other is told the slot is gone.
   it("two parallel client confirms on one hold: exactly one books", async () => {
@@ -186,7 +251,7 @@ d("hold concurrency (real Postgres)", () => {
     };
     const { data: holdId, error } = await admin.rpc("claim_slot_hold", {
       p_provider_id: providerId,
-      p_service_id: serviceId,
+      p_service_ids: [serviceId],
       p_starts_at: SLOT2.startsAt,
       p_ends_at: SLOT2.endsAt,
       p_effective_end_at: SLOT2.effectiveEndAt,

@@ -115,15 +115,18 @@ export async function providerReschedule(
 ): Promise<DashActionState> {
   const providerId = await requireProvider();
   const bookingId = String(formData.get("booking_id") ?? "");
-  const serviceId = String(formData.get("service_id") ?? "");
+  const serviceIds = String(formData.get("service_ids") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const startsAtIso = String(formData.get("starts_at") ?? "");
   const date = String(formData.get("date") ?? "");
   const starts = new Date(startsAtIso);
-  if (!bookingId || !serviceId || Number.isNaN(starts.getTime())) {
+  if (!bookingId || serviceIds.length === 0 || Number.isNaN(starts.getTime())) {
     return { error: "invalid" };
   }
 
-  const input = await getAvailabilityInput({ providerId, serviceId, date });
+  const input = await getAvailabilityInput({ providerId, serviceIds, date });
   if (!input || !canOfferInterval(input, starts)) return { error: "slot_taken" };
 
   const durationMs = input.service.durationMinutes * 60_000;
@@ -189,10 +192,10 @@ export async function providerReschedule(
 // Server-side slot fetch for the reschedule picker.
 export async function rescheduleSlots(
   providerId: string,
-  serviceId: string,
+  serviceIds: string[],
   date: string,
 ): Promise<{ startsAt: string; label: string }[]> {
-  const slots = await getDayAvailability({ providerId, serviceId, date });
+  const slots = await getDayAvailability({ providerId, serviceIds, date });
   return slots.map((s) => ({
     startsAt: s.startsAt.toISOString(),
     label: formatInTimeZone(s.startsAt, "Europe/Brussels", "HH:mm"),

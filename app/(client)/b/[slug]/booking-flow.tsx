@@ -63,9 +63,11 @@ export function BookingFlow({
   services: Service[];
   cancellationWindowHours: number;
 }) {
-  const [service, setService] = useState<Service | null>(
-    services.length === 1 ? services[0] : null,
+  // Multiple services can be booked in one visit (done back-to-back).
+  const [selected, setSelected] = useState<Service[]>(
+    services.length === 1 ? [services[0]] : [],
   );
+  const [selectionDone, setSelectionDone] = useState(services.length === 1);
   const [slots, setSlots] = useState<PublicSlot[] | null>(null);
   const [bookableDays, setBookableDays] = useState<string[]>([]);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -74,10 +76,15 @@ export function BookingFlow({
   const [picked, setPicked] = useState<PublicSlot | null>(null);
   const [notice, setNotice] = useState<"released" | "taken" | null>(null);
 
+  const serviceCsv = selected.map((s) => s.id).join(",");
+  const totalDuration = selected.reduce((n, s) => n + s.duration_minutes, 0);
+  const totalPrice = selected.reduce((n, s) => n + s.price_cents, 0);
+  const comboLabel = selected.map((s) => s.name).join(" + ");
+
   const loadEarliest = useCallback(
-    async (svcId: string) => {
+    async (csv: string) => {
       setSlots(null);
-      const res = await fetch(`/api/b/${slug}/slots?service=${svcId}`, {
+      const res = await fetch(`/api/b/${slug}/slots?service=${csv}`, {
         cache: "no-store",
       });
       const body = await res.json();
@@ -88,9 +95,9 @@ export function BookingFlow({
   );
 
   const loadDay = useCallback(
-    async (svcId: string, date: string) => {
+    async (csv: string, date: string) => {
       setDaySlots(null);
-      const res = await fetch(`/api/b/${slug}/slots?service=${svcId}&date=${date}`, {
+      const res = await fetch(`/api/b/${slug}/slots?service=${csv}&date=${date}`, {
         cache: "no-store",
       });
       const body = await res.json();
@@ -100,52 +107,75 @@ export function BookingFlow({
   );
 
   useEffect(() => {
-    if (service) void loadEarliest(service.id);
-  }, [service, loadEarliest]);
+    if (selectionDone && serviceCsv) void loadEarliest(serviceCsv);
+  }, [selectionDone, serviceCsv, loadEarliest]);
 
   const backToPicker = useCallback(
     (why: "released" | "taken" | null) => {
       setPicked(null);
       setNotice(why);
-      if (service) void loadEarliest(service.id);
-      if (service && dayDate) void loadDay(service.id, dayDate);
+      if (serviceCsv) void loadEarliest(serviceCsv);
+      if (serviceCsv && dayDate) void loadDay(serviceCsv, dayDate);
     },
-    [service, dayDate, loadEarliest, loadDay],
+    [serviceCsv, dayDate, loadEarliest, loadDay],
   );
 
-  // ── step 1: service selection ──────────────────────────────────────
-  if (!service) {
+  // ── step 1: service selection (one or more) ────────────────────────
+  if (!selectionDone) {
     return (
       <section>
         <ReturningClientLookup slug={slug} />
-        <h2 className="mb-4 font-serif text-xl text-stone-900">
+        <h2 className="mb-1 font-serif text-xl text-stone-900">
           {t.client.pickService}
         </h2>
+        <p className="mb-4 text-sm text-stone-500">{t.client.pickMultiple}</p>
         <div className="space-y-3">
-          {services.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setService(s)}
-              className="w-full rounded-xl border border-stone-200 bg-white p-4 text-left shadow-sm"
-            >
-              <span className="flex items-baseline justify-between">
-                <span className="font-serif text-lg text-stone-900">{s.name}</span>
-                <span className="font-mono text-sm text-stone-700">
-                  {euros(s.price_cents)}
+          {services.map((s) => {
+            const on = selected.some((x) => x.id === s.id);
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() =>
+                  setSelected(
+                    on ? selected.filter((x) => x.id !== s.id) : [...selected, s],
+                  )
+                }
+                className={`w-full rounded-xl border bg-white p-4 text-left shadow-sm ${
+                  on ? "border-stone-900 ring-1 ring-stone-900" : "border-stone-200"
+                }`}
+              >
+                <span className="flex items-baseline justify-between">
+                  <span className="font-serif text-lg text-stone-900">
+                    {on ? "✓ " : ""}
+                    {s.name}
+                  </span>
+                  <span className="font-mono text-sm text-stone-700">
+                    {euros(s.price_cents)}
+                  </span>
                 </span>
-              </span>
-              <span className="mt-1 block font-mono text-xs text-stone-500">
-                {fill(t.client.minutes, { n: s.duration_minutes })}
-              </span>
-              {s.prep_instructions && (
-                <span className="mt-2 block text-sm text-stone-500">
-                  {t.client.prep}: {s.prep_instructions}
+                <span className="mt-1 block font-mono text-xs text-stone-500">
+                  {fill(t.client.minutes, { n: s.duration_minutes })}
                 </span>
-              )}
-            </button>
-          ))}
+                {s.prep_instructions && (
+                  <span className="mt-2 block text-sm text-stone-500">
+                    {t.client.prep}: {s.prep_instructions}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
+        {selected.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setSelectionDone(true)}
+            className="sticky bottom-4 mt-4 w-full rounded-xl bg-stone-900 px-4 py-3 font-semibold text-amber-50"
+          >
+            {t.common.continue} · {euros(totalPrice)} ·{" "}
+            <span className="font-mono">{fill(t.client.minutes, { n: totalDuration })}</span>
+          </button>
+        )}
       </section>
     );
   }
@@ -155,7 +185,9 @@ export function BookingFlow({
     return (
       <DetailsStep
         slug={slug}
-        service={service}
+        selected={selected}
+        comboLabel={comboLabel}
+        totalPrice={totalPrice}
         slot={picked}
         cancellationWindowHours={cancellationWindowHours}
         onReleased={() => backToPicker("released")}
@@ -174,14 +206,12 @@ export function BookingFlow({
     <section>
       <button
         type="button"
-        onClick={() => {
-          if (services.length > 1) setService(null);
-        }}
-        className="mb-1 text-sm text-stone-500"
+        onClick={() => setSelectionDone(false)}
+        className="mb-1 text-left text-sm text-stone-500"
       >
-        {service.name} ·{" "}
-        <span className="font-mono">{fill(t.client.minutes, { n: service.duration_minutes })}</span>
-        {services.length > 1 && <span className="underline"> ✎</span>}
+        {comboLabel} ·{" "}
+        <span className="font-mono">{fill(t.client.minutes, { n: totalDuration })}</span>
+        <span className="underline"> ✎</span>
       </button>
 
       {notice === "released" && (
@@ -207,7 +237,7 @@ export function BookingFlow({
               type="button"
               onClick={() => {
                 setDayDate(date);
-                void loadDay(service.id, date);
+                void loadDay(serviceCsv, date);
               }}
               className={`rounded-lg px-2.5 py-1.5 font-mono text-xs ${
                 dayDate === date
@@ -261,7 +291,7 @@ export function BookingFlow({
       )}
 
       {showWaitlist ? (
-        <WaitlistJoin slug={slug} serviceId={service.id} />
+        <WaitlistJoin slug={slug} serviceId={selected[0].id} />
       ) : (
         <button
           type="button"
@@ -352,7 +382,9 @@ function ReturningClientLookup({ slug }: { slug: string }) {
 
 function DetailsStep({
   slug,
-  service,
+  selected,
+  comboLabel,
+  totalPrice,
   slot,
   cancellationWindowHours,
   onReleased,
@@ -360,13 +392,16 @@ function DetailsStep({
   onBack,
 }: {
   slug: string;
-  service: Service;
+  selected: Service[];
+  comboLabel: string;
+  totalPrice: number;
   slot: PublicSlot;
   cancellationWindowHours: number;
   onReleased: () => void;
   onTaken: () => void;
   onBack: () => void;
 }) {
+  const serviceCsv = selected.map((s) => s.id).join(",");
   const [hold, holdAction] = useActionState<HoldState, FormData>(placeHold, {});
   const [confirm, confirmAction, confirmPending] = useActionState<
     ConfirmState,
@@ -383,11 +418,11 @@ function DetailsStep({
     holdRequested.current = true;
     const fd = new FormData();
     fd.set("slug", slug);
-    fd.set("service_id", service.id);
+    fd.set("service_ids", serviceCsv);
     fd.set("starts_at", slot.startsAt);
     fd.set("date", localDateOf(slot.startsAt));
     holdAction(fd);
-  }, [slug, service.id, slot.startsAt, holdAction]);
+  }, [slug, serviceCsv, slot.startsAt, holdAction]);
 
   // Countdown.
   useEffect(() => {
@@ -482,7 +517,7 @@ function DetailsStep({
         ← {t.client.backToPicker}
       </button>
       <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-        <p className="font-serif text-lg text-stone-900">{service.name}</p>
+        <p className="font-serif text-lg text-stone-900">{comboLabel}</p>
         <p className="font-mono text-sm text-stone-700">
           {slotDay(slot.startsAt)} · {slotTime(slot.startsAt)}
         </p>
@@ -552,7 +587,7 @@ function DetailsStep({
           >
             {confirmPending
               ? t.common.loading
-              : `${t.client.confirm} — ${euros(service.price_cents)}`}
+              : `${t.client.confirm} — ${euros(totalPrice)}`}
           </button>
           <p className="text-center text-xs text-stone-400">
             {fill(t.client.freeCancellation, {

@@ -32,7 +32,7 @@ export function ManageBooking({
   businessName,
   providerEmail,
   clientFirstName,
-  serviceId,
+  serviceIds,
   serviceName,
   startsAt,
   whenText,
@@ -43,12 +43,13 @@ export function ManageBooking({
   businessName: string;
   providerEmail: string;
   clientFirstName: string;
-  serviceId: string;
+  serviceIds: string[];
   serviceName: string;
   startsAt: string;
   whenText: string;
   cancellationWindowHours: number;
 }) {
+  const serviceCsv = serviceIds.join(",");
   const [mode, setMode] = useState<"view" | "confirm-cancel" | "reschedule">("view");
   const [cancelState, cancelAction, cancelPending] = useActionState<
     ManageActionState,
@@ -64,12 +65,12 @@ export function ManageBooking({
 
   const loadSlots = useCallback(async () => {
     setSlots(null);
-    const res = await fetch(`/api/b/${slug}/slots?service=${serviceId}`, {
+    const res = await fetch(`/api/b/${slug}/slots?service=${serviceCsv}`, {
       cache: "no-store",
     });
     const body = await res.json();
     setSlots(body.slots ?? []);
-  }, [slug, serviceId]);
+  }, [slug, serviceCsv]);
 
   useEffect(() => {
     if (mode === "reschedule" && slots === null) void loadSlots();
@@ -215,7 +216,7 @@ export function ManageBooking({
                       pickedRef.current = slot;
                       const fd = new FormData();
                       fd.set("slug", slug);
-                      fd.set("service_id", serviceId);
+                      fd.set("service_ids", serviceCsv);
                       fd.set("starts_at", slot.startsAt);
                       fd.set("date", localDateOf(slot.startsAt));
                       holdAction(fd);

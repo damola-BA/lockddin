@@ -80,6 +80,14 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD27: a booking can cover several services done back-to-back in one visit
+(beta user feedback): total duration = sum, price = sum, one buffer (the
+largest among the chosen services) at the end. The engine is unchanged —
+callers pass a synthetic combined service (duration+buffer). Bookings and
+holds gain service_ids[]; service_id stays as the first/primary for FK and
+single-service reads. A per-day service restriction applies only if EVERY
+chosen service is allowed that day.
+
 DD26: the time-block editor folds a filled-but-not-yet-"Added" draft into
 the submitted value (beta user lost a lunch break by typing the times and
 hitting Save without clicking "+ Add block"); the visible list still only

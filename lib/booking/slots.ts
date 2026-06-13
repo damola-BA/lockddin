@@ -109,13 +109,13 @@ function publicSlots(slots: Slot[]): PublicSlot[] {
 
 export async function getSlotsForDay(
   provider: PublicProvider,
-  serviceId: string,
+  serviceIds: string[],
   date: string,
   now = new Date(),
 ): Promise<PublicSlot[]> {
   const slots = await getDayAvailability({
     providerId: provider.id,
-    serviceId,
+    serviceIds,
     date,
     now,
   });
@@ -127,7 +127,7 @@ export async function getSlotsForDay(
  *  and we stop once at least `minimum` slots are listed. */
 export async function getEarliestSlots(
   provider: PublicProvider,
-  serviceId: string,
+  serviceIds: string[],
   minimum = 5,
   now = new Date(),
 ): Promise<PublicSlot[]> {
@@ -137,7 +137,7 @@ export async function getEarliestSlots(
     if (out.length >= minimum) break;
     const slots = await getDayAvailability({
       providerId: provider.id,
-      serviceId,
+      serviceIds,
       date,
       now,
     });
