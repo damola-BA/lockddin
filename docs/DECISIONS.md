@@ -80,6 +80,11 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD26: the time-block editor folds a filled-but-not-yet-"Added" draft into
+the submitted value (beta user lost a lunch break by typing the times and
+hitting Save without clicking "+ Add block"); the visible list still only
+shows committed rows, but a valid draft is never silently dropped.
+
 DD25: the F9 reschedule email reuses the booking.confirmed template (new
 time + fresh manage link is exactly its content); the reminder job listens
 to both booking/confirmed and booking/rescheduled events, and a reschedule

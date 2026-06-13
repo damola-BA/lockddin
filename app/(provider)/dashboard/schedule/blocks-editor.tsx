@@ -22,9 +22,15 @@ export function BlocksEditor({
   const [blocks, setBlocks] = useState<Block[]>(initial);
   const [draft, setDraft] = useState<Block>({ start: "", end: "", label: "" });
 
+  // Fold a valid-but-not-yet-added draft into what gets submitted, so a
+  // break someone typed but forgot to "+ Add" is never silently dropped.
+  const draftValid =
+    Boolean(draft.start) && Boolean(draft.end) && draft.end > draft.start;
+  const submitted = draftValid ? [...blocks, draft] : blocks;
+
   return (
     <div className="space-y-2">
-      <input type="hidden" name={name} value={JSON.stringify(blocks)} />
+      <input type="hidden" name={name} value={JSON.stringify(submitted)} />
       {blocks.map((b, i) => (
         <div
           key={`${b.start}-${b.end}-${i}`}
