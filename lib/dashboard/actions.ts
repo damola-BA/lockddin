@@ -12,18 +12,9 @@ import { canOfferInterval } from "@/lib/scheduling/engine";
 import { getAvailabilityInput, getDayAvailability } from "@/lib/scheduling/availability";
 import { appUrl } from "@/lib/app-url";
 import { inngest } from "@/lib/inngest/client";
+import { CANCEL_REASONS } from "@/lib/dashboard/cancel-reasons";
 
 export type DashActionState = { ok?: boolean; error?: string };
-
-// Fixed cancellation reasons (F7). "other" carries free text.
-const CANCEL_REASONS: Record<string, string> = {
-  unwell: "I'm unwell",
-  emergency: "Personal emergency",
-  conflict: "Scheduling conflict",
-  equipment: "Equipment or supply issue",
-  closed: "Business closed that day",
-  other: "Other",
-};
 
 async function requireProvider() {
   const supabase = await createServerSupabase();
@@ -222,5 +213,3 @@ export async function deleteClient(
   revalidatePath("/dashboard/clients");
   redirect("/dashboard/clients");
 }
-
-export { CANCEL_REASONS };

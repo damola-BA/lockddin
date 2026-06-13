@@ -80,6 +80,13 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD29: cancellation reasons live in lib/dashboard/cancel-reasons.ts, NOT in
+the "use server" actions file. A "use server" module may export only async
+server actions; exporting a plain object (CANCEL_REASONS) corrupted the
+whole module so every provider action (cancel/reschedule/no-show) threw on
+invocation and the day-manager/booking-detail pages lost interactivity.
+Found via a real-browser repro (server action 500 before any DB write).
+
 DD28: "Manage this day" is rebuilt as a date-centric control panel (beta
 user feedback): the day's bookings with inline cancel (reason → email),
 plus that date's hours, daily cap (client limit), per-day service limit

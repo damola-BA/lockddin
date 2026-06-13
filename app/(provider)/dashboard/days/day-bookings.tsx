@@ -1,11 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import {
-  providerCancelBooking,
-  CANCEL_REASONS,
-  type DashActionState,
-} from "@/lib/dashboard/actions";
+import { providerCancelBooking, type DashActionState } from "@/lib/dashboard/actions";
+import { CANCEL_REASONS } from "@/lib/dashboard/cancel-reasons";
 import { getDictionary, fill } from "@/lib/i18n";
 import type { DayBooking } from "@/lib/dashboard/queries";
 
