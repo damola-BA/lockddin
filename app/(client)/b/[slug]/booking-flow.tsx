@@ -454,6 +454,13 @@ function DetailsStep({
         >
           {t.client.manageBooking}
         </a>
+        <button
+          type="button"
+          onClick={onBack}
+          className="mt-3 w-full text-center text-sm text-stone-500 underline"
+        >
+          ← {t.client.backToPicker}
+        </button>
       </section>
     );
   }
@@ -496,6 +503,9 @@ function DetailsStep({
               autoComplete="tel"
               onBlur={async (e) => {
                 const result = await recognizePhone(slug, e.target.value);
+                // This phone already has a booking and can't make another —
+                // free the held slot at once so it's bookable again.
+                if (result.existing && hold.ok) void releaseHold(hold.holdId);
                 setRecognized(result);
                 if (result.firstName && formRef.current) {
                   const el = formRef.current.elements.namedItem("first_name");
