@@ -4,12 +4,14 @@ import {
   getProviderContext,
   getDayBookings,
   getDayStats,
+  getDayTimeline,
   getWeekSummary,
   getMonthCounts,
   todayLocal,
   weekStartOf,
   maxNavDate,
   type ProviderContext,
+  type TimelineSegment,
 } from "@/lib/dashboard/queries";
 
 const t = getDictionary();
@@ -115,6 +117,7 @@ async function DayView({
 }) {
   const bookings = await getDayBookings(provider, date);
   const stats = await getDayStats(provider, date, bookings);
+  const timeline = await getDayTimeline(provider, date, bookings);
 
   return (
     <section>
@@ -126,36 +129,84 @@ async function DayView({
         <span><b className="text-amber-300">{stats.gaps}</b> {t.dashboard.statGaps}</span>
       </div>
 
-      {bookings.length === 0 ? (
-        <p className="text-sm text-stone-500">{t.dashboard.noBookingsDay}</p>
+      {!timeline.working ? (
+        <p className="rounded-xl border border-stone-800 bg-stone-900 px-4 py-6 text-center text-sm text-stone-500">
+          {t.dashboard.dayClosed}
+        </p>
       ) : (
-        <ul className="space-y-2">
-          {bookings.map((b) => (
-            <li key={b.id}>
-              <a
-                href={`/dashboard/booking/${b.id}`}
-                className="flex items-center justify-between rounded-xl border border-stone-800 bg-stone-900 px-4 py-3"
-              >
-                <span>
-                  <span className="font-mono text-amber-300">{b.timeText}</span>
-                  <span className="ml-3 font-serif">{b.clientName}</span>
-                  <span className="block text-xs text-stone-400">{b.serviceName}</span>
-                </span>
-                <span className="text-right">
-                  {b.status === "no_show" && (
-                    <span className="block text-xs text-red-400">{t.dashboard.noShowBadge}</span>
-                  )}
-                  {b.isPast && b.status !== "no_show" && (
-                    <span className="block text-xs text-stone-500">{t.dashboard.pastBadge}</span>
-                  )}
-                  <span className="font-mono text-sm text-stone-300">{euros(b.priceCents)}</span>
-                </span>
-              </a>
-            </li>
+        <ol className="relative space-y-1.5">
+          {timeline.segments.map((seg) => (
+            <TimelineRow key={`${seg.kind}-${seg.startMin}`} seg={seg} />
           ))}
-        </ul>
+        </ol>
       )}
     </section>
+  );
+}
+
+// Height scales gently with duration so the day reads as a timeline, but
+// clamps so short services stay tappable and long gaps don't dominate.
+function segHeight(minutes: number): number {
+  return Math.min(150, Math.max(52, Math.round(minutes * 0.6)));
+}
+
+function TimelineRow({ seg }: { seg: TimelineSegment }) {
+  const height = segHeight(seg.endMin - seg.startMin);
+
+  if (seg.kind === "free") {
+    return (
+      <li
+        style={{ minHeight: height }}
+        className="flex items-center gap-3 rounded-xl border border-dashed border-stone-700 px-4"
+      >
+        <span className="w-24 shrink-0 font-mono text-xs text-stone-500">{seg.timeText}</span>
+        <span className="text-sm text-stone-500">
+          {t.dashboard.freeGap} · {seg.minutes} {t.dashboard.minutesShort}
+        </span>
+      </li>
+    );
+  }
+
+  if (seg.kind === "break") {
+    return (
+      <li
+        style={{ minHeight: height }}
+        className="flex items-center gap-3 rounded-xl border border-stone-800 bg-stone-900/40 px-4"
+      >
+        <span className="w-24 shrink-0 font-mono text-xs text-stone-600">{seg.timeText}</span>
+        <span className="text-sm text-stone-500">{seg.label}</span>
+      </li>
+    );
+  }
+
+  const dimmed = seg.isPast || seg.status === "no_show";
+  return (
+    <li>
+      <a
+        href={`/dashboard/booking/${seg.id}`}
+        style={{ minHeight: height }}
+        className={`flex items-center gap-3 rounded-xl border px-4 ${
+          seg.status === "no_show"
+            ? "border-red-500/40 bg-stone-900"
+            : "border-amber-400/40 bg-stone-900"
+        } ${dimmed ? "opacity-60" : ""}`}
+      >
+        <span className="w-24 shrink-0 font-mono text-xs text-amber-300">{seg.timeText}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-serif text-stone-100">{seg.clientName}</span>
+          <span className="block truncate text-xs text-stone-400">{seg.serviceName}</span>
+        </span>
+        <span className="shrink-0 text-right">
+          {seg.status === "no_show" && (
+            <span className="block text-xs text-red-400">{t.dashboard.noShowBadge}</span>
+          )}
+          {seg.isPast && seg.status !== "no_show" && (
+            <span className="block text-xs text-stone-500">{t.dashboard.pastBadge}</span>
+          )}
+          <span className="font-mono text-sm text-stone-300">{euros(seg.priceCents)}</span>
+        </span>
+      </a>
+    </li>
   );
 }
 

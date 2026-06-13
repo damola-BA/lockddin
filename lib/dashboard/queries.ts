@@ -99,13 +99,17 @@ export async function getDayBookings(
 
 export type DayStats = { count: number; valueCents: number; gaps: number };
 
-// Gaps = open stretches (≥15 min) left in the working day once reserved
-// blocks and confirmed bookings are removed. Reuses the window builder.
-export async function getDayStats(
+type DayShape = {
+  hours: { start: number; end: number } | null;
+  breaks: { start: number; end: number; label: string }[];
+};
+
+// Working hours + recurring/one-off breaks for one local date, after the
+// override fork. Shared by the stat bar and the day timeline.
+async function getDayShape(
   provider: ProviderContext,
   date: string,
-  bookings: DayBooking[],
-): Promise<DayStats> {
+): Promise<DayShape> {
   const admin = createAdminClient();
   const jsDate = new Date(`${date}T12:00:00Z`);
   const weekday = (jsDate.getUTCDay() + 6) % 7;
@@ -113,7 +117,7 @@ export async function getDayStats(
   const [{ data: template }, { data: override }] = await Promise.all([
     admin
       .from("week_template_days")
-      .select("start_time, end_time, reserved_blocks (start_time, end_time)")
+      .select("start_time, end_time, reserved_blocks (start_time, end_time, label)")
       .eq("provider_id", provider.id)
       .eq("weekday", weekday)
       .maybeSingle(),
@@ -125,36 +129,143 @@ export async function getDayStats(
       .maybeSingle(),
   ]);
 
+  if (override?.kind === "closed") return { hours: null, breaks: [] };
+  if (override?.kind === "open" || override?.kind === "modified") {
+    if (!override.start_time || !override.end_time) return { hours: null, breaks: [] };
+    const breaks = ((override.extra_blocks ?? []) as {
+      start: string;
+      end: string;
+      label?: string;
+    }[]).map((b) => ({
+      start: toMinutes(b.start),
+      end: toMinutes(b.end),
+      label: b.label ?? "Break",
+    }));
+    return {
+      hours: { start: toMinutes(override.start_time), end: toMinutes(override.end_time) },
+      breaks,
+    };
+  }
+  if (template) {
+    const breaks = (template.reserved_blocks ?? []).map((r) => ({
+      start: toMinutes(r.start_time),
+      end: toMinutes(r.end_time),
+      label: r.label ?? "Break",
+    }));
+    return {
+      hours: { start: toMinutes(template.start_time), end: toMinutes(template.end_time) },
+      breaks,
+    };
+  }
+  return { hours: null, breaks: [] };
+}
+
+function minutesToHHMM(min: number): string {
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+}
+
+// Gaps = open stretches (≥15 min) left in the working day once breaks and
+// confirmed bookings are removed.
+export async function getDayStats(
+  provider: ProviderContext,
+  date: string,
+  bookings: DayBooking[],
+): Promise<DayStats> {
   const valueCents = bookings.reduce((sum, b) => sum + b.priceCents, 0);
   const count = bookings.length;
-
-  let hours: { start: number; end: number } | null = null;
-  let blocks: { start: string; end: string }[] = [];
-  if (override?.kind === "closed") {
-    hours = null;
-  } else if (override?.kind === "open" || override?.kind === "modified") {
-    if (override.start_time && override.end_time) {
-      hours = { start: toMinutes(override.start_time), end: toMinutes(override.end_time) };
-      blocks = ((override.extra_blocks ?? []) as { start: string; end: string }[]) ?? [];
-    }
-  } else if (template) {
-    hours = { start: toMinutes(template.start_time), end: toMinutes(template.end_time) };
-    blocks = (template.reserved_blocks ?? []).map((r) => ({
-      start: r.start_time.slice(0, 5),
-      end: r.end_time.slice(0, 5),
-    }));
-  }
-
+  const { hours, breaks } = await getDayShape(provider, date);
   if (!hours) return { count, valueCents, gaps: 0 };
 
-  const bookingBlocks = bookings.map((b) => ({
-    start: formatInTimeZone(new Date(b.startsAt), provider.timezone, "HH:mm"),
-    end: formatInTimeZone(new Date(b.endsAt), provider.timezone, "HH:mm"),
-  }));
-  const free = buildLocalWindows(hours, [...blocks, ...bookingBlocks]).filter(
-    (w) => w.endMin - w.startMin >= 15,
-  );
+  const blocks = [
+    ...breaks.map((b) => ({ start: minutesToHHMM(b.start), end: minutesToHHMM(b.end) })),
+    ...bookings.map((b) => ({
+      start: formatInTimeZone(new Date(b.startsAt), provider.timezone, "HH:mm"),
+      end: formatInTimeZone(new Date(b.endsAt), provider.timezone, "HH:mm"),
+    })),
+  ];
+  const free = buildLocalWindows(hours, blocks).filter((w) => w.endMin - w.startMin >= 15);
   return { count, valueCents, gaps: free.length };
+}
+
+export type TimelineSegment =
+  | {
+      kind: "booking";
+      startMin: number;
+      endMin: number;
+      timeText: string;
+      id: string;
+      clientName: string;
+      serviceName: string;
+      priceCents: number;
+      status: string;
+      isPast: boolean;
+    }
+  | { kind: "break"; startMin: number; endMin: number; timeText: string; label: string }
+  | { kind: "free"; startMin: number; endMin: number; timeText: string; minutes: number };
+
+export type DayTimeline =
+  | { working: false }
+  | { working: true; startMin: number; endMin: number; segments: TimelineSegment[] };
+
+// The whole working day in order: bookings placed in time, breaks marked,
+// and every open gap surfaced as bookable space.
+export async function getDayTimeline(
+  provider: ProviderContext,
+  date: string,
+  bookings: DayBooking[],
+): Promise<DayTimeline> {
+  const { hours, breaks } = await getDayShape(provider, date);
+  if (!hours) return { working: false };
+
+  const localMin = (iso: string) =>
+    toMinutes(formatInTimeZone(new Date(iso), provider.timezone, "HH:mm"));
+
+  const occupied: TimelineSegment[] = [
+    ...breaks.map((b) => ({
+      kind: "break" as const,
+      startMin: b.start,
+      endMin: b.end,
+      timeText: `${minutesToHHMM(b.start)}–${minutesToHHMM(b.end)}`,
+      label: b.label,
+    })),
+    ...bookings.map((b) => {
+      const startMin = localMin(b.startsAt);
+      const endMin = localMin(b.endsAt);
+      return {
+        kind: "booking" as const,
+        startMin,
+        endMin,
+        timeText: b.timeText,
+        id: b.id,
+        clientName: b.clientName,
+        serviceName: b.serviceName,
+        priceCents: b.priceCents,
+        status: b.status,
+        isPast: b.isPast,
+      };
+    }),
+  ].sort((a, b) => a.startMin - b.startMin);
+
+  const segments: TimelineSegment[] = [];
+  let cursor = hours.start;
+  const pushFree = (from: number, to: number) => {
+    if (to - from < 5) return; // ignore sub-5-min slivers
+    segments.push({
+      kind: "free",
+      startMin: from,
+      endMin: to,
+      timeText: `${minutesToHHMM(from)}–${minutesToHHMM(to)}`,
+      minutes: to - from,
+    });
+  };
+  for (const seg of occupied) {
+    if (seg.startMin > cursor) pushFree(cursor, seg.startMin);
+    segments.push(seg);
+    cursor = Math.max(cursor, seg.endMin);
+  }
+  pushFree(cursor, hours.end);
+
+  return { working: true, startMin: hours.start, endMin: hours.end, segments };
 }
 
 export type WeekDay = { date: string; count: number; valueCents: number };
