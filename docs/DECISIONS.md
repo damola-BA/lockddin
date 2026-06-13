@@ -80,6 +80,13 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD30: jsonb RPC params (day_overrides.extra_blocks) are passed to
+supabase-js as arrays/objects, never JSON.stringify'd — stringifying
+double-encodes and stores the literal string "[]" instead of an array,
+which then crashed the day-manager render and could crash the slot engine
+(".map is not a function"). Readers also guard with Array.isArray for any
+legacy bad rows. Found via in-browser repro of the close→reopen flow.
+
 DD29: cancellation reasons live in lib/dashboard/cancel-reasons.ts, NOT in
 the "use server" actions file. A "use server" module may export only async
 server actions; exporting a plain object (CANCEL_REASONS) corrupted the

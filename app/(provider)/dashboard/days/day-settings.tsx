@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   saveDay,
   removeOverride,
@@ -34,6 +35,7 @@ export function DaySettings({
   data: DayManager;
   scheduleType: "regular" | "flexible";
 }) {
+  const router = useRouter();
   const startDefault = data.override?.start ?? data.template?.start ?? "09:00";
   const endDefault = data.override?.end ?? data.template?.end ?? "18:00";
   const [closed, setClosed] = useState(data.override?.kind === "closed");
@@ -43,11 +45,22 @@ export function DaySettings({
     saveDay,
     {},
   );
-  const [, removeAction, removePending] = useActionState<ActionState, FormData>(
-    removeOverride,
-    {},
-  );
+  const [removeState, removeAction, removePending] = useActionState<
+    ActionState,
+    FormData
+  >(removeOverride, {});
   const needsConfirm = Boolean(state.affected && state.affected.length > 0);
+  const justSaved = state.applied !== undefined;
+
+  // After a save/remove lands, re-fetch the server data so the booking list
+  // and this form reflect the new state. The component is keyed by the
+  // override in the parent, so it remounts with fresh open/closed values.
+  useEffect(() => {
+    if (justSaved) router.refresh();
+  }, [justSaved, router]);
+  useEffect(() => {
+    if (removeState.ok) router.refresh();
+  }, [removeState.ok, router]);
 
   // open => 'modified' for a regular week (carries hours), 'open' for flexible.
   const openKind = scheduleType === "flexible" ? "open" : "modified";
@@ -59,17 +72,16 @@ export function DaySettings({
     label: b.label ?? "",
   }));
 
-  // After a successful save, show the result.
-  if (state.applied !== undefined) {
-    return (
-      <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/5 p-4 text-sm text-emerald-300">
-        {state.applied > 0 ? fill(t.schedule.applied, { n: state.applied }) : t.dashboard.daySaved}
-      </div>
-    );
-  }
-
   return (
-    <form action={action} className="space-y-4">
+    <div className="space-y-3">
+      {justSaved && (
+        <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm text-emerald-300">
+          {state.applied! > 0
+            ? fill(t.schedule.applied, { n: state.applied! })
+            : t.dashboard.daySaved}
+        </p>
+      )}
+      <form action={action} className="space-y-4">
       <input type="hidden" name="dates" value={date} />
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="confirm" value={needsConfirm ? "true" : "false"} />
@@ -198,27 +210,26 @@ export function DaySettings({
         disabled={pending}
         className="w-full rounded-xl bg-amber-400 px-4 py-3 font-semibold text-stone-950 disabled:opacity-50"
       >
-        {pending
-          ? t.common.loading
-          : needsConfirm
-            ? fill(t.schedule.confirmApply, { n: state.affected!.length })
-            : t.common.save}
-      </button>
+          {pending
+            ? t.common.loading
+            : needsConfirm
+              ? fill(t.schedule.confirmApply, { n: state.affected!.length })
+              : t.common.save}
+        </button>
+      </form>
 
       {data.override && (
-        <button
-          type="button"
-          onClick={() => {
-            const fd = new FormData();
-            fd.set("date", date);
-            removeAction(fd);
-          }}
-          disabled={removePending}
-          className="w-full text-center text-xs text-stone-500 underline disabled:opacity-50"
-        >
-          {t.schedule.removeOverride}
-        </button>
+        <form action={removeAction}>
+          <input type="hidden" name="date" value={date} />
+          <button
+            type="submit"
+            disabled={removePending}
+            className="w-full text-center text-xs text-stone-500 underline disabled:opacity-50"
+          >
+            {removePending ? t.common.loading : t.schedule.removeOverride}
+          </button>
+        </form>
       )}
-    </form>
+    </div>
   );
 }

@@ -149,8 +149,8 @@ export async function getAvailabilityInput(args: {
           start: override.start_time?.slice(0, 5) ?? null,
           end: override.end_time?.slice(0, 5) ?? null,
           extraBlocks: (
-            (override.extra_blocks ?? []) as { start: string; end: string }[]
-          ).map((b) => ({ start: b.start, end: b.end })),
+            Array.isArray(override.extra_blocks) ? override.extra_blocks : []
+          ).map((b: { start: string; end: string }) => ({ start: b.start, end: b.end })),
           dailyCap: override.daily_cap,
         }
       : null,

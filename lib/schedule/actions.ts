@@ -273,9 +273,7 @@ export async function previewOverride(
     p_kind: args.kind,
     p_start: args.start,
     p_end: args.end,
-    p_extra_blocks: JSON.stringify(
-      args.extraBlocks.map(({ start, end }) => ({ start, end })),
-    ),
+    p_extra_blocks: args.extraBlocks.map(({ start, end }) => ({ start, end })),
   });
   if (error) return { error: "server" };
   return { affected: (data ?? []) as AffectedBooking[] };
@@ -299,9 +297,7 @@ export async function applyOverride(
     p_kind: args.kind,
     p_start: args.start,
     p_end: args.end,
-    p_extra_blocks: JSON.stringify(
-      args.extraBlocks.map(({ start, end }) => ({ start, end })),
-    ),
+    p_extra_blocks: args.extraBlocks.map(({ start, end }) => ({ start, end })),
   });
 
   const { data: cancelled, error } = await admin.rpc(
@@ -312,7 +308,7 @@ export async function applyOverride(
       p_kind: args.kind,
       p_start: args.start,
       p_end: args.end,
-      p_extra_blocks: JSON.stringify(args.extraBlocks),
+      p_extra_blocks: args.extraBlocks,
       p_daily_cap: args.dailyCap,
       p_location_text: null,
       p_cancel_reason: reason,
@@ -383,9 +379,9 @@ export async function saveDay(
   const reason = String(formData.get("cancel_reason") ?? "").trim() || null;
   const admin = createAdminClient();
 
-  const blocksTimeOnly = JSON.stringify(
-    args.extraBlocks.map(({ start, end }) => ({ start, end })),
-  );
+  // Pass jsonb params as arrays — supabase-js encodes them; JSON.stringify
+  // here would double-encode and store a string instead of an array (DD30).
+  const blocksTimeOnly = args.extraBlocks.map(({ start, end }) => ({ start, end }));
   const { data: affected } = await admin.rpc("affected_bookings_for_override", {
     p_provider_id: user.id,
     p_dates: args.dates,
@@ -407,7 +403,7 @@ export async function saveDay(
       p_kind: args.kind,
       p_start: args.start,
       p_end: args.end,
-      p_extra_blocks: JSON.stringify(args.extraBlocks),
+      p_extra_blocks: args.extraBlocks,
       p_daily_cap: args.dailyCap,
       p_location_text: null,
       p_cancel_reason: reason,

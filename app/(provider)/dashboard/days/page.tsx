@@ -73,7 +73,12 @@ export default async function DaysPage({
 
         <section className="mb-8">
           <h2 className="mb-3 font-serif text-lg">{t.dashboard.daySettings}</h2>
-          <DaySettings date={date} data={data} scheduleType={provider.scheduleType} />
+          <DaySettings
+            key={`${data.date}:${JSON.stringify(data.override)}`}
+            date={date}
+            data={data}
+            scheduleType={provider.scheduleType}
+          />
         </section>
 
         <details className="rounded-xl border border-stone-800 bg-stone-900/50 p-4">

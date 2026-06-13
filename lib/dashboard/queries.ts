@@ -423,11 +423,9 @@ export async function getDayManager(
           end: override.end_time?.slice(0, 5) ?? null,
           dailyCap: override.daily_cap,
           serviceIds: override.service_ids,
-          extraBlocks: (override.extra_blocks ?? []) as {
-            start: string;
-            end: string;
-            label?: string;
-          }[],
+          extraBlocks: (Array.isArray(override.extra_blocks)
+            ? override.extra_blocks
+            : []) as { start: string; end: string; label?: string }[],
         }
       : null,
   };
