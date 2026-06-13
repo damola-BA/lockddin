@@ -95,7 +95,7 @@ export default async function DashboardPage({
           <a href="/dashboard/schedule" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
             {t.schedule.title}
           </a>
-          <a href="/dashboard/days" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
+          <a href={`/dashboard/days?date=${date}`} className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
             {t.dashboard.manageDay}
           </a>
         </nav>

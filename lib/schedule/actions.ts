@@ -220,6 +220,7 @@ type OverrideArgs = {
   end: string | null;
   extraBlocks: { start: string; end: string; label?: string }[];
   dailyCap: number | null;
+  serviceIds: string[] | null;
 };
 
 function parseOverrideArgs(formData: FormData): OverrideArgs | null {
@@ -249,7 +250,12 @@ function parseOverrideArgs(formData: FormData): OverrideArgs | null {
     return null;
   }
 
-  return { dates, kind, start, end, extraBlocks, dailyCap };
+  // Service limit: empty/absent = all services allowed (null).
+  const restrict = formData.get("restrict_services") === "on";
+  const picked = formData.getAll("service_ids").map(String).filter(Boolean);
+  const serviceIds = restrict && picked.length > 0 ? picked : null;
+
+  return { dates, kind, start, end, extraBlocks, dailyCap, serviceIds };
 }
 
 export async function previewOverride(
@@ -310,6 +316,7 @@ export async function applyOverride(
       p_daily_cap: args.dailyCap,
       p_location_text: null,
       p_cancel_reason: reason,
+      p_service_ids: args.serviceIds,
     },
   );
   if (error) return { error: "server" };
@@ -359,6 +366,98 @@ export async function applyOverride(
 
   revalidatePath("/dashboard/days");
   revalidatePath("/onboarding/schedule"); // flexible batch add lives there too
+  return { applied: cancelledIds.size };
+}
+
+// Day manager save (F7 redesign): one action that applies immediately when
+// nothing is affected, and returns the consequence preview (for a confirm
+// step) only when the change would cancel bookings.
+export async function saveDay(
+  _prev: PreviewState,
+  formData: FormData,
+): Promise<PreviewState> {
+  const { user } = await requireUser();
+  const args = parseOverrideArgs(formData);
+  if (!args) return { error: "invalid" };
+  const confirmed = formData.get("confirm") === "true";
+  const reason = String(formData.get("cancel_reason") ?? "").trim() || null;
+  const admin = createAdminClient();
+
+  const blocksTimeOnly = JSON.stringify(
+    args.extraBlocks.map(({ start, end }) => ({ start, end })),
+  );
+  const { data: affected } = await admin.rpc("affected_bookings_for_override", {
+    p_provider_id: user.id,
+    p_dates: args.dates,
+    p_kind: args.kind,
+    p_start: args.start,
+    p_end: args.end,
+    p_extra_blocks: blocksTimeOnly,
+  });
+  const affectedRows = (affected ?? []) as AffectedBooking[];
+  if (affectedRows.length > 0 && !confirmed) {
+    return { affected: affectedRows };
+  }
+
+  const { data: cancelled, error } = await admin.rpc(
+    "apply_override_with_cancellations",
+    {
+      p_provider_id: user.id,
+      p_dates: args.dates,
+      p_kind: args.kind,
+      p_start: args.start,
+      p_end: args.end,
+      p_extra_blocks: JSON.stringify(args.extraBlocks),
+      p_daily_cap: args.dailyCap,
+      p_location_text: null,
+      p_cancel_reason: reason,
+      p_service_ids: args.serviceIds,
+    },
+  );
+  if (error) return { error: "server" };
+
+  const cancelledIds = new Set((cancelled ?? []) as string[]);
+  const toEmail = affectedRows.filter(
+    (b) => cancelledIds.has(b.booking_id) && b.client_email,
+  );
+  if (toEmail.length > 0) {
+    const { data: provider } = await admin
+      .from("providers")
+      .select("email, business_name, provider_name, timezone, slug, location_text")
+      .eq("id", user.id)
+      .single();
+    const businessName = provider?.business_name ?? provider?.provider_name ?? "";
+    for (const b of toEmail) {
+      try {
+        await sendEmail({
+          to: b.client_email!,
+          providerId: user.id,
+          bookingId: b.booking_id,
+          fromName: businessName,
+          replyTo: provider?.email,
+          templateKey: "booking.cancelled_by_provider",
+          payload: {
+            clientFirstName: b.client_first_name,
+            businessName,
+            serviceName: b.service_name,
+            whenText: formatInTimeZone(
+              new Date(b.starts_at),
+              provider?.timezone ?? "Europe/Brussels",
+              "EEEE d MMMM yyyy 'at' HH:mm",
+            ),
+            locationText: provider?.location_text ?? null,
+            reason,
+            rebookUrl: appUrl(`/b/${provider?.slug}`),
+          },
+        });
+      } catch {
+        /* logged in notification_log */
+      }
+    }
+  }
+
+  revalidatePath("/dashboard/days");
+  revalidatePath("/dashboard");
   return { applied: cancelledIds.size };
 }
 

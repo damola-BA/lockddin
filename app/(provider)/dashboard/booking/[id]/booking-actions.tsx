@@ -157,6 +157,22 @@ function CancelForm({
   const [reason, setReason] = useState("unwell");
   const [reasonText, setReasonText] = useState("");
 
+  if (state.ok) {
+    return (
+      <div className="mt-6 rounded-xl border border-stone-700 bg-stone-900 p-5 text-center">
+        <p className="mb-3 font-serif text-lg text-stone-100">
+          {fill(t.dashboard.cancelDone, { name: clientName })}
+        </p>
+        <a
+          href="/dashboard"
+          className="inline-block rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-stone-950"
+        >
+          {t.dashboard.viewDay}
+        </a>
+      </div>
+    );
+  }
+
   const reasonLabel =
     reason === "other" ? reasonText || CANCEL_REASONS.other : CANCEL_REASONS[reason];
   const previewReason =

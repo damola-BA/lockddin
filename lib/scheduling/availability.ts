@@ -82,7 +82,7 @@ export async function getAvailabilityInput(args: {
       .maybeSingle(),
     admin
       .from("day_overrides")
-      .select("kind, start_time, end_time, extra_blocks, daily_cap")
+      .select("kind, start_time, end_time, extra_blocks, daily_cap, service_ids")
       .eq("provider_id", providerId)
       .eq("date", date)
       .maybeSingle(),
@@ -107,9 +107,12 @@ export async function getAvailabilityInput(args: {
   const override = overrideRes.data;
 
   // Per-day service restriction applies to a combined booking only if EVERY
-  // chosen service is allowed that day. Validated here; the engine then runs
-  // on the synthetic combined service with the restriction cleared.
-  const allowed = template?.service_ids as string[] | null | undefined;
+  // chosen service is allowed that day. A date override's own service limit
+  // takes precedence; otherwise the weekly template's applies. Validated
+  // here; the engine runs on the synthetic combined service unrestricted.
+  const overrideAllowed = override?.service_ids as string[] | null | undefined;
+  const templateAllowed = template?.service_ids as string[] | null | undefined;
+  const allowed = overrideAllowed ?? templateAllowed;
   if (allowed && !serviceIds.every((id) => allowed.includes(id))) return null;
 
   const input: AvailabilityInput = {

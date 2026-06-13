@@ -80,6 +80,14 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD28: "Manage this day" is rebuilt as a date-centric control panel (beta
+user feedback): the day's bookings with inline cancel (reason → email),
+plus that date's hours, daily cap (client limit), per-day service limit
+(new day_overrides.service_ids), and one-off blocks — saved via one
+saveDay action that applies immediately when nothing is affected and only
+asks to confirm when a change would cancel bookings. Provider cancel now
+returns a visible success instead of a silent redirect.
+
 DD27: a booking can cover several services done back-to-back in one visit
 (beta user feedback): total duration = sum, price = sum, one buffer (the
 largest among the chosen services) at the end. The engine is unchanged —

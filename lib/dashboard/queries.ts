@@ -14,6 +14,7 @@ export type ProviderContext = {
   id: string;
   timezone: string;
   bookingWindow: "3_days" | "current_week" | "current_month" | "3_months";
+  scheduleType: "regular" | "flexible";
   businessName: string;
   slug: string;
   locationText: string | null;
@@ -27,7 +28,9 @@ export async function getProviderContext(): Promise<ProviderContext | null> {
   if (!user) return null;
   const { data } = await supabase
     .from("providers")
-    .select("id, timezone, booking_window, business_name, provider_name, slug, location_text")
+    .select(
+      "id, timezone, booking_window, schedule_type, business_name, provider_name, slug, location_text",
+    )
     .eq("id", user.id)
     .single();
   if (!data) return null;
@@ -35,6 +38,7 @@ export async function getProviderContext(): Promise<ProviderContext | null> {
     id: data.id,
     timezone: data.timezone,
     bookingWindow: data.booking_window,
+    scheduleType: data.schedule_type,
     businessName: data.business_name ?? data.provider_name ?? "",
     slug: data.slug,
     locationText: data.location_text,
@@ -350,6 +354,83 @@ export async function getMonthCounts(
 /** Forward nav bound: the last date the booking window reaches. */
 export function maxNavDate(provider: ProviderContext): string {
   return lastBookableDate(provider.bookingWindow, new Date(), provider.timezone);
+}
+
+// ── Day manager (F7 redesign) ────────────────────────────────────────
+
+export type DayManager = {
+  date: string;
+  bookings: DayBooking[];
+  services: { id: string; name: string }[];
+  reservedBlocks: { start: string; end: string; label: string }[];
+  template: { working: boolean; start: string; end: string } | null;
+  override: {
+    kind: string;
+    start: string | null;
+    end: string | null;
+    dailyCap: number | null;
+    serviceIds: string[] | null;
+    extraBlocks: { start: string; end: string; label?: string }[];
+  } | null;
+};
+
+export async function getDayManager(
+  provider: ProviderContext,
+  date: string,
+): Promise<DayManager> {
+  const admin = createAdminClient();
+  const weekday = (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7;
+
+  const [bookings, { data: services }, { data: template }, { data: override }] =
+    await Promise.all([
+      getDayBookings(provider, date),
+      admin
+        .from("services")
+        .select("id, name")
+        .eq("provider_id", provider.id)
+        .eq("is_active", true)
+        .order("sort_order"),
+      admin
+        .from("week_template_days")
+        .select("start_time, end_time, reserved_blocks (start_time, end_time, label)")
+        .eq("provider_id", provider.id)
+        .eq("weekday", weekday)
+        .maybeSingle(),
+      admin
+        .from("day_overrides")
+        .select("kind, start_time, end_time, daily_cap, service_ids, extra_blocks")
+        .eq("provider_id", provider.id)
+        .eq("date", date)
+        .maybeSingle(),
+    ]);
+
+  return {
+    date,
+    bookings,
+    services: services ?? [],
+    reservedBlocks: (template?.reserved_blocks ?? []).map((r) => ({
+      start: r.start_time.slice(0, 5),
+      end: r.end_time.slice(0, 5),
+      label: r.label ?? "Break",
+    })),
+    template: template
+      ? { working: true, start: template.start_time.slice(0, 5), end: template.end_time.slice(0, 5) }
+      : null,
+    override: override
+      ? {
+          kind: override.kind,
+          start: override.start_time?.slice(0, 5) ?? null,
+          end: override.end_time?.slice(0, 5) ?? null,
+          dailyCap: override.daily_cap,
+          serviceIds: override.service_ids,
+          extraBlocks: (override.extra_blocks ?? []) as {
+            start: string;
+            end: string;
+            label?: string;
+          }[],
+        }
+      : null,
+  };
 }
 
 // ── Booking detail ───────────────────────────────────────────────────

@@ -83,8 +83,12 @@ export async function providerCancelBooking(
       // failure recorded in notification_log; the cancellation stands
     }
   }
+  // Return a visible success (not a silent redirect) so the provider sees
+  // it land; the day manager + dashboard re-render without the booking.
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath("/dashboard/days");
+  revalidatePath(`/dashboard/booking/${bookingId}`);
+  return { ok: true };
 }
 
 export async function toggleNoShow(
