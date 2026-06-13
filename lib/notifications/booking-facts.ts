@@ -9,6 +9,7 @@ export type BookingFacts = {
   status: string;
   startsAt: string;
   createdAt: string;
+  cancellationWindowHours: number;
   whenText: string;
   manageToken: string;
   clientFirstName: string;
@@ -30,7 +31,7 @@ export async function getBookingFacts(
   const { data } = await admin
     .from("bookings")
     .select(
-      `id, status, starts_at, created_at, manage_token, client_id,
+      `id, status, starts_at, created_at, cancellation_window_hours, manage_token, client_id,
        clients (first_name, email),
        services (name, prep_instructions),
        providers (id, email, business_name, provider_name, location_text, timezone, slug)`,
@@ -62,6 +63,7 @@ export async function getBookingFacts(
     status: data.status,
     startsAt: data.starts_at,
     createdAt: data.created_at,
+    cancellationWindowHours: data.cancellation_window_hours,
     whenText: formatInTimeZone(
       new Date(data.starts_at),
       provider.timezone,
