@@ -1,6 +1,13 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import {
+  startTransition,
+  useActionState,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   placeHold,
   releaseHold,
@@ -410,6 +417,8 @@ function DetailsStep({
   const [remaining, setRemaining] = useState<number | null>(null);
   const [recognized, setRecognized] = useState<RecognizeResult>({});
   const holdRequested = useRef(false);
+  const reholds = useRef(0);
+  const reholding = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Hold starts when the details step opens (F5 step 4).
@@ -421,22 +430,42 @@ function DetailsStep({
     fd.set("service_ids", serviceCsv);
     fd.set("starts_at", slot.startsAt);
     fd.set("date", localDateOf(slot.startsAt));
-    holdAction(fd);
+    startTransition(() => holdAction(fd));
   }, [slug, serviceCsv, slot.startsAt, holdAction]);
 
-  // Countdown.
+  // Countdown — and rather than dumping everything the client has typed when
+  // the 5-minute hold lapses, silently re-hold the same slot a couple of times
+  // so an active booker never loses their work (DD35). Only a genuinely gone
+  // slot (or a long-abandoned session) sends them back to the picker.
   useEffect(() => {
     if (!hold.ok) return;
+    reholding.current = false; // a fresh hold just landed
     const expires = new Date(hold.expiresAt).getTime();
+    const holdId = hold.holdId;
     const tick = () => {
       const left = Math.max(0, Math.floor((expires - Date.now()) / 1000));
       setRemaining(left);
-      if (left === 0) onReleased();
+      if (left > 0 || reholding.current) return;
+      if (reholds.current < 2) {
+        reholds.current += 1;
+        reholding.current = true;
+        void (async () => {
+          await releaseHold(holdId); // free the EXCLUDE so the re-claim can take it
+          const fd = new FormData();
+          fd.set("slug", slug);
+          fd.set("service_ids", serviceCsv);
+          fd.set("starts_at", slot.startsAt);
+          fd.set("date", localDateOf(slot.startsAt));
+          startTransition(() => holdAction(fd));
+        })();
+      } else {
+        onReleased();
+      }
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [hold, onReleased]);
+  }, [hold, onReleased, slug, serviceCsv, slot.startsAt, holdAction]);
 
   // Confirm-stage failures route back to the picker.
   useEffect(() => {
@@ -468,34 +497,12 @@ function DetailsStep({
         <p className="mt-3 text-sm text-ink-3">
           {fill(t.client.confirmationSent, { email: confirm.email })}
         </p>
-      </section>
-    );
-  }
-
-  if (recognized.existing) {
-    return (
-      <section className="rounded-xl border border-line bg-white p-5 shadow-sm">
-        <h2 className="mb-2 font-serif text-xl text-ink">
-          {t.client.existingTitle}
-        </h2>
-        <p className="mb-3 text-sm text-ink-3">{t.client.existingBody}</p>
-        <p className="font-serif text-ink">{recognized.existing.serviceName}</p>
-        <p className="font-mono text-sm text-ink-2">
-          {recognized.existing.whenText}
-        </p>
         <a
-          href={`/manage/${recognized.existing.manageToken}`}
-          className="mt-4 block w-full rounded-xl bg-ink px-4 py-3 text-center font-semibold text-canvas"
+          href={`/manage/${confirm.manageToken}`}
+          className="mt-5 block w-full rounded-xl border border-ink px-4 py-3 text-center font-semibold text-ink"
         >
           {t.client.manageBooking}
         </a>
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-3 w-full text-center text-sm text-ink-3 underline"
-        >
-          ← {t.client.backToPicker}
-        </button>
       </section>
     );
   }
@@ -503,6 +510,7 @@ function DetailsStep({
   const mm = remaining !== null ? String(Math.floor(remaining / 60)) : "5";
   const ss =
     remaining !== null ? String(remaining % 60).padStart(2, "0") : "00";
+  const ending = remaining !== null && remaining <= 60;
 
   return (
     <section>
@@ -522,14 +530,47 @@ function DetailsStep({
           {slotDay(slot.startsAt)} · {slotTime(slot.startsAt)}
         </p>
         {hold.ok && (
-          <p className="mt-2 rounded bg-accent-l px-2 py-1 font-mono text-xs text-ink-3">
-            {fill(t.client.holdNotice, { mm, ss })}
+          <p
+            className={`mt-2 rounded px-2 py-1 font-mono text-xs ${
+              ending ? "bg-red-50 font-semibold text-red-600" : "bg-accent-l text-ink-3"
+            }`}
+          >
+            {fill(ending ? t.client.holdEnding : t.client.holdNotice, { mm, ss })}
           </p>
         )}
 
         <form ref={formRef} action={confirmAction} className="mt-4 space-y-3">
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="hold_id" value={hold.ok ? hold.holdId : ""} />
+
+          {/* Returning client who already has a booking: an inline heads-up,
+              not a full-screen takeover — they keep their place and can change
+              the number to book a new time (DD35). */}
+          {recognized.existing && (
+            <div className="rounded-lg border border-accent/60 bg-accent-l p-3 text-sm">
+              <p className="text-ink-2">{t.client.existingInline}</p>
+              <p className="mt-1 font-serif text-ink">
+                {recognized.existing.serviceName}
+              </p>
+              <p className="font-mono text-ink-2">{recognized.existing.whenText}</p>
+              <a
+                href={`/manage/${recognized.existing.manageToken}`}
+                className="mt-2 inline-block font-semibold text-accent underline"
+              >
+                {t.client.manageBooking}
+              </a>
+              <p className="mt-2 text-ink-3">{t.client.existingOther}</p>
+            </div>
+          )}
+
+          <Field label={t.client.firstName}>
+            <input
+              name="first_name"
+              required
+              autoComplete="given-name"
+              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
+            />
+          </Field>
           <Field label={t.client.phone}>
             <input
               name="phone"
@@ -538,9 +579,6 @@ function DetailsStep({
               autoComplete="tel"
               onBlur={async (e) => {
                 const result = await recognizePhone(slug, e.target.value);
-                // This phone already has a booking and can't make another —
-                // free the held slot at once so it's bookable again.
-                if (result.existing && hold.ok) void releaseHold(hold.holdId);
                 setRecognized(result);
                 if (result.firstName && formRef.current) {
                   const el = formRef.current.elements.namedItem("first_name");
@@ -553,14 +591,6 @@ function DetailsStep({
                   }
                 }
               }}
-              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
-            />
-          </Field>
-          <Field label={t.client.firstName}>
-            <input
-              name="first_name"
-              required
-              autoComplete="given-name"
               className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
             />
           </Field>
@@ -582,7 +612,7 @@ function DetailsStep({
           )}
           <button
             type="submit"
-            disabled={!hold.ok || confirmPending}
+            disabled={!hold.ok || confirmPending || !!recognized.existing}
             className="w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas disabled:opacity-50"
           >
             {confirmPending

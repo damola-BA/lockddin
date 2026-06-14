@@ -80,6 +80,22 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD35: booking-funnel conversion pass (UX subject #2). (#1) The 5-minute hold
+no longer dumps the client's typed details when it lapses — under 60s the
+countdown turns urgent, and on expiry the details step silently re-holds the
+same slot up to twice (release old → re-claim, freeing the EXCLUDE) so an
+active booker keeps their work; only a genuinely taken slot or a long-idle
+session sends them back. (#2) The confirmation screen gains a "Cancel or
+reschedule" link — confirmBooking now returns the manage token it already
+minted. (#4) Details ask first name before phone, and a returning client who
+already has a booking gets an inline heads-up (with a Manage link) instead of
+a full-screen takeover — the form stays put and they can enter a different
+number. (#5) A free-cancellation / no-account reassurance line sits atop the
+booking page. Skipped per the user: a persistent summary (#3) and
+add-to-calendar. Also wrapped the manual holdAction dispatches in
+startTransition (clears a pre-existing useActionState warning). Verified in a
+real browser booking + a same-phone re-book.
+
 DD34: onboarding time-to-value pass. (1) The four booking-rule fields
 (booking window, cancellation, min lead time, buffer) leave the profile step
 for sensible defaults set on first insert + the Settings editor (DD32),

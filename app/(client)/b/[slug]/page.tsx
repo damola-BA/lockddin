@@ -50,6 +50,11 @@ export default async function BookingPage({
         {provider.city && (
           <p className="mt-1 text-sm text-ink-3">{provider.city}</p>
         )}
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sage px-3 py-1 text-xs font-medium text-ok">
+          {fill(t.client.reassureTop, {
+            hours: provider.cancellation_window_hours,
+          })}
+        </p>
       </header>
       <BookingFlow
         slug={slug}

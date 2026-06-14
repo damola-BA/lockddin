@@ -168,6 +168,7 @@ export type ConfirmState =
       prepInstructions: string | null;
       cancellationText: string;
       email: string;
+      manageToken: string;
     }
   | { ok: false; reason: "released" | "existing" | "taken" | "invalid" }
   | { ok?: undefined };
@@ -263,6 +264,7 @@ export async function confirmBooking(
     prepInstructions: services.prepInstructions,
     cancellationText,
     email,
+    manageToken,
   };
 }
 
