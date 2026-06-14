@@ -152,6 +152,7 @@ export async function addService(
   if (error) return { error: "server" };
 
   revalidatePath("/onboarding/services");
+  revalidatePath("/dashboard/services");
   return { ok: true };
 }
 
@@ -177,6 +178,7 @@ export async function updateService(
   if (error) return { error: "server" };
 
   revalidatePath("/onboarding/services");
+  revalidatePath("/dashboard/services");
   return { ok: true };
 }
 
@@ -223,6 +225,7 @@ export async function deleteService(
   if (error) return { error: "server" };
 
   revalidatePath("/onboarding/services");
+  revalidatePath("/dashboard/services");
   return { ok: true };
 }
 

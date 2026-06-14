@@ -102,6 +102,15 @@ export default async function DashboardPage({
             {t.dashboard.walkIn}
           </a>
         </nav>
+
+        <nav className="mt-2 grid grid-cols-2 gap-2 text-center text-xs">
+          <a href="/dashboard/services" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
+            {t.dashboard.services}
+          </a>
+          <a href="/dashboard/settings" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
+            {t.dashboard.settings}
+          </a>
+        </nav>
       </main>
     </div>
   );

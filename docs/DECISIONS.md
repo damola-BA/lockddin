@@ -80,6 +80,16 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD32: the onboarding profile + services steps become editable after
+signup — /dashboard/settings (updateProfileSettings in
+lib/dashboard/settings-actions.ts edits the F2 profile fields in place;
+never touches onboarding_step, no redirect, no re-verification email) and
+/dashboard/services (reuses the onboarding service CRUD through a shared
+components/provider/services-editor.tsx). Onboarding was one-shot, so a
+provider could not fix a typo'd business name, booking link, policy, or
+service after finishing setup. Day management (/dashboard/days) is
+unchanged; the two dashboard nav links were added additively.
+
 DD31: M8 hardening — graceful error boundaries per route group (client
 warm-paper, provider ink-dark, plus global-error + not-found) so an
 unexpected error shows a friendly retry, never a raw crash, even to a

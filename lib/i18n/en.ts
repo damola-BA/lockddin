@@ -213,6 +213,8 @@ export const en = {
     statGaps: "gaps",
     manageDay: "Manage this day",
     schedule: "Schedule",
+    services: "Services",
+    settings: "Settings",
     clients: "Clients",
     walkIn: "Add booking",
     bookingDetail: "Booking",
@@ -285,5 +287,16 @@ export const en = {
     walkInExisting: "This client already has an upcoming booking. Cancel it first.",
     walkInChangeClient: "Change",
     walkInChangeService: "Change",
+  },
+  settings: {
+    title: "Settings",
+    intro:
+      "Your business details and booking rules. Changes apply to new bookings only — existing ones are never touched.",
+    back: "Back to dashboard",
+    saved: "Saved.",
+    slugWarning:
+      "Changing this changes your public booking link — links you've already shared will stop working.",
+    servicesTitle: "Services",
+    servicesIntro: "Add, edit, or remove what clients can book.",
   },
 } as const;
