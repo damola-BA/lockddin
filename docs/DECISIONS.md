@@ -80,6 +80,20 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD34: onboarding time-to-value pass. (1) The four booking-rule fields
+(booking window, cancellation, min lead time, buffer) leave the profile step
+for sensible defaults set on first insert + the Settings editor (DD32),
+dropping that screen from 9 controls to 5 (identity only). (2) The regular
+schedule step folds its week save into the single "Finish" submit —
+completeOnboarding now persists the week via the new shared
+lib/schedule/week-template.ts (parseWeekForm + persistWeekTemplate);
+saveWeekBulk is removed and QuickWeekSetup is fields-only — no separate save
+button to forget (the DD26 trap). (3) Email verification no longer gates
+completion: finishing reaches the dashboard immediately and a persistent
+VerifyBanner (components/provider/verify-banner.tsx) nudges confirmation there
+instead. Verified end-to-end in browser + DB (defaults stored, Mon–Fri week
+saved, onboarding_step=complete with email_verified_at null).
+
 DD33: whole-product visual redesign into one warm-light system — Plus Jakarta
 Sans + Fraunces, warm paper canvas, terracotta accent — across a new public
 marketing landing (app/page.tsx, made reachable by adding "/" to the proxy's

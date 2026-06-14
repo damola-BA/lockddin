@@ -2,7 +2,6 @@
 
 import { useActionState, useState } from "react";
 import { completeOnboarding, type ActionState } from "@/lib/onboarding/actions";
-import { resendVerification } from "@/lib/auth/actions";
 import { getDictionary, fill } from "@/lib/i18n";
 import { PageTitle, Hint, PrimaryButton, ErrorText } from "@/components/provider/ui";
 import type { TemplateDayData } from "@/app/(provider)/dashboard/schedule/template-editor";
@@ -11,37 +10,11 @@ import { QuickWeekSetup } from "./quick-week-setup";
 
 const t = getDictionary();
 
-function ResendLink() {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    async () => resendVerification(),
-    {},
-  );
-  return (
-    <form action={formAction} className="inline">
-      {state.ok ? (
-        <span className="text-ok">{t.auth.verificationResent}</span>
-      ) : (
-        <button
-          type="submit"
-          disabled={pending}
-          className="text-accent underline disabled:opacity-50"
-        >
-          {t.auth.resendVerification}
-        </button>
-      )}
-    </form>
-  );
-}
-
 export function ScheduleStep({
-  email,
   initialType,
-  emailVerified,
   templateDays,
 }: {
-  email: string;
   initialType: string;
-  emailVerified: boolean;
   templateDays: TemplateDayData[];
 }) {
   const [type, setType] = useState<"regular" | "flexible">(
@@ -71,9 +44,7 @@ export function ScheduleStep({
               onChange={() => setType("regular")}
               className="accent-accent"
             />
-            <span className="font-medium text-ink">
-              {t.onboarding.scheduleRegular}
-            </span>
+            <span className="font-medium text-ink">{t.onboarding.scheduleRegular}</span>
           </span>
           <span className="mt-1 block pl-7 text-sm text-ink-3">
             {t.onboarding.scheduleRegularHint}
@@ -90,9 +61,7 @@ export function ScheduleStep({
               onChange={() => setType("flexible")}
               className="accent-accent"
             />
-            <span className="font-medium text-ink">
-              {t.onboarding.scheduleFlexible}
-            </span>
+            <span className="font-medium text-ink">{t.onboarding.scheduleFlexible}</span>
           </span>
           <span className="mt-1 block pl-7 text-sm text-ink-3">
             {t.onboarding.scheduleFlexibleHint}
@@ -100,43 +69,39 @@ export function ScheduleStep({
         </label>
       </div>
 
-      {/* The real setup, right here in onboarding (DD16/DD17): one set of
-          hours + breaks for the whole week; per-day tweaks and emergency
-          changes live in the dashboard. */}
       <div className="mt-6 border-t border-line pt-4">
-        {type === "regular" ? (
-          <QuickWeekSetup
-            initialWeekdays={templateDays.map((d) => d.weekday)}
-            initialStart={templateDays[0]?.start ?? "09:00"}
-            initialEnd={templateDays[0]?.end ?? "18:00"}
-            initialBlocks={templateDays[0]?.blocks ?? []}
-          />
-        ) : (
-          <FlexibleBatchAdd />
-        )}
+        {/* Flexible mode adds open days incrementally via its own form, so it
+            sits outside the single Finish form below. */}
+        {type === "flexible" && <FlexibleBatchAdd />}
+
+        <form action={formAction} className="mt-2 space-y-4">
+          <input type="hidden" name="schedule_type" value={type} />
+
+          {/* Regular mode: the week is saved as part of this one submit
+              (DD34) — no separate save button to forget. */}
+          {type === "regular" && (
+            <QuickWeekSetup
+              initialWeekdays={templateDays.map((d) => d.weekday)}
+              initialStart={templateDays[0]?.start ?? "09:00"}
+              initialEnd={templateDays[0]?.end ?? "18:00"}
+              initialBlocks={templateDays[0]?.blocks ?? []}
+            />
+          )}
+
+          {state.error === "no_week" && <ErrorText>{t.onboarding.needWeek}</ErrorText>}
+          {state.error === "no_days" && <ErrorText>{t.onboarding.needDays}</ErrorText>}
+          {(state.error === "pick_one" ||
+            state.error === "server" ||
+            state.error === "invalid_hours" ||
+            state.error === "invalid_blocks") && (
+            <ErrorText>{t.common.somethingWrong}</ErrorText>
+          )}
+
+          <PrimaryButton disabled={pending}>
+            {pending ? t.common.loading : t.onboarding.finish}
+          </PrimaryButton>
+        </form>
       </div>
-
-      <form action={formAction} className="mt-8 space-y-3">
-        <input type="hidden" name="schedule_type" value={type} />
-
-        {!emailVerified && (
-          <div className="rounded-lg border border-accent/40 bg-accent-l p-4 text-sm text-ink">
-            {fill(t.auth.verifyNeeded, { email })} <ResendLink />
-          </div>
-        )}
-        {state.error === "unverified" && (
-          <ErrorText>{fill(t.auth.verifyNeeded, { email })}</ErrorText>
-        )}
-        {state.error === "no_week" && <ErrorText>{t.onboarding.needWeek}</ErrorText>}
-        {state.error === "no_days" && <ErrorText>{t.onboarding.needDays}</ErrorText>}
-        {(state.error === "pick_one" || state.error === "server") && (
-          <ErrorText>{t.common.somethingWrong}</ErrorText>
-        )}
-
-        <PrimaryButton disabled={pending}>
-          {pending ? t.common.loading : t.onboarding.finish}
-        </PrimaryButton>
-      </form>
     </main>
   );
 }

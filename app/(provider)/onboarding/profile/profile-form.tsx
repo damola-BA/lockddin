@@ -21,23 +21,9 @@ type Initial = {
   city: string | null;
   slug: string;
   location_text: string | null;
-  booking_window: string;
-  cancellation_window_hours: number;
-  min_lead_time_minutes: number;
-  global_buffer_minutes: number;
 } | null;
 
 type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
-
-const LEAD_OPTIONS = [0, 60, 120, 240, 720, 1440, 2880, 10080, 20160];
-const BUFFER_OPTIONS = [0, 5, 10, 15, 20, 30, 45, 60];
-
-function leadLabel(minutes: number): string {
-  if (minutes === 0) return t.onboarding.minLeadNone;
-  if (minutes < 1440) return `${minutes / 60}h`;
-  if (minutes < 10080) return `${minutes / 1440} days`;
-  return `${minutes / 10080} week${minutes > 10080 ? "s" : ""}`;
-}
 
 export function ProfileForm({ initial }: { initial: Initial }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
@@ -148,82 +134,12 @@ export function ProfileForm({ initial }: { initial: Initial }) {
           <p className="mt-1.5 text-sm text-ink-3">{t.onboarding.locationHint}</p>
         </div>
 
-        <fieldset>
-          <legend className="mb-2 text-sm font-medium text-ink-2">
-            {t.onboarding.bookingWindowTitle}
-          </legend>
-          <div className="grid grid-cols-2 gap-2">
-            {(["3_days", "current_week", "current_month", "3_months"] as const).map(
-              (value) => (
-                <label
-                  key={value}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm has-checked:border-accent has-checked:text-accent"
-                >
-                  <input
-                    type="radio"
-                    name="booking_window"
-                    value={value}
-                    defaultChecked={(initial?.booking_window ?? "current_month") === value}
-                    className="accent-accent"
-                  />
-                  {t.onboarding[`bookingWindow_${value}`]}
-                </label>
-              ),
-            )}
-          </div>
-        </fieldset>
-
-        <div>
-          <Label htmlFor="cancellation_window_hours">
-            {t.onboarding.cancellationWindowTitle}
-          </Label>
-          <select
-            id="cancellation_window_hours"
-            name="cancellation_window_hours"
-            defaultValue={initial?.cancellation_window_hours ?? 12}
-            className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
-          >
-            {[12, 24, 48, 72].map((h) => (
-              <option key={h} value={h}>
-                {fill(t.onboarding.hoursBefore, { hours: h })}
-              </option>
-            ))}
-            <option value={168}>{t.onboarding.oneWeekBefore}</option>
-          </select>
-          <p className="mt-1.5 text-sm text-ink-3">{t.onboarding.cancellationHint}</p>
-        </div>
-
-        <div>
-          <Label htmlFor="min_lead_time_minutes">{t.onboarding.minLeadTitle}</Label>
-          <select
-            id="min_lead_time_minutes"
-            name="min_lead_time_minutes"
-            defaultValue={initial?.min_lead_time_minutes ?? 0}
-            className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
-          >
-            {LEAD_OPTIONS.map((m) => (
-              <option key={m} value={m}>
-                {leadLabel(m)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <Label htmlFor="global_buffer_minutes">{t.onboarding.bufferTitle}</Label>
-          <select
-            id="global_buffer_minutes"
-            name="global_buffer_minutes"
-            defaultValue={initial?.global_buffer_minutes ?? 0}
-            className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
-          >
-            {BUFFER_OPTIONS.map((m) => (
-              <option key={m} value={m}>
-                {m === 0 ? t.onboarding.bufferNone : fill(t.onboarding.minutes, { n: m })}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Booking rules (window, cancellation, lead time, buffer) start on
+            sensible defaults and are tuned later in Settings (DD34) — a new
+            provider has no basis to decide them cold. */}
+        <p className="rounded-lg border border-line bg-surface-2 p-3 text-sm text-ink-3">
+          {t.onboarding.rulesNote}
+        </p>
 
         {state.error === "missing_fields" && (
           <ErrorText>{t.common.somethingWrong}</ErrorText>

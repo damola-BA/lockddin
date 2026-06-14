@@ -10,7 +10,7 @@ export default async function SchedulePage() {
 
   const { data: provider } = await supabase
     .from("providers")
-    .select("email, schedule_type, email_verified_at")
+    .select("schedule_type")
     .eq("id", user!.id)
     .single();
 
@@ -37,9 +37,7 @@ export default async function SchedulePage() {
 
   return (
     <ScheduleStep
-      email={provider?.email ?? ""}
       initialType={provider?.schedule_type ?? "regular"}
-      emailVerified={Boolean(provider?.email_verified_at)}
       templateDays={dayData}
     />
   );

@@ -5,13 +5,10 @@ import { createServerSupabase } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { sendVerificationEmail } from "@/lib/auth/actions";
 import { isValidSlug, normalizeSlug } from "@/lib/onboarding/slug";
+import { parseWeekForm, persistWeekTemplate } from "@/lib/schedule/week-template";
 import { revalidatePath } from "next/cache";
 
 export type ActionState = { error?: string; ok?: boolean };
-
-const BOOKING_WINDOWS = ["3_days", "current_week", "current_month", "3_months"];
-const CANCELLATION_HOURS = [12, 24, 48, 72, 168];
-const MAX_LEAD_MINUTES = 20160;
 
 // ── F2: profile step ─────────────────────────────────────────────────
 
@@ -30,25 +27,9 @@ export async function saveProfile(
   const city = String(formData.get("city") ?? "").trim();
   const slug = normalizeSlug(String(formData.get("slug") ?? ""));
   const locationText = String(formData.get("location_text") ?? "").trim();
-  const bookingWindow = String(formData.get("booking_window") ?? "");
-  const cancellationHours = Number(formData.get("cancellation_window_hours"));
-  const minLeadMinutes = Number(formData.get("min_lead_time_minutes"));
-  const bufferMinutes = Number(formData.get("global_buffer_minutes"));
 
   if (!businessName || !providerName || !city) return { error: "missing_fields" };
   if (!isValidSlug(slug)) return { error: "slug_invalid" };
-  if (!BOOKING_WINDOWS.includes(bookingWindow)) return { error: "missing_fields" };
-  if (!CANCELLATION_HOURS.includes(cancellationHours)) return { error: "missing_fields" };
-  if (
-    !Number.isInteger(minLeadMinutes) ||
-    minLeadMinutes < 0 ||
-    minLeadMinutes > MAX_LEAD_MINUTES
-  ) {
-    return { error: "missing_fields" };
-  }
-  if (!Number.isInteger(bufferMinutes) || bufferMinutes < 0) {
-    return { error: "missing_fields" };
-  }
 
   // Insert under RLS as the signed-in provider; the unique constraint on
   // slug is the authoritative collision check.
@@ -58,23 +39,30 @@ export async function saveProfile(
     .eq("id", user.id)
     .maybeSingle();
 
-  const row = {
+  const identity = {
     email: user.email!,
     business_name: businessName,
     provider_name: providerName,
     city,
     slug,
     location_text: locationText || null,
-    booking_window: bookingWindow,
-    cancellation_window_hours: cancellationHours,
-    min_lead_time_minutes: minLeadMinutes,
-    global_buffer_minutes: bufferMinutes,
     onboarding_step: "services",
   };
 
+  // Booking rules (window, cancellation, lead time, buffer) start on sensible
+  // defaults and are tuned later in Settings (DD34) — a new provider has no
+  // basis to decide them cold. Set only on first create so a resume never
+  // clobbers values the provider may already have changed.
   const { error } = existing
-    ? await supabase.from("providers").update(row).eq("id", user.id)
-    : await supabase.from("providers").insert({ id: user.id, ...row });
+    ? await supabase.from("providers").update(identity).eq("id", user.id)
+    : await supabase.from("providers").insert({
+        id: user.id,
+        ...identity,
+        booking_window: "current_month",
+        cancellation_window_hours: 12,
+        min_lead_time_minutes: 0,
+        global_buffer_minutes: 0,
+      });
 
   if (error) {
     if (error.code === "23505" && error.message.includes("slug")) {
@@ -267,22 +255,15 @@ export async function completeOnboarding(
     return { error: "pick_one" };
   }
 
-  // Email verification is required before onboarding completes (F1).
-  const { data: provider } = await supabase
-    .from("providers")
-    .select("email_verified_at")
-    .eq("id", user.id)
-    .single();
-  if (!provider?.email_verified_at) return { error: "unverified" };
-
-  // The schedule step now includes real setup (DD16): finishing requires a
-  // usable starting pattern so the booking page never launches empty.
+  // The schedule lives in this single submit now (DD34): a regular provider's
+  // week is saved here, so finishing always leaves a usable starting pattern
+  // and the booking page never launches empty (DD16). Email verification no
+  // longer blocks completion — it's nudged from the dashboard instead (DD34).
   if (scheduleType === "regular") {
-    const { count } = await supabase
-      .from("week_template_days")
-      .select("id", { count: "exact", head: true })
-      .eq("provider_id", user.id);
-    if ((count ?? 0) === 0) return { error: "no_week" };
+    const parsed = parseWeekForm(formData);
+    if ("error" in parsed) return { error: parsed.error };
+    const res = await persistWeekTemplate(supabase, user.id, parsed.input);
+    if (res.error) return { error: res.error };
   } else {
     const today = new Date().toISOString().slice(0, 10);
     const { count } = await supabase

@@ -1,9 +1,7 @@
-﻿"use client";
+"use client";
 
-import { useActionState, useState } from "react";
-import { saveWeekBulk, type ActionState } from "@/lib/schedule/actions";
+import { useState } from "react";
 import { getDictionary } from "@/lib/i18n";
-import { ErrorText } from "@/components/provider/ui";
 import {
   BlocksEditor,
   type Block,
@@ -11,8 +9,10 @@ import {
 
 const t = getDictionary();
 
-// Onboarding week setup (DD17): one set of hours + breaks applied to all
-// ticked days in one go. Per-day fine-tuning lives in the dashboard.
+// Onboarding week fields (DD17/DD34): one set of hours + breaks applied to all
+// ticked days. Rendered INSIDE the schedule step's single "Finish" form, so
+// the week is saved as part of completing onboarding — no separate save button
+// to forget (the trap behind DD26). Per-day tweaks live in the dashboard.
 export function QuickWeekSetup({
   initialWeekdays,
   initialStart,
@@ -24,16 +24,12 @@ export function QuickWeekSetup({
   initialEnd: string;
   initialBlocks: Block[];
 }) {
-  const [state, formAction, pending] = useActionState<ActionState, FormData>(
-    saveWeekBulk,
-    {},
-  );
   const [days, setDays] = useState<Set<number>>(
     new Set(initialWeekdays.length > 0 ? initialWeekdays : [0, 1, 2, 3, 4]),
   );
 
   return (
-    <form action={formAction} className="mt-4 space-y-5">
+    <div className="space-y-5">
       <div>
         <p className="mb-1 font-medium text-ink">{t.onboarding.quickWeekTitle}</p>
         <p className="mb-3 text-sm text-ink-3">{t.onboarding.quickWeekHint}</p>
@@ -91,22 +87,6 @@ export function QuickWeekSetup({
         <p className="mb-2 text-sm text-ink-3">{t.onboarding.quickWeekBreaks}</p>
         <BlocksEditor name="blocks" initial={initialBlocks} showLabel />
       </div>
-
-      {state.error === "no_days" && <ErrorText>{t.onboarding.needWeek}</ErrorText>}
-      {state.error && state.error !== "no_days" && (
-        <ErrorText>{t.common.somethingWrong}</ErrorText>
-      )}
-      {state.ok && (
-        <p className="text-sm text-ok">{t.onboarding.quickWeekSaved}</p>
-      )}
-
-      <button
-        type="submit"
-        disabled={pending || days.size === 0}
-        className="w-full rounded-lg border border-accent px-4 py-3 text-base font-semibold text-accent disabled:opacity-50"
-      >
-        {pending ? t.common.loading : t.common.save}
-      </button>
-    </form>
+    </div>
   );
 }

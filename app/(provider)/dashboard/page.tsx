@@ -1,4 +1,5 @@
 import { signOut } from "@/lib/auth/actions";
+import { VerifyBanner } from "@/components/provider/verify-banner";
 import { getDictionary, fill } from "@/lib/i18n";
 import {
   getProviderContext,
@@ -50,6 +51,7 @@ export default async function DashboardPage({
   return (
     <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-8">
+        {!provider.emailVerified && <VerifyBanner email={provider.email} />}
         <header className="mb-6 flex items-center justify-between">
           <p className="font-serif text-lg">{provider.businessName}</p>
           <form action={signOut}>

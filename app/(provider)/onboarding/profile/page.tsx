@@ -10,9 +10,7 @@ export default async function ProfileStep() {
   // Prefill on resume (row exists when the provider re-enters this step).
   const { data: provider } = await supabase
     .from("providers")
-    .select(
-      "business_name, provider_name, city, slug, location_text, booking_window, cancellation_window_hours, min_lead_time_minutes, global_buffer_minutes",
-    )
+    .select("business_name, provider_name, city, slug, location_text")
     .eq("id", user!.id)
     .maybeSingle();
 

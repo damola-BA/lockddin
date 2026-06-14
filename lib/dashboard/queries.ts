@@ -18,6 +18,8 @@ export type ProviderContext = {
   businessName: string;
   slug: string;
   locationText: string | null;
+  email: string;
+  emailVerified: boolean;
 };
 
 export async function getProviderContext(): Promise<ProviderContext | null> {
@@ -29,7 +31,7 @@ export async function getProviderContext(): Promise<ProviderContext | null> {
   const { data } = await supabase
     .from("providers")
     .select(
-      "id, timezone, booking_window, schedule_type, business_name, provider_name, slug, location_text",
+      "id, timezone, booking_window, schedule_type, business_name, provider_name, slug, location_text, email, email_verified_at",
     )
     .eq("id", user.id)
     .single();
@@ -42,6 +44,8 @@ export async function getProviderContext(): Promise<ProviderContext | null> {
     businessName: data.business_name ?? data.provider_name ?? "",
     slug: data.slug,
     locationText: data.location_text,
+    email: data.email,
+    emailVerified: Boolean(data.email_verified_at),
   };
 }
 

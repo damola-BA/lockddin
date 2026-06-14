@@ -102,6 +102,7 @@ export const en = {
     quickWeekDays: "Working days",
     quickWeekBreaks: "Regular breaks (optional)",
     quickWeekSaved: "Week saved — you can fine-tune individual days from your dashboard anytime.",
+    rulesNote: "We've set sensible booking rules to start — when clients can book, your free-cancellation window, notice, and buffers. Fine-tune them anytime in Settings.",
   },
   schedule: {
     title: "Your week",
@@ -215,6 +216,9 @@ export const en = {
     schedule: "Schedule",
     services: "Services",
     settings: "Settings",
+    verifyBanner: "Confirm your email so booking alerts reach you — we sent a link to {email}.",
+    verifyResend: "Resend",
+    verifyResent: "Sent — check your inbox.",
     clients: "Clients",
     walkIn: "Add booking",
     bookingDetail: "Booking",
