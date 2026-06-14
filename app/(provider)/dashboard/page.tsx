@@ -1,5 +1,7 @@
 import { signOut } from "@/lib/auth/actions";
 import { VerifyBanner } from "@/components/provider/verify-banner";
+import { BookingLinkCard } from "@/components/provider/booking-link";
+import { appUrl } from "@/lib/app-url";
 import { getDictionary, fill } from "@/lib/i18n";
 import {
   getProviderContext,
@@ -60,6 +62,11 @@ export default async function DashboardPage({
             </button>
           </form>
         </header>
+
+        <BookingLinkCard
+          url={appUrl(`/b/${provider.slug}`)}
+          businessName={provider.businessName}
+        />
 
         <nav className="mb-5 flex gap-2 text-sm">
           {(["day", "week", "month"] as const).map((v) => (

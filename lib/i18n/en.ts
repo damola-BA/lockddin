@@ -199,6 +199,7 @@ export const en = {
     yourLink: "Your booking link",
     copyLink: "Copy link",
     copied: "Copied!",
+    shareLink: "Share",
     viewDay: "Day",
     viewWeek: "Week",
     viewMonth: "Month",
