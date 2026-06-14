@@ -80,6 +80,13 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD31: M8 hardening — graceful error boundaries per route group (client
+warm-paper, provider ink-dark, plus global-error + not-found) so an
+unexpected error shows a friendly retry, never a raw crash, even to a
+client mid-booking. Privacy notice fleshed out for AD12. Playwright
+golden-path E2E (e2e/, run with `npm run test:e2e`, gated by E2E_BASE_URL
+/E2E_SLUG, kept out of the Vitest run) green against a seeded provider.
+
 DD30: jsonb RPC params (day_overrides.extra_blocks) are passed to
 supabase-js as arrays/objects, never JSON.stringify'd — stringifying
 double-encodes and stores the literal string "[]" instead of an array,

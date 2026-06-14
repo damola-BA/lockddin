@@ -1,25 +1,47 @@
-// Plain-language privacy notice (F5 footer link). Hardening pass in M8.
+// Plain-language privacy notice (F5 footer link; AD12 GDPR-light posture).
 export default function PrivacyPage() {
   return (
     <div className="min-h-dvh bg-[#faf6f0] text-stone-800">
       <main className="mx-auto w-full max-w-md px-5 py-10">
         <h1 className="mb-4 font-serif text-2xl text-stone-900">Privacy notice</h1>
-        <div className="space-y-3 text-sm leading-relaxed text-stone-700">
+        <div className="space-y-4 text-sm leading-relaxed text-stone-700">
           <p>
-            When you book an appointment, we store your first name, phone
-            number and email address. Your phone number identifies you to the
-            provider you book with — it is never shared with other businesses.
+            LockdDin is the booking tool your provider uses. When you book, the
+            provider is responsible for your details; LockdDin stores them on
+            their behalf.
           </p>
-          <p>
-            Your email is used only for messages about your appointments:
-            confirmations, reminders, and changes. No marketing.
+
+          <div>
+            <p className="font-medium text-stone-900">What we store</p>
+            <p>
+              Your first name, phone number and email address, plus the bookings
+              you make. Your phone number is how the provider recognises you — it
+              is never shared with other businesses on LockdDin.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-medium text-stone-900">Why</p>
+            <p>
+              Only to manage your appointments. Your email is used for booking
+              messages — confirmations, reminders and changes. We send no
+              marketing, and we don&apos;t ask for marketing consent.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-medium text-stone-900">Your choices</p>
+            <p>
+              You can ask your provider to delete your personal details at any
+              time, or to give you a copy of what they hold. Deleting your
+              details keeps your past bookings only as anonymous records.
+            </p>
+          </div>
+
+          <p className="text-stone-600">
+            Your data is stored in the EU. There are no payments in this booking
+            tool, so no card or bank details are ever collected.
           </p>
-          <p>
-            You can ask the provider to delete your details at any time.
-            Bookings older than needed for the provider&apos;s records are
-            removed on request.
-          </p>
-          <p>Data is stored in the EU.</p>
         </div>
       </main>
     </div>
