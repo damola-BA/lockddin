@@ -17,9 +17,9 @@ export default async function NewBookingPage() {
     .order("sort_order");
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-8">
-        <a href="/dashboard" className="text-sm text-stone-400 underline">
+        <a href="/dashboard" className="text-sm text-ink-3 underline">
           ← {t.dashboard.viewDay}
         </a>
         <h1 className="mt-4 mb-6 font-serif text-2xl">{t.dashboard.walkInTitle}</h1>

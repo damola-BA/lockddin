@@ -43,26 +43,26 @@ export default async function DaysPage({
   const next = addDays(date, 1);
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-8">
-        <a href={`/dashboard?view=day&date=${date}`} className="text-sm text-stone-400 underline">
+        <a href={`/dashboard?view=day&date=${date}`} className="text-sm text-ink-3 underline">
           ← {t.dashboard.viewDay}
         </a>
 
         <div className="mt-4 mb-6 flex items-center justify-between">
-          <a href={`/dashboard/days?date=${prev}`} className="rounded px-3 py-1 text-stone-400">←</a>
+          <a href={`/dashboard/days?date=${prev}`} className="rounded px-3 py-1 text-ink-3">←</a>
           <span className="text-center">
             <span className="block font-serif text-lg">{prettyDate(date, provider.timezone)}</span>
             {date !== today && (
-              <a href={`/dashboard/days?date=${today}`} className="text-xs text-amber-400 underline">
+              <a href={`/dashboard/days?date=${today}`} className="text-xs text-accent underline">
                 {t.dashboard.today}
               </a>
             )}
           </span>
           {next <= maxDate ? (
-            <a href={`/dashboard/days?date=${next}`} className="rounded px-3 py-1 text-stone-400">→</a>
+            <a href={`/dashboard/days?date=${next}`} className="rounded px-3 py-1 text-ink-3">→</a>
           ) : (
-            <span className="px-3 py-1 text-stone-700">→</span>
+            <span className="px-3 py-1 text-ink-4">→</span>
           )}
         </div>
 
@@ -81,8 +81,8 @@ export default async function DaysPage({
           />
         </section>
 
-        <details className="rounded-xl border border-stone-800 bg-stone-900/50 p-4">
-          <summary className="cursor-pointer text-sm text-stone-300">
+        <details className="rounded-xl border border-line bg-surface-2 p-4">
+          <summary className="cursor-pointer text-sm text-ink-2">
             {t.dashboard.rangeCloseTitle}
           </summary>
           <div className="mt-4">

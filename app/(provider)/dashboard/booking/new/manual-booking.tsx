@@ -57,7 +57,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
       <div className="space-y-5">
         <PickedClient client={client} onChange={() => setClient(null)} />
         {client.hasActiveBooking && (
-          <p className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-3 text-sm text-amber-200">
+          <p className="rounded-lg border border-accent/40 bg-accent-l p-3 text-sm text-accent">
             {t.dashboard.walkInExisting}
           </p>
         )}
@@ -75,17 +75,17 @@ export function ManualBooking({ services }: { services: Service[] }) {
                     setPicked(on ? picked.filter((x) => x.id !== s.id) : [...picked, s])
                   }
                   className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left ${
-                    on ? "border-amber-400 bg-stone-900" : "border-stone-800 bg-stone-900"
+                    on ? "border-accent bg-surface" : "border-line bg-surface"
                   }`}
                 >
                   <span>
                     {on ? "✓ " : ""}
                     {s.name}
-                    <span className="ml-2 font-mono text-xs text-stone-500">
+                    <span className="ml-2 font-mono text-xs text-ink-3">
                       {fill(t.client.minutes, { n: s.duration_minutes })}
                     </span>
                   </span>
-                  <span className="font-mono text-sm text-stone-300">{euros(s.price_cents)}</span>
+                  <span className="font-mono text-sm text-ink-2">{euros(s.price_cents)}</span>
                 </button>
               );
             })}
@@ -95,20 +95,20 @@ export function ManualBooking({ services }: { services: Service[] }) {
         {picked.length > 0 && (
           <>
             <div>
-              <p className="mb-1 text-sm text-stone-400">{t.dashboard.walkInPickDay}</p>
+              <p className="mb-1 text-sm text-ink-3">{t.dashboard.walkInPickDay}</p>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2.5 text-stone-100"
+                className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink"
               />
             </div>
 
             {date && slots === null && (
-              <p className="text-sm text-stone-500">{t.common.loading}</p>
+              <p className="text-sm text-ink-3">{t.common.loading}</p>
             )}
             {slots !== null && slots.length === 0 && (
-              <p className="text-sm text-stone-500">{t.dashboard.walkInNoSlots}</p>
+              <p className="text-sm text-ink-3">{t.dashboard.walkInNoSlots}</p>
             )}
             {slots && slots.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -117,7 +117,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
                     key={s.startsAt}
                     type="button"
                     onClick={() => setSlot(s.startsAt)}
-                    className="rounded-lg border border-stone-700 px-3 py-2 font-mono text-sm text-stone-200"
+                    className="rounded-lg border border-line px-3 py-2 font-mono text-sm text-ink"
                   >
                     {s.label}
                   </button>
@@ -143,23 +143,23 @@ export function ManualBooking({ services }: { services: Service[] }) {
   return (
     <div className="space-y-5">
       <PickedClient client={client} onChange={() => setClient(null)} />
-      <div className="rounded-xl border border-stone-800 bg-stone-900 p-4">
+      <div className="rounded-xl border border-line bg-surface p-4">
         <p className="font-serif text-lg">{picked.map((s) => s.name).join(" + ")}</p>
-        <p className="font-mono text-sm text-stone-300">{slotLabel}</p>
-        <p className="mt-1 font-mono text-sm text-amber-300">
+        <p className="font-mono text-sm text-ink-2">{slotLabel}</p>
+        <p className="mt-1 font-mono text-sm text-accent">
           {euros(totalPrice)} · {fill(t.client.minutes, { n: totalDuration })}
         </p>
         <button
           type="button"
           onClick={() => setSlot(null)}
-          className="mt-2 text-xs text-stone-500 underline"
+          className="mt-2 text-xs text-ink-3 underline"
         >
           {t.dashboard.walkInChangeService}
         </button>
       </div>
 
       {error && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-red-600">
           {error === "existing"
             ? t.dashboard.walkInExisting
             : error === "slot_taken" || error === "taken"
@@ -184,7 +184,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
             else setError(res.error);
           })
         }
-        className="w-full rounded-xl bg-amber-400 px-4 py-3 font-semibold text-stone-950 disabled:opacity-50"
+        className="w-full rounded-xl bg-accent px-4 py-3 font-semibold text-white disabled:opacity-50"
       >
         {pending ? t.common.loading : t.dashboard.walkInConfirm}
       </button>
@@ -200,12 +200,12 @@ function PickedClient({
   onChange: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-stone-800 bg-stone-900 px-4 py-3">
+    <div className="flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-3">
       <span>
         <span className="font-serif">{client.firstName}</span>
-        <span className="block font-mono text-xs text-stone-400">{client.phone}</span>
+        <span className="block font-mono text-xs text-ink-3">{client.phone}</span>
       </span>
-      <button type="button" onClick={onChange} className="text-xs text-amber-400 underline">
+      <button type="button" onClick={onChange} className="text-xs text-accent underline">
         {t.dashboard.walkInChangeClient}
       </button>
     </div>
@@ -240,7 +240,7 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.dashboard.walkInSearch}
-            className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-2.5 text-stone-100 placeholder:text-stone-600"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-4"
           />
           <ul className="space-y-2">
             {results.map((c) => (
@@ -248,14 +248,14 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
                 <button
                   type="button"
                   onClick={() => onPick(c)}
-                  className="flex w-full items-center justify-between rounded-lg border border-stone-800 bg-stone-900 px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between rounded-lg border border-line bg-surface px-4 py-3 text-left"
                 >
                   <span>
                     <span className="font-serif">{c.firstName}</span>
-                    <span className="block font-mono text-xs text-stone-400">{c.phone}</span>
+                    <span className="block font-mono text-xs text-ink-3">{c.phone}</span>
                   </span>
                   {c.hasActiveBooking && (
-                    <span className="text-xs text-amber-400">{t.dashboard.walkInHasBooking}</span>
+                    <span className="text-xs text-accent">{t.dashboard.walkInHasBooking}</span>
                   )}
                 </button>
               </li>
@@ -264,7 +264,7 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="text-sm text-amber-400 underline"
+            className="text-sm text-accent underline"
           >
             {t.dashboard.walkInNewClient}
           </button>
@@ -275,28 +275,28 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             placeholder={t.dashboard.walkInFirstName}
-            className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-2.5 text-stone-100 placeholder:text-stone-600"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-4"
           />
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             type="tel"
             placeholder={t.dashboard.walkInPhone}
-            className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-2.5 text-stone-100 placeholder:text-stone-600"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-4"
           />
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             placeholder={t.dashboard.walkInEmail}
-            className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-2.5 text-stone-100 placeholder:text-stone-600"
+            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-4"
           />
-          {err && <p className="text-sm text-red-400">{t.common.somethingWrong}</p>}
+          {err && <p className="text-sm text-red-600">{t.common.somethingWrong}</p>}
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setCreating(false)}
-              className="flex-1 rounded-lg border border-stone-700 px-3 py-2.5 text-sm text-stone-300"
+              className="flex-1 rounded-lg border border-line px-3 py-2.5 text-sm text-ink-2"
             >
               {t.common.back}
             </button>
@@ -311,7 +311,7 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
                   else setErr(true);
                 })
               }
-              className="flex-1 rounded-lg bg-amber-400 px-3 py-2.5 text-sm font-semibold text-stone-950 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-accent px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {pending ? t.common.loading : t.dashboard.walkInCreateClient}
             </button>

@@ -125,10 +125,10 @@ export function BookingFlow({
     return (
       <section>
         <ReturningClientLookup slug={slug} />
-        <h2 className="mb-1 font-serif text-xl text-stone-900">
+        <h2 className="mb-1 font-serif text-xl text-ink">
           {t.client.pickService}
         </h2>
-        <p className="mb-4 text-sm text-stone-500">{t.client.pickMultiple}</p>
+        <p className="mb-4 text-sm text-ink-3">{t.client.pickMultiple}</p>
         <div className="space-y-3">
           {services.map((s) => {
             const on = selected.some((x) => x.id === s.id);
@@ -142,23 +142,23 @@ export function BookingFlow({
                   )
                 }
                 className={`w-full rounded-xl border bg-white p-4 text-left shadow-sm ${
-                  on ? "border-stone-900 ring-1 ring-stone-900" : "border-stone-200"
+                  on ? "border-ink ring-1 ring-ink" : "border-line"
                 }`}
               >
                 <span className="flex items-baseline justify-between">
-                  <span className="font-serif text-lg text-stone-900">
+                  <span className="font-serif text-lg text-ink">
                     {on ? "✓ " : ""}
                     {s.name}
                   </span>
-                  <span className="font-mono text-sm text-stone-700">
+                  <span className="font-mono text-sm text-ink-2">
                     {euros(s.price_cents)}
                   </span>
                 </span>
-                <span className="mt-1 block font-mono text-xs text-stone-500">
+                <span className="mt-1 block font-mono text-xs text-ink-3">
                   {fill(t.client.minutes, { n: s.duration_minutes })}
                 </span>
                 {s.prep_instructions && (
-                  <span className="mt-2 block text-sm text-stone-500">
+                  <span className="mt-2 block text-sm text-ink-3">
                     {t.client.prep}: {s.prep_instructions}
                   </span>
                 )}
@@ -170,7 +170,7 @@ export function BookingFlow({
           <button
             type="button"
             onClick={() => setSelectionDone(true)}
-            className="sticky bottom-4 mt-4 w-full rounded-xl bg-stone-900 px-4 py-3 font-semibold text-amber-50"
+            className="sticky bottom-4 mt-4 w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas"
           >
             {t.common.continue} · {euros(totalPrice)} ·{" "}
             <span className="font-mono">{fill(t.client.minutes, { n: totalDuration })}</span>
@@ -207,7 +207,7 @@ export function BookingFlow({
       <button
         type="button"
         onClick={() => setSelectionDone(false)}
-        className="mb-1 text-left text-sm text-stone-500"
+        className="mb-1 text-left text-sm text-ink-3"
       >
         {comboLabel} ·{" "}
         <span className="font-mono">{fill(t.client.minutes, { n: totalDuration })}</span>
@@ -215,17 +215,17 @@ export function BookingFlow({
       </button>
 
       {notice === "released" && (
-        <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-stone-700">
+        <p className="mb-3 rounded-lg border border-accent/60 bg-accent-l p-3 text-sm text-ink-2">
           {t.client.holdReleased}
         </p>
       )}
       {notice === "taken" && (
-        <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-stone-700">
+        <p className="mb-3 rounded-lg border border-accent/60 bg-accent-l p-3 text-sm text-ink-2">
           {t.client.justTaken}
         </p>
       )}
 
-      <h2 className="mb-3 font-serif text-xl text-stone-900">
+      <h2 className="mb-3 font-serif text-xl text-ink">
         {calendarOpen && dayDate ? slotDay(`${dayDate}T12:00:00Z`) : t.client.nextSlots}
       </h2>
 
@@ -241,8 +241,8 @@ export function BookingFlow({
               }}
               className={`rounded-lg px-2.5 py-1.5 font-mono text-xs ${
                 dayDate === date
-                  ? "bg-stone-900 text-amber-50"
-                  : "border border-stone-300 bg-white text-stone-700"
+                  ? "bg-ink text-canvas"
+                  : "border border-line bg-white text-ink-2"
               }`}
             >
               {new Intl.DateTimeFormat("en-BE", {
@@ -256,10 +256,10 @@ export function BookingFlow({
       )}
 
       {visibleSlots === null ? (
-        <p className="text-sm text-stone-400">{t.common.loading}</p>
+        <p className="text-sm text-ink-4">{t.common.loading}</p>
       ) : visibleSlots.length === 0 ? (
         calendarOpen ? (
-          <p className="text-sm text-stone-500">{t.client.noSlotsDay}</p>
+          <p className="text-sm text-ink-3">{t.client.noSlotsDay}</p>
         ) : null
       ) : (
         // All of a day's times together, earliest day first (DD24).
@@ -267,7 +267,7 @@ export function BookingFlow({
           {[...new Set(visibleSlots.map((s) => localDateOf(s.startsAt)))].map(
             (day) => (
               <div key={day}>
-                <p className="mb-2 font-serif text-stone-900">
+                <p className="mb-2 font-serif text-ink">
                   {slotDay(`${day}T12:00:00Z`)}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -278,7 +278,7 @@ export function BookingFlow({
                         key={slot.startsAt}
                         type="button"
                         onClick={() => setPicked(slot)}
-                        className="rounded-lg border border-stone-200 bg-white px-3.5 py-2 font-mono text-stone-800 shadow-sm"
+                        className="rounded-lg border border-line bg-white px-3.5 py-2 font-mono text-ink shadow-sm"
                       >
                         {slotTime(slot.startsAt)}
                       </button>
@@ -300,7 +300,7 @@ export function BookingFlow({
             setDayDate(null);
             setDaySlots(null);
           }}
-          className="mt-4 text-sm text-stone-600 underline"
+          className="mt-4 text-sm text-ink-3 underline"
         >
           {calendarOpen ? t.client.backToNext : t.client.chooseDifferentDay}
         </button>
@@ -318,14 +318,14 @@ function ReturningClientLookup({ slug }: { slug: string }) {
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="mb-6 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+    <div className="mb-6 rounded-xl border border-line bg-white p-4 shadow-sm">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between text-left"
       >
-        <span className="font-serif text-stone-900">{t.client.returningTitle}</span>
-        <span className="font-mono text-stone-400">{open ? "−" : "+"}</span>
+        <span className="font-serif text-ink">{t.client.returningTitle}</span>
+        <span className="font-mono text-ink-4">{open ? "−" : "+"}</span>
       </button>
 
       {open && result === null && (
@@ -346,12 +346,12 @@ function ReturningClientLookup({ slug }: { slug: string }) {
             placeholder={t.client.phone}
             required
             autoFocus
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
           />
           <button
             type="submit"
             disabled={busy}
-            className="shrink-0 rounded-lg bg-stone-900 px-3 py-2.5 text-sm font-semibold text-amber-50 disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-ink px-3 py-2.5 text-sm font-semibold text-canvas disabled:opacity-50"
           >
             {busy ? "…" : t.client.returningCta}
           </button>
@@ -359,16 +359,16 @@ function ReturningClientLookup({ slug }: { slug: string }) {
       )}
 
       {result === "none" && (
-        <p className="mt-3 text-sm text-stone-600">{t.client.returningNone}</p>
+        <p className="mt-3 text-sm text-ink-3">{t.client.returningNone}</p>
       )}
 
       {result !== null && result !== "none" && result.existing && (
         <div className="mt-3">
-          <p className="font-serif text-stone-900">{result.existing.serviceName}</p>
-          <p className="font-mono text-sm text-stone-700">{result.existing.whenText}</p>
+          <p className="font-serif text-ink">{result.existing.serviceName}</p>
+          <p className="font-mono text-sm text-ink-2">{result.existing.whenText}</p>
           <a
             href={`/manage/${result.existing.manageToken}`}
-            className="mt-3 block w-full rounded-xl bg-stone-900 px-4 py-3 text-center font-semibold text-amber-50"
+            className="mt-3 block w-full rounded-xl bg-ink px-4 py-3 text-center font-semibold text-canvas"
           >
             {t.client.manageBooking}
           </a>
@@ -450,22 +450,22 @@ function DetailsStep({
 
   if (confirm.ok) {
     return (
-      <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 font-serif text-2xl text-stone-900">
+      <section className="rounded-xl border border-line bg-white p-5 shadow-sm">
+        <h2 className="mb-3 font-serif text-2xl text-ink">
           {t.client.confirmed}
         </h2>
-        <p className="font-serif text-lg text-stone-900">{confirm.serviceName}</p>
-        <p className="font-mono text-stone-700">{confirm.whenText}</p>
+        <p className="font-serif text-lg text-ink">{confirm.serviceName}</p>
+        <p className="font-mono text-ink-2">{confirm.whenText}</p>
         {confirm.locationText && (
-          <p className="mt-1 text-sm text-stone-600">{confirm.locationText}</p>
+          <p className="mt-1 text-sm text-ink-3">{confirm.locationText}</p>
         )}
         {confirm.prepInstructions && (
-          <p className="mt-3 text-sm text-stone-600">
+          <p className="mt-3 text-sm text-ink-3">
             <strong>{t.client.prep}:</strong> {confirm.prepInstructions}
           </p>
         )}
-        <p className="mt-3 text-sm text-stone-500">{confirm.cancellationText}</p>
-        <p className="mt-3 text-sm text-stone-500">
+        <p className="mt-3 text-sm text-ink-3">{confirm.cancellationText}</p>
+        <p className="mt-3 text-sm text-ink-3">
           {fill(t.client.confirmationSent, { email: confirm.email })}
         </p>
       </section>
@@ -474,25 +474,25 @@ function DetailsStep({
 
   if (recognized.existing) {
     return (
-      <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-2 font-serif text-xl text-stone-900">
+      <section className="rounded-xl border border-line bg-white p-5 shadow-sm">
+        <h2 className="mb-2 font-serif text-xl text-ink">
           {t.client.existingTitle}
         </h2>
-        <p className="mb-3 text-sm text-stone-600">{t.client.existingBody}</p>
-        <p className="font-serif text-stone-900">{recognized.existing.serviceName}</p>
-        <p className="font-mono text-sm text-stone-700">
+        <p className="mb-3 text-sm text-ink-3">{t.client.existingBody}</p>
+        <p className="font-serif text-ink">{recognized.existing.serviceName}</p>
+        <p className="font-mono text-sm text-ink-2">
           {recognized.existing.whenText}
         </p>
         <a
           href={`/manage/${recognized.existing.manageToken}`}
-          className="mt-4 block w-full rounded-xl bg-stone-900 px-4 py-3 text-center font-semibold text-amber-50"
+          className="mt-4 block w-full rounded-xl bg-ink px-4 py-3 text-center font-semibold text-canvas"
         >
           {t.client.manageBooking}
         </a>
         <button
           type="button"
           onClick={onBack}
-          className="mt-3 w-full text-center text-sm text-stone-500 underline"
+          className="mt-3 w-full text-center text-sm text-ink-3 underline"
         >
           ← {t.client.backToPicker}
         </button>
@@ -512,17 +512,17 @@ function DetailsStep({
           if (hold.ok) void releaseHold(hold.holdId);
           onBack();
         }}
-        className="mb-2 text-sm text-stone-500 underline"
+        className="mb-2 text-sm text-ink-3 underline"
       >
         ← {t.client.backToPicker}
       </button>
-      <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-        <p className="font-serif text-lg text-stone-900">{comboLabel}</p>
-        <p className="font-mono text-sm text-stone-700">
+      <div className="rounded-xl border border-line bg-white p-5 shadow-sm">
+        <p className="font-serif text-lg text-ink">{comboLabel}</p>
+        <p className="font-mono text-sm text-ink-2">
           {slotDay(slot.startsAt)} · {slotTime(slot.startsAt)}
         </p>
         {hold.ok && (
-          <p className="mt-2 rounded bg-amber-50 px-2 py-1 font-mono text-xs text-stone-600">
+          <p className="mt-2 rounded bg-accent-l px-2 py-1 font-mono text-xs text-ink-3">
             {fill(t.client.holdNotice, { mm, ss })}
           </p>
         )}
@@ -553,7 +553,7 @@ function DetailsStep({
                   }
                 }
               }}
-              className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
             />
           </Field>
           <Field label={t.client.firstName}>
@@ -561,7 +561,7 @@ function DetailsStep({
               name="first_name"
               required
               autoComplete="given-name"
-              className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
             />
           </Field>
           <Field label={t.client.email}>
@@ -570,10 +570,10 @@ function DetailsStep({
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
             />
           </Field>
-          <p className="text-xs text-stone-500">{t.client.consent}</p>
+          <p className="text-xs text-ink-3">{t.client.consent}</p>
           {confirm.ok === false && confirm.reason === "invalid" && (
             <p className="text-sm text-red-600">{t.common.somethingWrong}</p>
           )}
@@ -583,13 +583,13 @@ function DetailsStep({
           <button
             type="submit"
             disabled={!hold.ok || confirmPending}
-            className="w-full rounded-xl bg-stone-900 px-4 py-3 font-semibold text-amber-50 disabled:opacity-50"
+            className="w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas disabled:opacity-50"
           >
             {confirmPending
               ? t.common.loading
               : `${t.client.confirm} — ${euros(totalPrice)}`}
           </button>
-          <p className="text-center text-xs text-stone-400">
+          <p className="text-center text-xs text-ink-4">
             {fill(t.client.freeCancellation, {
               when: `${cancellationWindowHours}h before`,
             })}
@@ -603,7 +603,7 @@ function DetailsStep({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm text-stone-600">{label}</span>
+      <span className="mb-1 block text-sm text-ink-3">{label}</span>
       {children}
     </label>
   );
@@ -619,18 +619,18 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
 
   if (state.ok) {
     return (
-      <p className="mt-2 rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-700 shadow-sm">
+      <p className="mt-2 rounded-xl border border-line bg-white p-4 text-sm text-ink-2 shadow-sm">
         {t.client.waitlistJoined}
       </p>
     );
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-      <h3 className="mb-1 font-serif text-lg text-stone-900">
+    <div className="mt-2 rounded-xl border border-line bg-white p-4 shadow-sm">
+      <h3 className="mb-1 font-serif text-lg text-ink">
         {t.client.noSlotsAtAll}
       </h3>
-      <p className="mb-3 text-sm text-stone-600">{t.client.waitlistBody}</p>
+      <p className="mb-3 text-sm text-ink-3">{t.client.waitlistBody}</p>
       <form action={formAction} className="space-y-3">
         <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="service_id" value={serviceId} />
@@ -638,7 +638,7 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
           <input
             name="first_name"
             required
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
           />
         </Field>
         <Field label={t.client.phone}>
@@ -646,14 +646,14 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
             name="phone"
             type="tel"
             required
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
           />
         </Field>
         <Field label={`${t.schedule.pickDate} (${t.client.waitlistAnyDay})`}>
           <input
             name="date_preference"
             type="date"
-            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-stone-900"
+            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
           />
         </Field>
         {state.error && (
@@ -662,7 +662,7 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-xl border border-stone-900 px-4 py-3 font-semibold text-stone-900 disabled:opacity-50"
+          className="w-full rounded-xl border border-ink px-4 py-3 font-semibold text-ink disabled:opacity-50"
         >
           {pending ? t.common.loading : t.client.waitlistTitle}
         </button>

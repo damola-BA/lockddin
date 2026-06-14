@@ -16,8 +16,13 @@ full launch; the architecture should not preclude them, but no stubs, no dead co
 - **Inngest** for ALL timed/background work: hold expiry, 6-hour reminders,
   delayed provider notifications, waitlist rounds. Never use setTimeout/cron for
   business logic.
-- **Tailwind CSS**. Client booking page: warm paper aesthetic. Provider dashboard:
-  ink-dark. (See "Operator's Ledger" notes in docs/fragments/F5 and F7.)
+- **Tailwind CSS**. One warm-light design system across the landing, client
+  booking, and the provider app — Plus Jakarta Sans + Fraunces, warm paper canvas,
+  terracotta accent — built on semantic colour tokens in `app/globals.css`
+  (`bg-canvas`, `text-ink`, `bg-accent`, …). The provider app left ink-dark for this
+  shared system (DD33); dark mode can return later as a `.theme-dark` token swap
+  (the scaffold is already in globals.css). The original "Operator's Ledger" ink-dark
+  notes (F5/F7) are superseded for the provider UI.
 - Testing: **Vitest** for unit/property tests, **Playwright** for the booking flow.
 
 ## Hard rules

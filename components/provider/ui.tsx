@@ -4,12 +4,12 @@ import type { InputHTMLAttributes, ReactNode } from "react";
 
 export function PageTitle({ children }: { children: ReactNode }) {
   return (
-    <h1 className="mb-1 font-serif text-2xl text-stone-100">{children}</h1>
+    <h1 className="mb-1 font-serif text-2xl text-ink">{children}</h1>
   );
 }
 
 export function Hint({ children }: { children: ReactNode }) {
-  return <p className="mb-6 text-sm text-stone-400">{children}</p>;
+  return <p className="mb-6 text-sm text-ink-3">{children}</p>;
 }
 
 export function Label({
@@ -22,7 +22,7 @@ export function Label({
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-1.5 block text-sm font-medium text-stone-300"
+      className="mb-1.5 block text-sm font-medium text-ink-2"
     >
       {children}
     </label>
@@ -33,7 +33,7 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 placeholder:text-stone-600 focus:border-amber-400 focus:outline-none ${props.className ?? ""}`}
+      className={`w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink placeholder:text-ink-4 focus:border-accent focus:outline-none ${props.className ?? ""}`}
     />
   );
 }
@@ -49,7 +49,7 @@ export function PrimaryButton({
     <button
       type="submit"
       disabled={disabled}
-      className="mt-6 w-full rounded-lg bg-amber-400 px-4 py-3 text-base font-semibold text-stone-950 transition-opacity disabled:opacity-50"
+      className="mt-6 w-full rounded-lg bg-accent px-4 py-3 text-base font-semibold text-white transition-opacity disabled:opacity-50"
     >
       {children}
     </button>
@@ -57,7 +57,7 @@ export function PrimaryButton({
 }
 
 export function ErrorText({ children }: { children: ReactNode }) {
-  return <p className="mt-2 text-sm text-red-400">{children}</p>;
+  return <p className="mt-2 text-sm text-red-600">{children}</p>;
 }
 
 export function FormCard({ children }: { children: ReactNode }) {

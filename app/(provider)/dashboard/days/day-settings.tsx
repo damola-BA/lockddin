@@ -75,7 +75,7 @@ export function DaySettings({
   return (
     <div className="space-y-3">
       {justSaved && (
-        <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-sm text-emerald-300">
+        <p className="rounded-lg border border-ok/40 bg-ok-l p-3 text-sm text-ok">
           {state.applied! > 0
             ? fill(t.schedule.applied, { n: state.applied! })
             : t.dashboard.daySaved}
@@ -91,7 +91,7 @@ export function DaySettings({
           type="button"
           onClick={() => setClosed(false)}
           className={`flex-1 rounded-lg px-3 py-2 text-sm ${
-            !closed ? "bg-amber-400 font-semibold text-stone-950" : "border border-stone-700 text-stone-300"
+            !closed ? "bg-accent font-semibold text-white" : "border border-line text-ink-2"
           }`}
         >
           {t.dashboard.dayOpen}
@@ -100,7 +100,7 @@ export function DaySettings({
           type="button"
           onClick={() => setClosed(true)}
           className={`flex-1 rounded-lg px-3 py-2 text-sm ${
-            closed ? "bg-red-500 font-semibold text-white" : "border border-stone-700 text-stone-300"
+            closed ? "bg-red-600 font-semibold text-white" : "border border-line text-ink-2"
           }`}
         >
           {t.dashboard.dayClosedToggle}
@@ -110,44 +110,44 @@ export function DaySettings({
       {!closed && (
         <>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-stone-400">{t.schedule.from}</span>
+            <span className="text-ink-3">{t.schedule.from}</span>
             <input
               type="time"
               name="start_time"
               defaultValue={startDefault}
               required
-              className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
-            <span className="text-stone-400">{t.schedule.to}</span>
+            <span className="text-ink-3">{t.schedule.to}</span>
             <input
               type="time"
               name="end_time"
               defaultValue={endDefault}
               required
-              className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
           </div>
 
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-stone-400">{t.dashboard.dayCapLabel}</span>
+            <span className="text-ink-3">{t.dashboard.dayCapLabel}</span>
             <input
               type="number"
               name="daily_cap"
               min={1}
               defaultValue={data.override?.dailyCap ?? ""}
               placeholder={t.dashboard.dayCapNone}
-              className="w-24 rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="w-24 rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm text-stone-300">
+            <label className="flex items-center gap-2 text-sm text-ink-2">
               <input
                 type="checkbox"
                 name="restrict_services"
                 checked={restrict}
                 onChange={(e) => setRestrict(e.target.checked)}
-                className="accent-amber-400"
+                className="accent-accent"
               />
               {t.dashboard.dayServiceLimit}
             </label>
@@ -160,7 +160,7 @@ export function DaySettings({
                       name="service_ids"
                       value={s.id}
                       defaultChecked={data.override?.serviceIds?.includes(s.id) ?? false}
-                      className="accent-amber-400"
+                      className="accent-accent"
                     />
                     {s.name}
                   </label>
@@ -170,9 +170,9 @@ export function DaySettings({
           </div>
 
           <div>
-            <p className="mb-2 text-sm text-stone-400">{t.dashboard.dayBlocks}</p>
+            <p className="mb-2 text-sm text-ink-3">{t.dashboard.dayBlocks}</p>
             {data.reservedBlocks.length > 0 && (
-              <p className="mb-2 text-xs text-stone-600">
+              <p className="mb-2 text-xs text-ink-4">
                 {data.reservedBlocks.map((b) => `${b.start}–${b.end} ${b.label}`).join(", ")}{" "}
                 (weekly)
               </p>
@@ -186,21 +186,21 @@ export function DaySettings({
       {state.error && <ErrorText>{t.common.somethingWrong}</ErrorText>}
 
       {needsConfirm && (
-        <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-3">
-          <p className="mb-2 text-sm font-medium text-stone-100">
+        <div className="rounded-lg border border-accent/40 bg-accent-l p-3">
+          <p className="mb-2 text-sm font-medium text-ink">
             {t.schedule.consequencesTitle}
           </p>
-          <ul className="mb-3 space-y-1 text-sm text-stone-300">
+          <ul className="mb-3 space-y-1 text-sm text-ink-2">
             {state.affected!.map((b) => (
               <li key={b.booking_id}>
                 {fmtTime(b.starts_at)} — {b.client_first_name}, {b.service_name}
               </li>
             ))}
           </ul>
-          <label className="text-xs text-stone-400">{t.schedule.cancelReason}</label>
+          <label className="text-xs text-ink-3">{t.schedule.cancelReason}</label>
           <input
             name="cancel_reason"
-            className="mt-1 w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-100"
+            className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
           />
         </div>
       )}
@@ -208,7 +208,7 @@ export function DaySettings({
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-amber-400 px-4 py-3 font-semibold text-stone-950 disabled:opacity-50"
+        className="w-full rounded-xl bg-accent px-4 py-3 font-semibold text-white disabled:opacity-50"
       >
           {pending
             ? t.common.loading
@@ -224,7 +224,7 @@ export function DaySettings({
           <button
             type="submit"
             disabled={removePending}
-            className="w-full text-center text-xs text-stone-500 underline disabled:opacity-50"
+            className="w-full text-center text-xs text-ink-3 underline disabled:opacity-50"
           >
             {removePending ? t.common.loading : t.schedule.removeOverride}
           </button>

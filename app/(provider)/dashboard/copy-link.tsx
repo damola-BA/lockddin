@@ -16,7 +16,7 @@ export function CopyLinkButton({ url }: { url: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="rounded-lg border border-stone-600 px-4 py-2 text-sm text-stone-200"
+      className="rounded-lg border border-line px-4 py-2 text-sm text-ink"
     >
       {copied ? t.dashboard.copied : t.dashboard.copyLink}
     </button>

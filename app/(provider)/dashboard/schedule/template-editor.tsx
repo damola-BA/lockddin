@@ -38,18 +38,18 @@ function DayCard({
   return (
     <form
       action={formAction}
-      className="rounded-lg border border-stone-800 bg-stone-900/60 p-4"
+      className="rounded-lg border border-line bg-surface-2 p-4"
     >
       <input type="hidden" name="weekday" value={weekday} />
       <div className="flex items-center justify-between">
         <span className="font-medium">{t.schedule.weekdays[weekday]}</span>
-        <label className="flex items-center gap-2 text-sm text-stone-300">
+        <label className="flex items-center gap-2 text-sm text-ink-2">
           <input
             type="checkbox"
             name="working"
             checked={working}
             onChange={(e) => setWorking(e.target.checked)}
-            className="accent-amber-400"
+            className="accent-accent"
           />
           {t.schedule.working}
         </label>
@@ -58,49 +58,49 @@ function DayCard({
       {working && (
         <div className="mt-4 space-y-4">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-stone-400">{t.schedule.from}</span>
+            <span className="text-ink-3">{t.schedule.from}</span>
             <input
               type="time"
               name="start_time"
               defaultValue={data?.start ?? "09:00"}
               required
-              className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
-            <span className="text-stone-400">{t.schedule.to}</span>
+            <span className="text-ink-3">{t.schedule.to}</span>
             <input
               type="time"
               name="end_time"
               defaultValue={data?.end ?? "18:00"}
               required
-              className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
           </div>
 
           <div>
-            <p className="mb-1.5 text-sm text-stone-400">{t.schedule.reservedBlocks}</p>
-            <p className="mb-2 text-xs text-stone-500">{t.schedule.reservedBlocksHint}</p>
+            <p className="mb-1.5 text-sm text-ink-3">{t.schedule.reservedBlocks}</p>
+            <p className="mb-2 text-xs text-ink-3">{t.schedule.reservedBlocksHint}</p>
             <BlocksEditor name="blocks" initial={data?.blocks ?? []} showLabel />
           </div>
 
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-stone-400">{t.schedule.dailyCap}</span>
+            <span className="text-ink-3">{t.schedule.dailyCap}</span>
             <input
               type="number"
               name="daily_cap"
               min={1}
               defaultValue={data?.dailyCap ?? ""}
-              className="w-20 rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="w-20 rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm text-stone-300">
+            <label className="flex items-center gap-2 text-sm text-ink-2">
               <input
                 type="checkbox"
                 name="restrict_services"
                 checked={restrict}
                 onChange={(e) => setRestrict(e.target.checked)}
-                className="accent-amber-400"
+                className="accent-accent"
               />
               {t.schedule.restrictServices}
             </label>
@@ -113,7 +113,7 @@ function DayCard({
                       name="service_ids"
                       value={s.id}
                       defaultChecked={data?.serviceIds?.includes(s.id) ?? false}
-                      className="accent-amber-400"
+                      className="accent-accent"
                     />
                     {s.name}
                   </label>
@@ -128,7 +128,7 @@ function DayCard({
       <button
         type="submit"
         disabled={pending}
-        className="mt-3 rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-stone-950 disabled:opacity-50"
+        className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
       >
         {pending ? t.common.loading : state.ok ? t.schedule.saved : t.common.save}
       </button>

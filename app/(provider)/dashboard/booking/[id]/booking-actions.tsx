@@ -76,14 +76,14 @@ export function BookingActions({
       <button
         type="button"
         onClick={() => setMode("reschedule")}
-        className="w-full rounded-xl border border-stone-700 bg-stone-900 px-4 py-3 font-semibold text-stone-100"
+        className="w-full rounded-xl border border-line bg-surface px-4 py-3 font-semibold text-ink"
       >
         {t.dashboard.rescheduleBooking}
       </button>
       <button
         type="button"
         onClick={() => setMode("cancel")}
-        className="w-full rounded-xl border border-red-500/40 bg-stone-900 px-4 py-3 font-semibold text-red-300"
+        className="w-full rounded-xl border border-red-300 bg-surface px-4 py-3 font-semibold text-red-600"
       >
         {t.dashboard.cancelBooking}
       </button>
@@ -110,13 +110,13 @@ function NoShowControl({
       <input type="hidden" name="is_no_show" value={isNoShow ? "false" : "true"} />
       {!isNoShow ? (
         <>
-          <p className="mb-3 text-sm text-stone-400">
+          <p className="mb-3 text-sm text-ink-3">
             {fill(t.dashboard.markNoShow, { name: clientName })}
           </p>
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-xl border border-stone-700 bg-stone-900 px-4 py-3 font-semibold text-stone-100 disabled:opacity-50"
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3 font-semibold text-ink disabled:opacity-50"
           >
             {t.dashboard.markedNoShow}
           </button>
@@ -125,12 +125,12 @@ function NoShowControl({
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-xl border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 disabled:opacity-50"
+          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink-2 disabled:opacity-50"
         >
           {t.dashboard.undoNoShow}
         </button>
       )}
-      {state.error && <p className="mt-2 text-sm text-red-400">{t.common.somethingWrong}</p>}
+      {state.error && <p className="mt-2 text-sm text-red-600">{t.common.somethingWrong}</p>}
     </form>
   );
 }
@@ -159,13 +159,13 @@ function CancelForm({
 
   if (state.ok) {
     return (
-      <div className="mt-6 rounded-xl border border-stone-700 bg-stone-900 p-5 text-center">
-        <p className="mb-3 font-serif text-lg text-stone-100">
+      <div className="mt-6 rounded-xl border border-line bg-surface p-5 text-center">
+        <p className="mb-3 font-serif text-lg text-ink">
           {fill(t.dashboard.cancelDone, { name: clientName })}
         </p>
         <a
           href="/dashboard"
-          className="inline-block rounded-lg bg-amber-400 px-4 py-2 text-sm font-semibold text-stone-950"
+          className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white"
         >
           {t.dashboard.viewDay}
         </a>
@@ -181,7 +181,7 @@ function CancelForm({
   return (
     <form action={action} className="mt-6 space-y-4">
       <input type="hidden" name="booking_id" value={bookingId} />
-      <button type="button" onClick={onBack} className="text-sm text-stone-400 underline">
+      <button type="button" onClick={onBack} className="text-sm text-ink-3 underline">
         ← {t.dashboard.backToBooking}
       </button>
 
@@ -195,7 +195,7 @@ function CancelForm({
               value={key}
               checked={reason === key}
               onChange={() => setReason(key)}
-              className="accent-amber-400"
+              className="accent-accent"
             />
             {label}
           </label>
@@ -208,12 +208,12 @@ function CancelForm({
           value={reasonText}
           onChange={(e) => setReasonText(e.target.value)}
           placeholder={t.dashboard.reasonText}
-          className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2.5 text-sm text-stone-100"
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink"
         />
       )}
 
-      <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-3 text-sm text-stone-300">
-        <p className="mb-1 font-medium text-stone-100">
+      <div className="rounded-lg border border-accent/40 bg-accent-l p-3 text-sm text-ink-2">
+        <p className="mb-1 font-medium text-ink">
           {fill(t.dashboard.cancelPreviewTitle, { name: clientName })}
         </p>
         <p>
@@ -227,11 +227,11 @@ function CancelForm({
         </p>
       </div>
 
-      {state.error && <p className="text-sm text-red-400">{t.common.somethingWrong}</p>}
+      {state.error && <p className="text-sm text-red-600">{t.common.somethingWrong}</p>}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-red-500 px-4 py-3 font-semibold text-white disabled:opacity-50"
+        className="w-full rounded-xl bg-red-600 px-4 py-3 font-semibold text-white disabled:opacity-50"
       >
         {pending ? t.common.loading : fill(t.dashboard.confirmCancel, { name: clientName })}
       </button>
@@ -273,7 +273,7 @@ function RescheduleForm({
       <input type="hidden" name="date" value={date} />
       <input type="hidden" name="starts_at" value={picked ?? ""} />
 
-      <button type="button" onClick={onBack} className="text-sm text-stone-400 underline">
+      <button type="button" onClick={onBack} className="text-sm text-ink-3 underline">
         ← {t.dashboard.backToBooking}
       </button>
       <p className="font-serif text-lg">{t.dashboard.rescheduleTitle}</p>
@@ -282,12 +282,12 @@ function RescheduleForm({
         type="date"
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2.5 text-stone-100"
+        className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink"
       />
 
-      {date && slots === null && <p className="text-sm text-stone-500">{t.common.loading}</p>}
+      {date && slots === null && <p className="text-sm text-ink-3">{t.common.loading}</p>}
       {slots !== null && slots.length === 0 && (
-        <p className="text-sm text-stone-500">{t.dashboard.rescheduleNoSlots}</p>
+        <p className="text-sm text-ink-3">{t.dashboard.rescheduleNoSlots}</p>
       )}
       {slots && slots.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -298,8 +298,8 @@ function RescheduleForm({
               onClick={() => setPicked(s.startsAt)}
               className={`rounded-lg px-3 py-2 font-mono text-sm ${
                 picked === s.startsAt
-                  ? "bg-amber-400 font-semibold text-stone-950"
-                  : "border border-stone-700 text-stone-200"
+                  ? "bg-accent font-semibold text-white"
+                  : "border border-line text-ink"
               }`}
             >
               {s.label}
@@ -309,14 +309,14 @@ function RescheduleForm({
       )}
 
       {state.error && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-red-600">
           {state.error === "slot_taken" ? t.client.justTaken : t.common.somethingWrong}
         </p>
       )}
       <button
         type="submit"
         disabled={pending || !picked}
-        className="w-full rounded-xl bg-amber-400 px-4 py-3 font-semibold text-stone-950 disabled:opacity-50"
+        className="w-full rounded-xl bg-accent px-4 py-3 font-semibold text-white disabled:opacity-50"
       >
         {pending ? t.common.loading : t.dashboard.rescheduleBooking}
       </button>

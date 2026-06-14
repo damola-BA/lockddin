@@ -48,12 +48,12 @@ export default async function DashboardPage({
   const maxDate = maxNavDate(provider);
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-8">
         <header className="mb-6 flex items-center justify-between">
           <p className="font-serif text-lg">{provider.businessName}</p>
           <form action={signOut}>
-            <button type="submit" className="text-sm text-stone-400 underline">
+            <button type="submit" className="text-sm text-ink-3 underline">
               {t.auth.signOut}
             </button>
           </form>
@@ -66,8 +66,8 @@ export default async function DashboardPage({
               href={`/dashboard?view=${v}&date=${date}`}
               className={`rounded-lg px-3 py-1.5 ${
                 view === v
-                  ? "bg-amber-400 font-semibold text-stone-950"
-                  : "border border-stone-700 text-stone-300"
+                  ? "bg-accent font-semibold text-white"
+                  : "border border-line text-ink-2"
               }`}
             >
               {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
@@ -75,7 +75,7 @@ export default async function DashboardPage({
           ))}
           <a
             href="/dashboard/clients"
-            className="ml-auto rounded-lg border border-stone-700 px-3 py-1.5 text-stone-300"
+            className="ml-auto rounded-lg border border-line px-3 py-1.5 text-ink-2"
           >
             {t.dashboard.clients}
           </a>
@@ -92,22 +92,22 @@ export default async function DashboardPage({
         )}
 
         <nav className="mt-8 grid grid-cols-3 gap-2 text-center text-xs">
-          <a href="/dashboard/schedule" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
+          <a href="/dashboard/schedule" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
             {t.schedule.title}
           </a>
-          <a href={`/dashboard/days?date=${date}`} className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
+          <a href={`/dashboard/days?date=${date}`} className="rounded-lg border border-line bg-surface p-3 text-ink-2">
             {t.dashboard.manageDay}
           </a>
-          <a href="/dashboard/booking/new" className="rounded-lg border border-amber-400/50 bg-stone-900 p-3 text-amber-300">
+          <a href="/dashboard/booking/new" className="rounded-lg border border-accent/50 bg-surface p-3 text-accent">
             {t.dashboard.walkIn}
           </a>
         </nav>
 
         <nav className="mt-2 grid grid-cols-2 gap-2 text-center text-xs">
-          <a href="/dashboard/services" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
+          <a href="/dashboard/services" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
             {t.dashboard.services}
           </a>
-          <a href="/dashboard/settings" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
+          <a href="/dashboard/settings" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
             {t.dashboard.settings}
           </a>
         </nav>
@@ -135,14 +135,14 @@ async function DayView({
     <section>
       <DateNav provider={provider} view="day" date={date} step={1} today={today} maxDate={maxDate} label={dayLabel(date, provider.timezone)} />
 
-      <div className="mb-5 flex gap-4 rounded-lg border border-stone-800 bg-stone-900 px-4 py-3 text-sm">
-        <span><b className="text-amber-300">{stats.count}</b> {t.dashboard.statBookings}</span>
-        <span><b className="text-amber-300">{euros(stats.valueCents)}</b> {t.dashboard.statValue}</span>
-        <span><b className="text-amber-300">{stats.gaps}</b> {t.dashboard.statGaps}</span>
+      <div className="mb-5 flex gap-4 rounded-lg border border-line bg-surface px-4 py-3 text-sm">
+        <span><b className="text-accent">{stats.count}</b> {t.dashboard.statBookings}</span>
+        <span><b className="text-accent">{euros(stats.valueCents)}</b> {t.dashboard.statValue}</span>
+        <span><b className="text-accent">{stats.gaps}</b> {t.dashboard.statGaps}</span>
       </div>
 
       {!timeline.working ? (
-        <p className="rounded-xl border border-stone-800 bg-stone-900 px-4 py-6 text-center text-sm text-stone-500">
+        <p className="rounded-xl border border-line bg-surface px-4 py-6 text-center text-sm text-ink-3">
           {t.dashboard.dayClosed}
         </p>
       ) : (
@@ -169,10 +169,10 @@ function TimelineRow({ seg }: { seg: TimelineSegment }) {
     return (
       <li
         style={{ minHeight: height }}
-        className="flex items-center gap-3 rounded-xl border border-dashed border-stone-700 px-4"
+        className="flex items-center gap-3 rounded-xl border border-dashed border-line px-4"
       >
-        <span className="w-24 shrink-0 font-mono text-xs text-stone-500">{seg.timeText}</span>
-        <span className="text-sm text-stone-500">
+        <span className="w-24 shrink-0 font-mono text-xs text-ink-3">{seg.timeText}</span>
+        <span className="text-sm text-ink-3">
           {t.dashboard.freeGap} · {seg.minutes} {t.dashboard.minutesShort}
         </span>
       </li>
@@ -183,10 +183,10 @@ function TimelineRow({ seg }: { seg: TimelineSegment }) {
     return (
       <li
         style={{ minHeight: height }}
-        className="flex items-center gap-3 rounded-xl border border-stone-800 bg-stone-900/40 px-4"
+        className="flex items-center gap-3 rounded-xl border border-line bg-canvas-2 px-4"
       >
-        <span className="w-24 shrink-0 font-mono text-xs text-stone-600">{seg.timeText}</span>
-        <span className="text-sm text-stone-500">{seg.label}</span>
+        <span className="w-24 shrink-0 font-mono text-xs text-ink-4">{seg.timeText}</span>
+        <span className="text-sm text-ink-3">{seg.label}</span>
       </li>
     );
   }
@@ -199,23 +199,23 @@ function TimelineRow({ seg }: { seg: TimelineSegment }) {
         style={{ minHeight: height }}
         className={`flex items-center gap-3 rounded-xl border px-4 ${
           seg.status === "no_show"
-            ? "border-red-500/40 bg-stone-900"
-            : "border-amber-400/40 bg-stone-900"
+            ? "border-red-300 bg-surface"
+            : "border-accent/40 bg-surface"
         } ${dimmed ? "opacity-60" : ""}`}
       >
-        <span className="w-24 shrink-0 font-mono text-xs text-amber-300">{seg.timeText}</span>
+        <span className="w-24 shrink-0 font-mono text-xs text-accent">{seg.timeText}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-serif text-stone-100">{seg.clientName}</span>
-          <span className="block truncate text-xs text-stone-400">{seg.serviceName}</span>
+          <span className="block truncate font-serif text-ink">{seg.clientName}</span>
+          <span className="block truncate text-xs text-ink-3">{seg.serviceName}</span>
         </span>
         <span className="shrink-0 text-right">
           {seg.status === "no_show" && (
-            <span className="block text-xs text-red-400">{t.dashboard.noShowBadge}</span>
+            <span className="block text-xs text-red-600">{t.dashboard.noShowBadge}</span>
           )}
           {seg.isPast && seg.status !== "no_show" && (
-            <span className="block text-xs text-stone-500">{t.dashboard.pastBadge}</span>
+            <span className="block text-xs text-ink-3">{t.dashboard.pastBadge}</span>
           )}
-          <span className="font-mono text-sm text-stone-300">{euros(seg.priceCents)}</span>
+          <span className="font-mono text-sm text-ink-2">{euros(seg.priceCents)}</span>
         </span>
       </a>
     </li>
@@ -252,18 +252,18 @@ async function WeekView({
             <a
               href={`/dashboard?view=day&date=${d.date}`}
               className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                d.date === today ? "border-amber-400/50 bg-stone-900" : "border-stone-800 bg-stone-900"
+                d.date === today ? "border-accent/50 bg-surface" : "border-line bg-surface"
               }`}
             >
               <span className="font-serif">{dayLabel(d.date, provider.timezone)}</span>
               <span className="text-sm">
                 {d.count > 0 ? (
                   <>
-                    <span className="font-mono text-amber-300">{d.count}</span>
-                    <span className="ml-2 font-mono text-stone-400">{euros(d.valueCents)}</span>
+                    <span className="font-mono text-accent">{d.count}</span>
+                    <span className="ml-2 font-mono text-ink-3">{euros(d.valueCents)}</span>
                   </>
                 ) : (
-                  <span className="text-stone-600">—</span>
+                  <span className="text-ink-4">—</span>
                 )}
               </span>
             </a>
@@ -306,13 +306,13 @@ async function MonthView({
   return (
     <section>
       <div className="mb-4 flex items-center justify-between">
-        <a href={`/dashboard?view=month&date=${prevMonth}`} className="rounded px-3 py-1 text-stone-400">←</a>
+        <a href={`/dashboard?view=month&date=${prevMonth}`} className="rounded px-3 py-1 text-ink-3">←</a>
         <span className="font-serif">{monthLabel}</span>
-        <a href={`/dashboard?view=month&date=${nextMonth}`} className="rounded px-3 py-1 text-stone-400">→</a>
+        <a href={`/dashboard?view=month&date=${nextMonth}`} className="rounded px-3 py-1 text-ink-3">→</a>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center">
         {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-          <span key={i} className="text-xs text-stone-600">{d}</span>
+          <span key={i} className="text-xs text-ink-4">{d}</span>
         ))}
         {cells.map((cell, i) =>
           cell === null ? (
@@ -322,12 +322,12 @@ async function MonthView({
               key={cell}
               href={`/dashboard?view=day&date=${cell}`}
               className={`rounded-lg py-2 text-sm ${
-                cell === today ? "bg-amber-400 font-semibold text-stone-950" : "border border-stone-800 bg-stone-900 text-stone-300"
+                cell === today ? "bg-accent font-semibold text-white" : "border border-line bg-surface text-ink-2"
               }`}
             >
               {Number(cell.slice(-2))}
               {counts.get(cell) ? (
-                <span className="block text-[10px] text-amber-300">{counts.get(cell)}</span>
+                <span className="block text-[10px] text-accent">{counts.get(cell)}</span>
               ) : (
                 <span className="block text-[10px] text-transparent">0</span>
               )}
@@ -360,19 +360,19 @@ function DateNav({
   const nextAllowed = next <= maxDate;
   return (
     <div className="mb-4 flex items-center justify-between">
-      <a href={`/dashboard?view=${view}&date=${prev}`} className="rounded px-3 py-1 text-stone-400">←</a>
+      <a href={`/dashboard?view=${view}&date=${prev}`} className="rounded px-3 py-1 text-ink-3">←</a>
       <span className="text-center">
         <span className="block font-serif">{label}</span>
         {date !== today && (
-          <a href={`/dashboard?view=${view}&date=${today}`} className="text-xs text-amber-400 underline">
+          <a href={`/dashboard?view=${view}&date=${today}`} className="text-xs text-accent underline">
             {t.dashboard.today}
           </a>
         )}
       </span>
       {nextAllowed ? (
-        <a href={`/dashboard?view=${view}&date=${next}`} className="rounded px-3 py-1 text-stone-400">→</a>
+        <a href={`/dashboard?view=${view}&date=${next}`} className="rounded px-3 py-1 text-ink-3">→</a>
       ) : (
-        <span className="px-3 py-1 text-stone-700">→</span>
+        <span className="px-3 py-1 text-ink-4">→</span>
       )}
     </div>
   );

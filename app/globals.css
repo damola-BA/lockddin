@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
+/* ── LockdDin design system ───────────────────────────────────────────
+   One warm-light system across landing, client booking, and provider app.
+   Colours are CSS variables behind Tailwind tokens via `@theme inline`, so a
+   future `.theme-dark` scope (provider dark toggle — see DD33) can swap them
+   at runtime without touching any utility class. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #faf6f1;
+  --canvas-2: #f3ece3;
+  --surface: #ffffff;
+  --surface-2: #f7f1ea;
+  --ink: #241f1b;
+  --ink-2: #574f47;
+  --ink-3: #726860;
+  --ink-4: #9b9087;
+  --accent: #bb431b;
+  --accent-d: #94340f;
+  --accent-l: #fbeae1;
+  --blush: #f8e7df;
+  --sage: #e7efe7;
+  --cream: #f7eede;
+  --sky: #e7eef6;
+  --lilac: #efe8f4;
+  --ok: #1f6e42;
+  --ok-l: #e7f2ec;
+  --line: #ece3d9;
+  --shadow: 0 14px 38px -18px rgba(74, 46, 28, 0.3);
+  --shadow-sm: 0 6px 18px -10px rgba(74, 46, 28, 0.22);
+}
+
+/* Future provider dark mode (DD33: "light now, dark toggle later").
+   Inert until a toggle adds `.theme-dark` to the provider shell. */
+.theme-dark {
+  --canvas: #14110f;
+  --canvas-2: #1c1815;
+  --surface: #211c19;
+  --surface-2: #2a2420;
+  --ink: #f5efe9;
+  --ink-2: #d8cfc6;
+  --ink-3: #a89d92;
+  --ink-4: #837a70;
+  --accent: #e0673c;
+  --accent-d: #bb431b;
+  --accent-l: #3a241b;
+  --line: #352e28;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: var(--font-fraunces), Georgia, serif;
+  --font-mono: var(--font-jakarta), system-ui, sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-canvas: var(--canvas);
+  --color-canvas-2: var(--canvas-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-accent: var(--accent);
+  --color-accent-d: var(--accent-d);
+  --color-accent-l: var(--accent-l);
+  --color-blush: var(--blush);
+  --color-sage: var(--sage);
+  --color-cream: var(--cream);
+  --color-sky: var(--sky);
+  --color-lilac: var(--lilac);
+  --color-ok: var(--ok);
+  --color-ok-l: var(--ok-l);
+  --color-line: var(--line);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
 }

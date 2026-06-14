@@ -54,7 +54,7 @@ function RemoveButton({ date }: { date: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="text-xs text-red-400 underline disabled:opacity-50"
+        className="text-xs text-red-600 underline disabled:opacity-50"
       >
         {t.schedule.removeOverride}
       </button>
@@ -108,7 +108,7 @@ export function DayOverrides({
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               required
-              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2.5 text-stone-100"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink"
             />
           </div>
           <div>
@@ -119,7 +119,7 @@ export function DayOverrides({
               value={to}
               min={from}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2.5 text-stone-100"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink"
             />
           </div>
         </div>
@@ -140,8 +140,8 @@ export function DayOverrides({
               onClick={() => setKind(value)}
               className={`rounded-lg px-3 py-2 text-sm ${
                 kind === value
-                  ? "bg-amber-400 font-semibold text-stone-950"
-                  : "border border-stone-700 bg-stone-900 text-stone-300"
+                  ? "bg-accent font-semibold text-white"
+                  : "border border-line bg-surface text-ink-2"
               }`}
             >
               {label}
@@ -151,28 +151,28 @@ export function DayOverrides({
 
         {needsHours && (
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-stone-400">{t.schedule.from}</span>
+            <span className="text-ink-3">{t.schedule.from}</span>
             <input
               type="time"
               name="start_time"
               defaultValue="09:00"
               required
-              className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
-            <span className="text-stone-400">{t.schedule.to}</span>
+            <span className="text-ink-3">{t.schedule.to}</span>
             <input
               type="time"
               name="end_time"
               defaultValue="18:00"
               required
-              className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+              className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
             />
           </div>
         )}
 
         {needsHours ? (
           <div>
-            <p className="mb-2 text-sm text-stone-400">{t.schedule.oneOffBlocks}</p>
+            <p className="mb-2 text-sm text-ink-3">{t.schedule.oneOffBlocks}</p>
             <BlocksEditor name="blocks" initial={[]} showLabel />
           </div>
         ) : (
@@ -184,15 +184,15 @@ export function DayOverrides({
         )}
 
         {preview.affected && applied.applied === undefined && (
-          <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-4">
+          <div className="rounded-lg border border-accent/40 bg-accent-l p-4">
             {preview.affected.length === 0 ? (
-              <p className="text-sm text-stone-200">{t.schedule.noConsequences}</p>
+              <p className="text-sm text-ink">{t.schedule.noConsequences}</p>
             ) : (
               <>
-                <p className="mb-2 text-sm font-medium text-stone-100">
+                <p className="mb-2 text-sm font-medium text-ink">
                   {t.schedule.consequencesTitle}
                 </p>
-                <ul className="mb-3 space-y-1 text-sm text-stone-300">
+                <ul className="mb-3 space-y-1 text-sm text-ink-2">
                   {preview.affected.map((b) => (
                     <li key={b.booking_id}>
                       {fmt(b.starts_at)} — {b.client_first_name}, {b.service_name}
@@ -203,7 +203,7 @@ export function DayOverrides({
                 <input
                   id="cancel_reason"
                   name="cancel_reason"
-                  className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-100"
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
                 />
               </>
             )}
@@ -211,7 +211,7 @@ export function DayOverrides({
         )}
 
         {applied.applied !== undefined ? (
-          <p className="text-sm text-emerald-400">
+          <p className="text-sm text-ok">
             {applied.applied > 0
               ? fill(t.schedule.applied, { n: applied.applied })
               : t.schedule.appliedNone}
@@ -220,7 +220,7 @@ export function DayOverrides({
           <button
             type="submit"
             disabled={previewPending || applyPending || dates.length === 0}
-            className="w-full rounded-lg bg-amber-400 px-4 py-3 text-base font-semibold text-stone-950 disabled:opacity-50"
+            className="w-full rounded-lg bg-accent px-4 py-3 text-base font-semibold text-white disabled:opacity-50"
           >
             {previewPending || applyPending
               ? t.common.loading
@@ -235,14 +235,14 @@ export function DayOverrides({
 
       {existing.length > 0 && (
         <div className="mt-8">
-          <p className="mb-2 text-sm font-medium text-stone-300">
+          <p className="mb-2 text-sm font-medium text-ink-2">
             {t.schedule.existingOverrides}
           </p>
           <ul className="space-y-2">
             {existing.map((o) => (
               <li
                 key={o.date}
-                className="flex items-center justify-between rounded-lg border border-stone-800 bg-stone-900/60 px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm"
               >
                 <span>
                   {o.date} —{" "}

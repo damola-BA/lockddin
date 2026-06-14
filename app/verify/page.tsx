@@ -36,13 +36,13 @@ export default async function VerifyPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center bg-stone-950 px-5 py-10 text-stone-100">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center bg-canvas px-5 py-10 text-ink">
       {verified ? (
         <>
           <h1 className="mb-2 font-serif text-2xl">{t.auth.verifyDone}</h1>
-          <p className="text-sm text-stone-400">
+          <p className="text-sm text-ink-3">
             You can close this tab, or{" "}
-            <a href="/" className="text-amber-400 underline">
+            <a href="/" className="text-accent underline">
               continue your setup
             </a>
             .
@@ -51,8 +51,8 @@ export default async function VerifyPage({
       ) : (
         <>
           <h1 className="mb-2 font-serif text-2xl">Hmm, that link is stale</h1>
-          <p className="text-sm text-stone-400">
-            <a href="/" className="text-amber-400 underline">
+          <p className="text-sm text-ink-3">
+            <a href="/" className="text-accent underline">
               Continue your setup
             </a>{" "}
             — you can request a fresh link from the final step.

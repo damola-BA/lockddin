@@ -17,7 +17,7 @@ export default async function BookingPage({
   if (!provider) {
     return (
       <Shell>
-        <h1 className="font-serif text-2xl text-stone-800">Page not found</h1>
+        <h1 className="font-serif text-2xl text-ink">Page not found</h1>
       </Shell>
     );
   }
@@ -27,10 +27,10 @@ export default async function BookingPage({
   if (!provider.is_active) {
     return (
       <Shell>
-        <h1 className="mb-2 font-serif text-2xl text-stone-800">
+        <h1 className="mb-2 font-serif text-2xl text-ink">
           {fill(t.client.closedTitle, { name })}
         </h1>
-        <p className="text-stone-500">{t.client.closedBody}</p>
+        <p className="text-ink-3">{t.client.closedBody}</p>
       </Shell>
     );
   }
@@ -46,9 +46,9 @@ export default async function BookingPage({
   return (
     <Shell>
       <header className="mb-8">
-        <h1 className="font-serif text-3xl text-stone-900">{name}</h1>
+        <h1 className="font-serif text-3xl text-ink">{name}</h1>
         {provider.city && (
-          <p className="mt-1 text-sm text-stone-500">{provider.city}</p>
+          <p className="mt-1 text-sm text-ink-3">{provider.city}</p>
         )}
       </header>
       <BookingFlow
@@ -56,8 +56,8 @@ export default async function BookingPage({
         cancellationWindowHours={provider.cancellation_window_hours}
         services={services ?? []}
       />
-      <footer className="mt-12 border-t border-stone-200 pt-4 text-center">
-        <a href="/privacy" className="text-xs text-stone-400 underline">
+      <footer className="mt-12 border-t border-line pt-4 text-center">
+        <a href="/privacy" className="text-xs text-ink-4 underline">
           {t.client.privacy}
         </a>
       </footer>
@@ -67,7 +67,7 @@ export default async function BookingPage({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[#faf6f0] text-stone-800">
+    <div className="min-h-dvh bg-[#faf6f0] text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-10">{children}</main>
     </div>
   );

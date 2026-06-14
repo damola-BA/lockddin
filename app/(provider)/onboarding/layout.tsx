@@ -16,12 +16,12 @@ export default async function OnboardingLayout({
   } = await supabase.auth.getUser();
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       {children}
       {user && (
         <footer className="pb-8 text-center">
           <form action={signOut}>
-            <button type="submit" className="text-sm text-stone-500 underline">
+            <button type="submit" className="text-sm text-ink-3 underline">
               {t.auth.signOut}
             </button>
           </form>

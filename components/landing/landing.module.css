@@ -1,0 +1,85 @@
+/* Landing-page motion only. Colour + layout come from Tailwind tokens so the
+   page stays in the shared design system; this file holds the bespoke 3D /
+   animation work that utilities can't express. All of it is gated behind
+   prefers-reduced-motion. */
+
+/* entrance */
+.fadeUp {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: fadeUp 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.d1 { animation-delay: 0.05s; }
+.d2 { animation-delay: 0.13s; }
+.d3 { animation-delay: 0.21s; }
+.d4 { animation-delay: 0.29s; }
+@keyframes fadeUp {
+  to { opacity: 1; transform: none; }
+}
+
+/* gentle floats for the hero cards */
+.float { animation: float 6s ease-in-out infinite; }
+.floatSlow { animation: float 8.5s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* morphing, drifting gradient blobs */
+.blob {
+  border-radius: 42% 58% 55% 45% / 55% 45% 60% 40%;
+  animation: drift 18s ease-in-out infinite, morph 13s ease-in-out infinite;
+}
+.blob2 {
+  border-radius: 60% 40% 45% 55% / 50% 55% 45% 50%;
+  animation: drift2 21s ease-in-out infinite, morph 16s ease-in-out infinite;
+}
+@keyframes morph {
+  0%, 100% { border-radius: 42% 58% 55% 45% / 55% 45% 60% 40%; }
+  50% { border-radius: 58% 42% 40% 60% / 45% 58% 42% 55%; }
+}
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-14px, 18px); }
+}
+@keyframes drift2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(16px, -14px); }
+}
+
+/* 3D stage for the mouse-parallax hero */
+.scene { perspective: 1100px; }
+.stage {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out;
+  will-change: transform;
+}
+.layer { transform-style: preserve-3d; }
+
+/* scroll-reveal — uses CSS scroll-driven animation where supported, and
+   simply shows content (no motion) everywhere else, so nothing is ever
+   hidden behind an unsupported feature. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      opacity: 0;
+      transform: translateY(26px);
+      animation: revealIn linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+@keyframes revealIn {
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fadeUp, .float, .floatSlow, .blob, .blob2 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -18,18 +18,18 @@ export async function SlotPreview({
   const service = services.find((s) => s.id === serviceId);
 
   return (
-    <div className="mt-3 rounded-lg border border-stone-800 bg-stone-900/60 p-4">
-      <p className="mb-2 text-sm text-stone-400">
+    <div className="mt-3 rounded-lg border border-line bg-surface-2 p-4">
+      <p className="mb-2 text-sm text-ink-3">
         {service?.name} — {date}
       </p>
       {slots.length === 0 ? (
-        <p className="text-sm text-stone-500">No slots on this day.</p>
+        <p className="text-sm text-ink-3">No slots on this day.</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {slots.map((slot) => (
             <span
               key={slot.startsAt.toISOString()}
-              className="rounded border border-amber-400/40 px-2.5 py-1 text-sm text-amber-300"
+              className="rounded border border-accent/40 px-2.5 py-1 text-sm text-accent"
             >
               {formatInTimeZone(slot.startsAt, "Europe/Brussels", "HH:mm")}
             </span>

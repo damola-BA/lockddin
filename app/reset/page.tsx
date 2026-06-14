@@ -22,12 +22,12 @@ export default function ResetRequestPage() {
   );
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <FormCard>
         <PageTitle>{t.auth.resetTitle}</PageTitle>
         <Hint>{t.auth.resetHint}</Hint>
         {state.ok ? (
-          <p className="rounded-lg border border-stone-700 bg-stone-900 p-4 text-sm text-stone-300">
+          <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-2">
             {t.auth.resetSent}
           </p>
         ) : (

@@ -45,9 +45,9 @@ export default function EmailStep() {
           {pending ? t.common.loading : t.common.continue}
         </PrimaryButton>
       </form>
-      <p className="mt-6 text-center text-sm text-stone-400">
+      <p className="mt-6 text-center text-sm text-ink-3">
         {t.auth.alreadyHaveAccount}{" "}
-        <a href="/signin" className="text-amber-400 underline">
+        <a href="/signin" className="text-accent underline">
           {t.auth.signInInstead}
         </a>
       </p>

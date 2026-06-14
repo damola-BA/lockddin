@@ -18,7 +18,7 @@ export function ServicesStep({ services }: { services: Service[] }) {
 
   return (
     <main className="mx-auto w-full max-w-md px-5 py-10">
-      <p className="mb-2 text-xs tracking-widest text-stone-500">
+      <p className="mb-2 text-xs tracking-widest text-ink-3">
         {fill(t.onboarding.stepOf, { current: 2, total: 3 })}
       </p>
       <PageTitle>{t.onboarding.servicesTitle}</PageTitle>

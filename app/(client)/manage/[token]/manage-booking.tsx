@@ -95,10 +95,10 @@ export function ManageBooking({
   if (cancelState.ok) {
     return (
       <div>
-        <p className="mb-4 font-serif text-xl text-stone-900">{t.client.cancelled}</p>
+        <p className="mb-4 font-serif text-xl text-ink">{t.client.cancelled}</p>
         <a
           href={`/b/${slug}`}
-          className="block w-full rounded-xl bg-stone-900 px-4 py-3 text-center font-semibold text-amber-50"
+          className="block w-full rounded-xl bg-ink px-4 py-3 text-center font-semibold text-canvas"
         >
           {t.client.bookAgain}
         </a>
@@ -108,12 +108,12 @@ export function ManageBooking({
   if (reState.ok) {
     return (
       <div>
-        <p className="mb-2 font-serif text-xl text-stone-900">{t.client.rescheduled}</p>
-        <p className="font-mono text-stone-700">{reState.whenText}</p>
-        <p className="mt-3 text-sm text-stone-500">
+        <p className="mb-2 font-serif text-xl text-ink">{t.client.rescheduled}</p>
+        <p className="font-mono text-ink-2">{reState.whenText}</p>
+        <p className="mt-3 text-sm text-ink-3">
           {fill(t.client.confirmationSent, { email: "your inbox" })}
         </p>
-        <a href={`/b/${slug}`} className="mt-4 inline-block text-sm text-stone-600 underline">
+        <a href={`/b/${slug}`} className="mt-4 inline-block text-sm text-ink-3 underline">
           ← {businessName}
         </a>
       </div>
@@ -123,13 +123,13 @@ export function ManageBooking({
   if (late) {
     return (
       <div>
-        <h1 className="mb-2 font-serif text-xl text-stone-900">{t.client.lateTitle}</h1>
-        <p className="mb-3 text-sm text-stone-600">
+        <h1 className="mb-2 font-serif text-xl text-ink">{t.client.lateTitle}</h1>
+        <p className="mb-3 text-sm text-ink-3">
           {fill(t.client.lateBody, { name: businessName, hours: cancellationWindowHours })}
         </p>
         <a
           href={`mailto:${providerEmail}`}
-          className="font-mono text-sm text-stone-900 underline"
+          className="font-mono text-sm text-ink underline"
         >
           {providerEmail}
         </a>
@@ -139,13 +139,13 @@ export function ManageBooking({
 
   return (
     <div>
-      <p className="text-sm text-stone-500">Hi {clientFirstName},</p>
-      <h1 className="mb-1 font-serif text-2xl text-stone-900">{serviceName}</h1>
-      <p className="mb-1 font-mono text-stone-700">{whenText}</p>
-      <p className="mb-6 text-sm text-stone-500">{businessName}</p>
+      <p className="text-sm text-ink-3">Hi {clientFirstName},</p>
+      <h1 className="mb-1 font-serif text-2xl text-ink">{serviceName}</h1>
+      <p className="mb-1 font-mono text-ink-2">{whenText}</p>
+      <p className="mb-6 text-sm text-ink-3">{businessName}</p>
 
       {(cancelState.ok === false || reState.ok === false) && !late && (
-        <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-stone-700">
+        <p className="mb-3 rounded-lg border border-accent/60 bg-accent-l p-3 text-sm text-ink-2">
           {reState.ok === false &&
           (reState.reason === "taken" || reState.reason === "released")
             ? t.client.justTaken
@@ -158,36 +158,36 @@ export function ManageBooking({
           <button
             type="button"
             onClick={() => setMode("reschedule")}
-            className="w-full rounded-xl bg-stone-900 px-4 py-3 font-semibold text-amber-50"
+            className="w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas"
           >
             {t.client.rescheduleTitle}
           </button>
           <button
             type="button"
             onClick={() => setMode("confirm-cancel")}
-            className="w-full rounded-xl border border-stone-900 px-4 py-3 font-semibold text-stone-900"
+            className="w-full rounded-xl border border-ink px-4 py-3 font-semibold text-ink"
           >
             {t.client.cancelTitle}
           </button>
-          <p className="text-xs text-stone-500">{t.client.serviceChangeNote}</p>
+          <p className="text-xs text-ink-3">{t.client.serviceChangeNote}</p>
         </div>
       )}
 
       {mode === "confirm-cancel" && (
         <form action={cancelAction} className="space-y-3">
           <input type="hidden" name="token" value={token} />
-          <p className="text-sm text-stone-700">{t.client.cancelTitle}</p>
+          <p className="text-sm text-ink-2">{t.client.cancelTitle}</p>
           <button
             type="submit"
             disabled={cancelPending}
-            className="w-full rounded-xl bg-stone-900 px-4 py-3 font-semibold text-amber-50 disabled:opacity-50"
+            className="w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas disabled:opacity-50"
           >
             {cancelPending ? t.common.loading : t.client.cancelConfirm}
           </button>
           <button
             type="button"
             onClick={() => setMode("view")}
-            className="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-700"
+            className="w-full rounded-xl border border-line px-4 py-3 text-ink-2"
           >
             {t.common.back}
           </button>
@@ -196,13 +196,13 @@ export function ManageBooking({
 
       {mode === "reschedule" && (
         <div>
-          <h2 className="mb-3 font-serif text-lg text-stone-900">
+          <h2 className="mb-3 font-serif text-lg text-ink">
             {t.client.rescheduleTitle}
           </h2>
           {slots === null ? (
-            <p className="text-sm text-stone-400">{t.common.loading}</p>
+            <p className="text-sm text-ink-4">{t.common.loading}</p>
           ) : slots.length === 0 ? (
-            <p className="text-sm text-stone-600">{t.client.noSlotsAtAll}</p>
+            <p className="text-sm text-ink-3">{t.client.noSlotsAtAll}</p>
           ) : (
             <div className="space-y-2">
               {slots
@@ -221,7 +221,7 @@ export function ManageBooking({
                       fd.set("date", localDateOf(slot.startsAt));
                       holdAction(fd);
                     }}
-                    className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-left font-mono text-sm text-stone-800 shadow-sm disabled:opacity-50"
+                    className="w-full rounded-xl border border-line bg-white px-4 py-3 text-left font-mono text-sm text-ink shadow-sm disabled:opacity-50"
                   >
                     {slotLabel(slot.startsAt)}
                   </button>
@@ -231,7 +231,7 @@ export function ManageBooking({
           <button
             type="button"
             onClick={() => setMode("view")}
-            className="mt-4 text-sm text-stone-600 underline"
+            className="mt-4 text-sm text-ink-3 underline"
           >
             {t.client.keepOriginal}
           </button>

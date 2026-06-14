@@ -14,6 +14,7 @@ const STEP_ROUTES: Record<string, string> = {
 
 // Reachable without a session.
 const PUBLIC_PATHS = [
+  "/", // public marketing landing (signed-in providers are routed on below)
   "/onboarding/email",
   "/onboarding/password",
   "/signin",

@@ -21,7 +21,7 @@ export default function SignInPage() {
   );
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <FormCard>
         <PageTitle>{t.auth.signInTitle}</PageTitle>
         <form action={formAction} className="mt-4">
@@ -51,15 +51,15 @@ export default function SignInPage() {
             {pending ? t.common.loading : t.auth.signIn}
           </PrimaryButton>
         </form>
-        <div className="mt-6 space-y-2 text-center text-sm text-stone-400">
+        <div className="mt-6 space-y-2 text-center text-sm text-ink-3">
           <p>
-            <a href="/reset" className="text-amber-400 underline">
+            <a href="/reset" className="text-accent underline">
               {t.auth.forgotPassword}
             </a>
           </p>
           <p>
             {t.auth.noAccount}{" "}
-            <a href="/onboarding/email" className="text-amber-400 underline">
+            <a href="/onboarding/email" className="text-accent underline">
               {t.auth.createAccount}
             </a>
           </p>

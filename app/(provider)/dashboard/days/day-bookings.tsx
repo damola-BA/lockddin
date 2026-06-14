@@ -15,7 +15,7 @@ function euros(cents: number): string {
 // All of the day's bookings with an inline cancel (reason → email).
 export function DayBookingsList({ bookings }: { bookings: DayBooking[] }) {
   if (bookings.length === 0) {
-    return <p className="text-sm text-stone-500">{t.dashboard.noBookingsDay}</p>;
+    return <p className="text-sm text-ink-3">{t.dashboard.noBookingsDay}</p>;
   }
   return (
     <ul className="space-y-2">
@@ -36,19 +36,19 @@ function BookingRow({ booking }: { booking: DayBooking }) {
 
   if (state.ok) {
     return (
-      <li className="rounded-xl border border-stone-800 bg-stone-900/50 px-4 py-3 text-sm text-stone-500">
+      <li className="rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink-3">
         {fill(t.dashboard.cancelDone, { name: booking.clientName })}
       </li>
     );
   }
 
   return (
-    <li className="rounded-xl border border-stone-800 bg-stone-900">
+    <li className="rounded-xl border border-line bg-surface">
       <div className="flex items-center justify-between px-4 py-3">
         <a href={`/dashboard/booking/${booking.id}`} className="min-w-0 flex-1">
-          <span className="font-mono text-amber-300">{booking.timeText}</span>
-          <span className="ml-3 font-serif text-stone-100">{booking.clientName}</span>
-          <span className="block truncate text-xs text-stone-400">
+          <span className="font-mono text-accent">{booking.timeText}</span>
+          <span className="ml-3 font-serif text-ink">{booking.clientName}</span>
+          <span className="block truncate text-xs text-ink-3">
             {booking.serviceName} · {euros(booking.priceCents)}
           </span>
         </a>
@@ -56,7 +56,7 @@ function BookingRow({ booking }: { booking: DayBooking }) {
           <button
             type="button"
             onClick={() => setOpen(!open)}
-            className="ml-3 shrink-0 text-xs text-red-400 underline"
+            className="ml-3 shrink-0 text-xs text-red-600 underline"
           >
             {t.dashboard.cancelInline}
           </button>
@@ -64,13 +64,13 @@ function BookingRow({ booking }: { booking: DayBooking }) {
       </div>
 
       {open && (
-        <form action={action} className="space-y-2 border-t border-stone-800 px-4 py-3">
+        <form action={action} className="space-y-2 border-t border-line px-4 py-3">
           <input type="hidden" name="booking_id" value={booking.id} />
           <select
             name="reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-100"
+            className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
           >
             {Object.entries(CANCEL_REASONS).map(([k, label]) => (
               <option key={k} value={k}>
@@ -82,13 +82,13 @@ function BookingRow({ booking }: { booking: DayBooking }) {
             <input
               name="reason_text"
               placeholder={t.dashboard.reasonText}
-              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-100"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
             />
           )}
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {pending
               ? t.common.loading

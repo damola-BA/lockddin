@@ -80,6 +80,19 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD33: whole-product visual redesign into one warm-light system — Plus Jakarta
+Sans + Fraunces, warm paper canvas, terracotta accent — across a new public
+marketing landing (app/page.tsx, made reachable by adding "/" to the proxy's
+PUBLIC_PATHS; animated mouse-parallax 3D hero in components/landing/), the
+client booking pages, and the provider app, which left ink-dark (per user
+"light now, dark toggle later"). Colours are semantic tokens in app/globals.css
+behind `@theme inline` CSS vars (bg-canvas/text-ink/bg-accent/…) so provider
+dark mode can return as a `.theme-dark` swap — scaffold present, no toggle UI
+built. Beta scope held: the mockups' deposits/payments/WhatsApp were dropped to
+stay email-only. The provider/client flip was a mechanical colour-token remap
+(stone/amber → tokens), logic untouched; verified in-browser across landing,
+booking, dashboard, settings, day-manager, and auth pages.
+
 DD32: the onboarding profile + services steps become editable after
 signup — /dashboard/settings (updateProfileSettings in
 lib/dashboard/settings-actions.ts edits the F2 profile fields in place;

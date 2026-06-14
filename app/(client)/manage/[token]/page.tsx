@@ -16,7 +16,7 @@ export default async function ManagePage({
 
   const check = checkManageToken(token);
   if (check !== "valid") {
-    return <Shell><p className="text-stone-600">{t.client.linkExpired}</p></Shell>;
+    return <Shell><p className="text-ink-3">{t.client.linkExpired}</p></Shell>;
   }
 
   const admin = createAdminClient();
@@ -29,7 +29,7 @@ export default async function ManagePage({
     .maybeSingle();
 
   if (!booking) {
-    return <Shell><p className="text-stone-600">{t.client.linkExpired}</p></Shell>;
+    return <Shell><p className="text-ink-3">{t.client.linkExpired}</p></Shell>;
   }
 
   // Old links resolve to honest states instead of a blunt "expired" (DD21).
@@ -37,7 +37,7 @@ export default async function ManagePage({
   if (booking.status !== "confirmed") {
     return (
       <Shell>
-        <p className="mb-4 text-stone-600">{t.client.linkCancelled}</p>
+        <p className="mb-4 text-ink-3">{t.client.linkCancelled}</p>
         <BookAgain slug={slugOf} />
       </Shell>
     );
@@ -45,7 +45,7 @@ export default async function ManagePage({
   if (booking.starts_at <= new Date().toISOString()) {
     return (
       <Shell>
-        <p className="mb-4 text-stone-600">{t.client.linkPast}</p>
+        <p className="mb-4 text-ink-3">{t.client.linkPast}</p>
         <BookAgain slug={slugOf} />
       </Shell>
     );
@@ -89,7 +89,7 @@ function BookAgain({ slug }: { slug: string }) {
   return (
     <a
       href={`/b/${slug}`}
-      className="block w-full rounded-xl bg-stone-900 px-4 py-3 text-center font-semibold text-amber-50"
+      className="block w-full rounded-xl bg-ink px-4 py-3 text-center font-semibold text-canvas"
     >
       {t.client.bookAgain}
     </a>
@@ -98,7 +98,7 @@ function BookAgain({ slug }: { slug: string }) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[#faf6f0] text-stone-800">
+    <div className="min-h-dvh bg-[#faf6f0] text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-10">{children}</main>
     </div>
   );

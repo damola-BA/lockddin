@@ -46,9 +46,9 @@ export default async function SchedulePage() {
   }));
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-10">
-        <a href="/dashboard" className="text-sm text-stone-400 underline">
+        <a href="/dashboard" className="text-sm text-ink-3 underline">
           ← Dashboard
         </a>
         {provider?.schedule_type === "flexible" ? (

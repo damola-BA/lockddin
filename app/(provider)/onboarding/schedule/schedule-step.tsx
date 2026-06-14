@@ -19,12 +19,12 @@ function ResendLink() {
   return (
     <form action={formAction} className="inline">
       {state.ok ? (
-        <span className="text-emerald-400">{t.auth.verificationResent}</span>
+        <span className="text-ok">{t.auth.verificationResent}</span>
       ) : (
         <button
           type="submit"
           disabled={pending}
-          className="text-amber-400 underline disabled:opacity-50"
+          className="text-accent underline disabled:opacity-50"
         >
           {t.auth.resendVerification}
         </button>
@@ -54,14 +54,14 @@ export function ScheduleStep({
 
   return (
     <main className="mx-auto w-full max-w-md px-5 py-10">
-      <p className="mb-2 text-xs tracking-widest text-stone-500">
+      <p className="mb-2 text-xs tracking-widest text-ink-3">
         {fill(t.onboarding.stepOf, { current: 3, total: 3 })}
       </p>
       <PageTitle>{t.onboarding.scheduleTitle}</PageTitle>
       <Hint>{t.onboarding.scheduleReassurance}</Hint>
 
       <div className="space-y-3">
-        <label className="block cursor-pointer rounded-lg border border-stone-700 bg-stone-900 p-4 has-checked:border-amber-400">
+        <label className="block cursor-pointer rounded-lg border border-line bg-surface p-4 has-checked:border-accent">
           <span className="flex items-center gap-3">
             <input
               type="radio"
@@ -69,18 +69,18 @@ export function ScheduleStep({
               value="regular"
               checked={type === "regular"}
               onChange={() => setType("regular")}
-              className="accent-amber-400"
+              className="accent-accent"
             />
-            <span className="font-medium text-stone-100">
+            <span className="font-medium text-ink">
               {t.onboarding.scheduleRegular}
             </span>
           </span>
-          <span className="mt-1 block pl-7 text-sm text-stone-400">
+          <span className="mt-1 block pl-7 text-sm text-ink-3">
             {t.onboarding.scheduleRegularHint}
           </span>
         </label>
 
-        <label className="block cursor-pointer rounded-lg border border-stone-700 bg-stone-900 p-4 has-checked:border-amber-400">
+        <label className="block cursor-pointer rounded-lg border border-line bg-surface p-4 has-checked:border-accent">
           <span className="flex items-center gap-3">
             <input
               type="radio"
@@ -88,13 +88,13 @@ export function ScheduleStep({
               value="flexible"
               checked={type === "flexible"}
               onChange={() => setType("flexible")}
-              className="accent-amber-400"
+              className="accent-accent"
             />
-            <span className="font-medium text-stone-100">
+            <span className="font-medium text-ink">
               {t.onboarding.scheduleFlexible}
             </span>
           </span>
-          <span className="mt-1 block pl-7 text-sm text-stone-400">
+          <span className="mt-1 block pl-7 text-sm text-ink-3">
             {t.onboarding.scheduleFlexibleHint}
           </span>
         </label>
@@ -103,7 +103,7 @@ export function ScheduleStep({
       {/* The real setup, right here in onboarding (DD16/DD17): one set of
           hours + breaks for the whole week; per-day tweaks and emergency
           changes live in the dashboard. */}
-      <div className="mt-6 border-t border-stone-800 pt-4">
+      <div className="mt-6 border-t border-line pt-4">
         {type === "regular" ? (
           <QuickWeekSetup
             initialWeekdays={templateDays.map((d) => d.weekday)}
@@ -120,7 +120,7 @@ export function ScheduleStep({
         <input type="hidden" name="schedule_type" value={type} />
 
         {!emailVerified && (
-          <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 p-4 text-sm text-stone-200">
+          <div className="rounded-lg border border-accent/40 bg-accent-l p-4 text-sm text-ink">
             {fill(t.auth.verifyNeeded, { email })} <ResendLink />
           </div>
         )}

@@ -54,8 +54,8 @@ export function FlexibleBatchAdd() {
                 }}
                 className={`rounded p-1.5 text-center text-xs ${
                   on
-                    ? "bg-amber-400 font-semibold text-stone-950"
-                    : "border border-stone-800 bg-stone-900 text-stone-300"
+                    ? "bg-accent font-semibold text-white"
+                    : "border border-line bg-surface text-ink-2"
                 }`}
               >
                 <span className="block text-[10px] opacity-70">
@@ -68,27 +68,27 @@ export function FlexibleBatchAdd() {
         </div>
 
         <div className="mt-4 flex items-center gap-2 text-sm">
-          <span className="text-stone-400">{t.schedule.from}</span>
+          <span className="text-ink-3">{t.schedule.from}</span>
           <input
             type="time"
             name="start_time"
             defaultValue="09:00"
             required
-            className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+            className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
           />
-          <span className="text-stone-400">{t.schedule.to}</span>
+          <span className="text-ink-3">{t.schedule.to}</span>
           <input
             type="time"
             name="end_time"
             defaultValue="18:00"
             required
-            className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+            className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
           />
         </div>
 
         {state.error && <ErrorText>{t.common.somethingWrong}</ErrorText>}
         {state.applied !== undefined && (
-          <p className="mt-3 text-sm text-emerald-400">
+          <p className="mt-3 text-sm text-ok">
             {state.applied > 0
               ? fill(t.schedule.applied, { n: state.applied })
               : t.schedule.appliedNone}
@@ -98,7 +98,7 @@ export function FlexibleBatchAdd() {
         <button
           type="submit"
           disabled={pending || selected.size === 0}
-          className="mt-4 w-full rounded-lg bg-amber-400 px-4 py-3 text-base font-semibold text-stone-950 disabled:opacity-50"
+          className="mt-4 w-full rounded-lg bg-accent px-4 py-3 text-base font-semibold text-white disabled:opacity-50"
         >
           {pending ? t.common.loading : t.schedule.batchAdd}
         </button>

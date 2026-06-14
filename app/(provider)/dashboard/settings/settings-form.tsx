@@ -76,9 +76,9 @@ export function SettingsForm({ initial }: { initial: Initial }) {
   }, [slug, initial.slug]);
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-10">
-        <a href="/dashboard" className="text-sm text-stone-400 underline">
+        <a href="/dashboard" className="text-sm text-ink-3 underline">
           ← Dashboard
         </a>
 
@@ -113,35 +113,35 @@ export function SettingsForm({ initial }: { initial: Initial }) {
 
           <div>
             <Label htmlFor="slug">{t.onboarding.slugLabel}</Label>
-            <div className="flex items-center gap-1 rounded-lg border border-stone-700 bg-stone-900 px-3.5 focus-within:border-amber-400">
-              <span className="shrink-0 text-sm text-stone-500">lockddin.app/b/</span>
+            <div className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3.5 focus-within:border-accent">
+              <span className="shrink-0 text-sm text-ink-3">lockddin.app/b/</span>
               <input
                 id="slug"
                 name="slug"
                 value={slug}
                 onChange={(e) => setSlug(normalizeSlug(e.target.value))}
                 required
-                className="w-full bg-transparent py-3 text-base text-stone-100 focus:outline-none"
+                className="w-full bg-transparent py-3 text-base text-ink focus:outline-none"
               />
             </div>
             <p className="mt-1.5 text-sm">
               {slugStatus === "checking" && (
-                <span className="text-stone-400">{t.onboarding.slugChecking}</span>
+                <span className="text-ink-3">{t.onboarding.slugChecking}</span>
               )}
               {slugStatus === "available" && (
-                <span className="text-emerald-400">{t.onboarding.slugAvailable}</span>
+                <span className="text-ok">{t.onboarding.slugAvailable}</span>
               )}
               {slugStatus === "taken" && (
-                <span className="text-red-400">{t.onboarding.slugTaken}</span>
+                <span className="text-red-600">{t.onboarding.slugTaken}</span>
               )}
               {slugStatus === "invalid" && (
-                <span className="text-red-400">{t.onboarding.slugInvalid}</span>
+                <span className="text-red-600">{t.onboarding.slugInvalid}</span>
               )}
               {slugStatus === "idle" && (
-                <span className="text-stone-500">{t.onboarding.slugHint}</span>
+                <span className="text-ink-3">{t.onboarding.slugHint}</span>
               )}
             </p>
-            <p className="mt-1.5 text-sm text-amber-300/80">{t.settings.slugWarning}</p>
+            <p className="mt-1.5 text-sm text-accent/80">{t.settings.slugWarning}</p>
           </div>
 
           <div>
@@ -152,11 +152,11 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               defaultValue={initial.location_text ?? ""}
               placeholder="e.g. Rue de la Paix 12, 1000 Brussels"
             />
-            <p className="mt-1.5 text-sm text-stone-500">{t.onboarding.locationHint}</p>
+            <p className="mt-1.5 text-sm text-ink-3">{t.onboarding.locationHint}</p>
           </div>
 
           <fieldset>
-            <legend className="mb-2 text-sm font-medium text-stone-300">
+            <legend className="mb-2 text-sm font-medium text-ink-2">
               {t.onboarding.bookingWindowTitle}
             </legend>
             <div className="grid grid-cols-2 gap-2">
@@ -164,14 +164,14 @@ export function SettingsForm({ initial }: { initial: Initial }) {
                 (value) => (
                   <label
                     key={value}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-700 bg-stone-900 px-3 py-2.5 text-sm has-checked:border-amber-400 has-checked:text-amber-300"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm has-checked:border-accent has-checked:text-accent"
                   >
                     <input
                       type="radio"
                       name="booking_window"
                       value={value}
                       defaultChecked={initial.booking_window === value}
-                      className="accent-amber-400"
+                      className="accent-accent"
                     />
                     {t.onboarding[`bookingWindow_${value}`]}
                   </label>
@@ -188,7 +188,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               id="cancellation_window_hours"
               name="cancellation_window_hours"
               defaultValue={initial.cancellation_window_hours}
-              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
             >
               {[12, 24, 48, 72].map((h) => (
                 <option key={h} value={h}>
@@ -197,7 +197,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               ))}
               <option value={168}>{t.onboarding.oneWeekBefore}</option>
             </select>
-            <p className="mt-1.5 text-sm text-stone-500">{t.onboarding.cancellationHint}</p>
+            <p className="mt-1.5 text-sm text-ink-3">{t.onboarding.cancellationHint}</p>
           </div>
 
           <div>
@@ -206,7 +206,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               id="min_lead_time_minutes"
               name="min_lead_time_minutes"
               defaultValue={initial.min_lead_time_minutes}
-              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
             >
               {LEAD_OPTIONS.map((m) => (
                 <option key={m} value={m}>
@@ -222,7 +222,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               id="global_buffer_minutes"
               name="global_buffer_minutes"
               defaultValue={initial.global_buffer_minutes}
-              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 focus:border-amber-400 focus:outline-none"
+              className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
             >
               {BUFFER_OPTIONS.map((m) => (
                 <option key={m} value={m}>
@@ -238,7 +238,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             <ErrorText>{t.common.somethingWrong}</ErrorText>
           )}
           {state.ok && (
-            <p className="mt-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-sm text-emerald-300">
+            <p className="mt-2 rounded-lg border border-ok/40 bg-ok-l px-3.5 py-2.5 text-sm text-ok">
               {t.settings.saved}
             </p>
           )}

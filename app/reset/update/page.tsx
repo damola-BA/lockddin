@@ -21,7 +21,7 @@ export default function ResetUpdatePage() {
   );
 
   return (
-    <div className="min-h-dvh bg-stone-950 text-stone-100">
+    <div className="min-h-dvh bg-canvas text-ink">
       <FormCard>
         <PageTitle>{t.auth.newPasswordTitle}</PageTitle>
         <form action={formAction} className="mt-4">

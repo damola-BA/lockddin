@@ -35,10 +35,10 @@ export function QuickWeekSetup({
   return (
     <form action={formAction} className="mt-4 space-y-5">
       <div>
-        <p className="mb-1 font-medium text-stone-100">{t.onboarding.quickWeekTitle}</p>
-        <p className="mb-3 text-sm text-stone-400">{t.onboarding.quickWeekHint}</p>
+        <p className="mb-1 font-medium text-ink">{t.onboarding.quickWeekTitle}</p>
+        <p className="mb-3 text-sm text-ink-3">{t.onboarding.quickWeekHint}</p>
 
-        <p className="mb-1.5 text-sm text-stone-400">{t.onboarding.quickWeekDays}</p>
+        <p className="mb-1.5 text-sm text-ink-3">{t.onboarding.quickWeekDays}</p>
         <div className="flex gap-1.5">
           {t.schedule.weekdays.map((name, weekday) => {
             const on = days.has(weekday);
@@ -54,8 +54,8 @@ export function QuickWeekSetup({
                 }}
                 className={`flex-1 rounded-lg py-2.5 text-center text-sm ${
                   on
-                    ? "bg-amber-400 font-semibold text-stone-950"
-                    : "border border-stone-700 bg-stone-900 text-stone-400"
+                    ? "bg-accent font-semibold text-white"
+                    : "border border-line bg-surface text-ink-3"
                 }`}
               >
                 {name.slice(0, 2)}
@@ -69,26 +69,26 @@ export function QuickWeekSetup({
       </div>
 
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-stone-400">{t.schedule.from}</span>
+        <span className="text-ink-3">{t.schedule.from}</span>
         <input
           type="time"
           name="start_time"
           defaultValue={initialStart}
           required
-          className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+          className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
         />
-        <span className="text-stone-400">{t.schedule.to}</span>
+        <span className="text-ink-3">{t.schedule.to}</span>
         <input
           type="time"
           name="end_time"
           defaultValue={initialEnd}
           required
-          className="rounded border border-stone-700 bg-stone-900 px-2 py-1.5 text-stone-100"
+          className="rounded border border-line bg-surface px-2 py-1.5 text-ink"
         />
       </div>
 
       <div>
-        <p className="mb-2 text-sm text-stone-400">{t.onboarding.quickWeekBreaks}</p>
+        <p className="mb-2 text-sm text-ink-3">{t.onboarding.quickWeekBreaks}</p>
         <BlocksEditor name="blocks" initial={initialBlocks} showLabel />
       </div>
 
@@ -97,13 +97,13 @@ export function QuickWeekSetup({
         <ErrorText>{t.common.somethingWrong}</ErrorText>
       )}
       {state.ok && (
-        <p className="text-sm text-emerald-400">{t.onboarding.quickWeekSaved}</p>
+        <p className="text-sm text-ok">{t.onboarding.quickWeekSaved}</p>
       )}
 
       <button
         type="submit"
         disabled={pending || days.size === 0}
-        className="w-full rounded-lg border border-amber-400 px-4 py-3 text-base font-semibold text-amber-300 disabled:opacity-50"
+        className="w-full rounded-lg border border-accent px-4 py-3 text-base font-semibold text-accent disabled:opacity-50"
       >
         {pending ? t.common.loading : t.common.save}
       </button>
