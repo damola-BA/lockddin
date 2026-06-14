@@ -17,6 +17,8 @@ export const providerNewBookingNotify = inngest.createFunction(
     return await step.run("send-or-suppress", async () => {
       const facts = await getBookingFacts(event.data.bookingId as string);
       if (!facts) return { outcome: "booking_missing" };
+      // F8: a manual/walk-in booking gets no provider self-notification.
+      if (facts.source === "manual") return { outcome: "manual_no_notify" };
       if (facts.status !== "confirmed") {
         await logSuppressed({
           templateKey: "booking.new_for_provider",

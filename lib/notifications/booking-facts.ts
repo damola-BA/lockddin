@@ -8,6 +8,7 @@ import { resolveServiceSet } from "@/lib/booking/service-set";
 export type BookingFacts = {
   bookingId: string;
   status: string;
+  source: string;
   startsAt: string;
   createdAt: string;
   cancellationWindowHours: number;
@@ -32,7 +33,7 @@ export async function getBookingFacts(
   const { data } = await admin
     .from("bookings")
     .select(
-      `id, status, starts_at, created_at, cancellation_window_hours, manage_token, client_id, service_ids,
+      `id, status, source, starts_at, created_at, cancellation_window_hours, manage_token, client_id, service_ids,
        clients (first_name, email),
        providers (id, email, business_name, provider_name, location_text, timezone, slug)`,
     )
@@ -59,6 +60,7 @@ export async function getBookingFacts(
   return {
     bookingId: data.id,
     status: data.status,
+    source: data.source,
     startsAt: data.starts_at,
     createdAt: data.created_at,
     cancellationWindowHours: data.cancellation_window_hours,

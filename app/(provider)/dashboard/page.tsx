@@ -91,12 +91,15 @@ export default async function DashboardPage({
           <MonthView provider={provider} date={date} />
         )}
 
-        <nav className="mt-8 grid grid-cols-2 gap-2 text-center text-xs">
+        <nav className="mt-8 grid grid-cols-3 gap-2 text-center text-xs">
           <a href="/dashboard/schedule" className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
             {t.schedule.title}
           </a>
           <a href={`/dashboard/days?date=${date}`} className="rounded-lg border border-stone-800 bg-stone-900 p-3 text-stone-300">
             {t.dashboard.manageDay}
+          </a>
+          <a href="/dashboard/booking/new" className="rounded-lg border border-amber-400/50 bg-stone-900 p-3 text-amber-300">
+            {t.dashboard.walkIn}
           </a>
         </nav>
       </main>
