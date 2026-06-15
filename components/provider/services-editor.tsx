@@ -198,7 +198,7 @@ export function ServicesEditor({ services }: { services: Service[] }) {
               <p className="font-medium text-ink">{service.name}</p>
               <p className="text-sm text-ink-3">
                 {service.duration_minutes} min · {euros(service.price_cents)}
-                {service.buffer_minutes !== null && ` · +${service.buffer_minutes} min buffer`}
+                {service.buffer_minutes !== null && ` · +${service.buffer_minutes} min gap`}
               </p>
               {service.prep_instructions && (
                 <p className="mt-1 text-sm text-ink-3">{service.prep_instructions}</p>
