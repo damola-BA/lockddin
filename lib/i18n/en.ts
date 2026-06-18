@@ -145,6 +145,7 @@ export const en = {
   client: {
     pickService: "What would you like to book?",
     pickMultiple: "Pick one or more — they'll be done in the same visit.",
+    editServices: "Add or remove services",
     returningTitle: "Booked here before?",
     returningHint: "Enter your phone number to see your appointment.",
     returningCta: "Find my appointment",

@@ -246,15 +246,22 @@ export function BookingFlow({
 
   return (
     <section>
-      <button
-        type="button"
-        onClick={() => setSelectionDone(false)}
-        className="mb-1 text-left text-sm text-ink-3"
-      >
-        {comboLabel} ·{" "}
+      {services.length > 1 && (
+        <button
+          type="button"
+          onClick={() => setSelectionDone(false)}
+          className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-accent"
+        >
+          ← {t.client.editServices}
+        </button>
+      )}
+      <div className="mb-4 rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink-2">
+        <span className="text-ink">{comboLabel}</span>
+        {" · "}
         <span className="font-mono">{formatDuration(totalDuration)}</span>
-        <span className="underline"> ✎</span>
-      </button>
+        {" · "}
+        <span className="font-mono">{euros(totalPrice)}</span>
+      </div>
 
       {notice === "released" && (
         <p className="mb-3 rounded-lg border border-accent/60 bg-accent-l p-3 text-sm text-ink-2">
