@@ -82,16 +82,17 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Scale the whole UI up on larger screens. Tailwind sizes almost everything in
-   rem (text, padding, gaps, rem-based max-widths), so growing the root font
-   size enlarges the entire layout proportionally without changing it. Phones
-   and tablets stay at the 16px base. Media queries are in px on purpose — rem
-   units inside media queries are evaluated against the browser's initial 16px,
-   so Tailwind's rem breakpoints are unaffected by this. */
-@media (min-width: 1280px) { :root { font-size: 17px; } }
-@media (min-width: 1536px) { :root { font-size: 18.5px; } }
-@media (min-width: 1920px) { :root { font-size: 20px; } }
-@media (min-width: 2560px) { :root { font-size: 24px; } }
+/* Fluid sizing: the root font size tracks the viewport width, so the whole
+   rem-based UI (text, spacing, the rem-width panel + rail) grows and shrinks
+   with the window — the layout fills the screen at any size instead of sitting
+   as a fixed box, while proportions stay identical so nothing looks stretched.
+   Below ~1300px the clamp floors at 16px, so phones, tablets, and small
+   laptops are unchanged; above that it scales up to fill large monitors and
+   TVs. (rem in Tailwind's media-query breakpoints is resolved against the
+   browser's initial 16px, so this doesn't shift any breakpoints.) */
+:root {
+  font-size: clamp(16px, 1.28vw, 34px);
+}
 
 /* The app is mobile-first (max-w-md columns). On wider screens that column
    would otherwise strand as a thin strip in a sea of canvas, so frame it as a
