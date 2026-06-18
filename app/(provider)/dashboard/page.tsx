@@ -77,7 +77,7 @@ export default async function DashboardPage({
     <div className="min-h-dvh bg-canvas text-ink md:flex md:justify-center md:bg-desk md:px-6 md:py-8">
       {/* On desktop the app is a contained cream panel floating on the taupe
           "desk"; on phone it's full-bleed with a bottom tab bar. */}
-      <div className="w-full pb-24 md:max-w-[1240px] md:rounded-[28px] md:bg-canvas md:pb-8 md:shadow-[var(--shadow-panel)]">
+      <div className="w-full pb-24 md:max-w-[77.5rem] md:rounded-[28px] md:bg-canvas md:pb-8 md:shadow-[var(--shadow-panel)]">
         <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-none md:px-9 md:py-8">
           {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
@@ -126,7 +126,7 @@ export default async function DashboardPage({
           </nav>
 
           {/* Two columns on desktop: the view fills the wide left, a rail sits right. */}
-          <div className="md:grid md:grid-cols-[minmax(0,1fr)_312px] md:gap-8 md:items-start">
+          <div className="md:grid md:grid-cols-[minmax(0,1fr)_19.5rem] md:gap-8 md:items-start">
             <div className="min-w-0">
               {view === "day" && (
                 <DayView
