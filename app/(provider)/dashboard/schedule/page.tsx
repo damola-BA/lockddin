@@ -51,6 +51,12 @@ export default async function SchedulePage() {
         <a href="/dashboard" className="text-sm text-ink-3 underline">
           ← Dashboard
         </a>
+        <a
+          href="/dashboard/days"
+          className="mt-2 block text-sm text-accent underline"
+        >
+          {t.dashboard.crossToExceptions}
+        </a>
         {provider?.schedule_type === "flexible" ? (
           <FlexibleBatchAdd />
         ) : (

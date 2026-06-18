@@ -88,6 +88,9 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         </div>
 
         <form action={formAction} className="space-y-5">
+          <p className="border-b border-line pb-1 text-xs font-semibold uppercase tracking-wide text-ink-4">
+            {t.settings.sectionDetails}
+          </p>
           <div>
             <Label htmlFor="business_name">{t.onboarding.businessName}</Label>
             <TextInput
@@ -154,6 +157,10 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             />
             <p className="mt-1.5 text-sm text-ink-3">{t.onboarding.locationHint}</p>
           </div>
+
+          <p className="border-b border-line pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-ink-4">
+            {t.settings.sectionRules}
+          </p>
 
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-ink-2">

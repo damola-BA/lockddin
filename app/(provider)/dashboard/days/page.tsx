@@ -48,6 +48,12 @@ export default async function DaysPage({
         <a href={`/dashboard?view=day&date=${date}`} className="text-sm text-ink-3 underline">
           ← {t.dashboard.viewDay}
         </a>
+        <a
+          href="/dashboard/schedule"
+          className="mt-2 block text-sm text-accent underline"
+        >
+          {t.dashboard.crossToWeek}
+        </a>
 
         <div className="mt-4 mb-6 flex items-center justify-between">
           <a href={`/dashboard/days?date=${prev}`} className="rounded px-3 py-1 text-ink-3">←</a>

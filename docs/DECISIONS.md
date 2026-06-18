@@ -80,6 +80,21 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD36: provider IA pass (UX subject #9/#10) — labels + grouping only, no logic.
+(A) The recurring-vs-one-off split is now signposted: the dashboard nav item
+"Manage this day" → "Days off & exceptions", "Your week" kept, with reciprocal
+cross-links (schedule page → days, days page → schedule) so "where do I change
+my hours?" resolves to usual=Your week / one date=Days off & exceptions. (B)
+The four config destinations are grouped under nav section labels —
+"Availability" (Your week, Days off & exceptions) and "Your business"
+(Services, Settings & rules) — with "Add booking" promoted to a prominent
+full-width primary. (C) Booking policies surfaced: Settings nav label →
+"Settings & rules", page title to match, and in-page section headers
+("Your details" / "Booking rules") so cancellation/notice/window/gap are
+discoverable. Also "buffer" → "gap between appointments" in all provider copy
+(field/column names unchanged); "lead time" was already shown as "Minimum
+notice". Verified in-browser.
+
 DD35: booking-funnel conversion pass (UX subject #2). (#1) The 5-minute hold
 no longer dumps the client's typed details when it lapses — under 60s the
 countdown turns urgent, and on expiry the details step silently re-holds the

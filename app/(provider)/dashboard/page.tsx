@@ -100,19 +100,29 @@ export default async function DashboardPage({
           <MonthView provider={provider} date={date} />
         )}
 
-        <nav className="mt-8 grid grid-cols-3 gap-2 text-center text-xs">
+        <a
+          href="/dashboard/booking/new"
+          className="mt-8 block rounded-lg border border-accent/50 bg-surface p-3 text-center text-sm font-semibold text-accent"
+        >
+          {t.dashboard.walkIn}
+        </a>
+
+        <p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-ink-4">
+          {t.dashboard.groupAvailability}
+        </p>
+        <nav className="grid grid-cols-2 gap-2 text-center text-xs">
           <a href="/dashboard/schedule" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
             {t.schedule.title}
           </a>
           <a href={`/dashboard/days?date=${date}`} className="rounded-lg border border-line bg-surface p-3 text-ink-2">
             {t.dashboard.manageDay}
           </a>
-          <a href="/dashboard/booking/new" className="rounded-lg border border-accent/50 bg-surface p-3 text-accent">
-            {t.dashboard.walkIn}
-          </a>
         </nav>
 
-        <nav className="mt-2 grid grid-cols-2 gap-2 text-center text-xs">
+        <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-ink-4">
+          {t.dashboard.groupBusiness}
+        </p>
+        <nav className="grid grid-cols-2 gap-2 text-center text-xs">
           <a href="/dashboard/services" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
             {t.dashboard.services}
           </a>
