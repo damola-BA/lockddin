@@ -9,6 +9,7 @@ import {
 } from "@/lib/onboarding/actions";
 import { getDictionary } from "@/lib/i18n";
 import { Label, TextInput, ErrorText } from "@/components/provider/ui";
+import { ServicePhotoGrid } from "@/components/provider/service-photos";
 
 const t = getDictionary();
 
@@ -21,6 +22,7 @@ export type Service = {
   prep_instructions: string | null;
   is_active: boolean;
   sort_order: number;
+  work_photos: string[];
 };
 
 function euros(cents: number): string {
@@ -192,28 +194,34 @@ export function ServicesEditor({ services }: { services: Service[] }) {
         ) : (
           <div
             key={service.id}
-            className="flex items-start justify-between gap-3 rounded-lg border border-line bg-surface-2 p-4"
+            className="rounded-lg border border-line bg-surface-2 p-4"
           >
-            <div>
-              <p className="font-medium text-ink">{service.name}</p>
-              <p className="text-sm text-ink-3">
-                {service.duration_minutes} min · {euros(service.price_cents)}
-                {service.buffer_minutes !== null && ` · +${service.buffer_minutes} min gap`}
-              </p>
-              {service.prep_instructions && (
-                <p className="mt-1 text-sm text-ink-3">{service.prep_instructions}</p>
-              )}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-medium text-ink">{service.name}</p>
+                <p className="text-sm text-ink-3">
+                  {service.duration_minutes} min · {euros(service.price_cents)}
+                  {service.buffer_minutes !== null && ` · +${service.buffer_minutes} min gap`}
+                </p>
+                {service.prep_instructions && (
+                  <p className="mt-1 text-sm text-ink-3">{service.prep_instructions}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setEditing(service.id)}
+                  className="text-sm text-accent underline"
+                >
+                  {t.common.edit}
+                </button>
+                <DeleteButton service={service} />
+              </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              <button
-                type="button"
-                onClick={() => setEditing(service.id)}
-                className="text-sm text-accent underline"
-              >
-                {t.common.edit}
-              </button>
-              <DeleteButton service={service} />
-            </div>
+            <ServicePhotoGrid
+              serviceId={service.id}
+              photos={service.work_photos}
+            />
           </div>
         ),
       )}

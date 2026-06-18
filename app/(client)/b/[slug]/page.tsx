@@ -1,6 +1,7 @@
 import { getProviderBySlug } from "@/lib/booking/slots";
 import { createAdminClient } from "@/lib/db/admin";
 import { getDictionary, fill } from "@/lib/i18n";
+import { ProviderBanner } from "@/components/provider/banner";
 import { BookingFlow } from "./booking-flow";
 
 const t = getDictionary();
@@ -38,28 +39,34 @@ export default async function BookingPage({
   const admin = createAdminClient();
   const { data: services } = await admin
     .from("services")
-    .select("id, name, duration_minutes, price_cents, prep_instructions")
+    .select("id, name, duration_minutes, price_cents, prep_instructions, work_photos")
     .eq("provider_id", provider.id)
     .eq("is_active", true)
     .order("sort_order");
 
+  const normalizedServices = (services ?? []).map((s) => ({
+    ...s,
+    work_photos: Array.isArray(s.work_photos) ? (s.work_photos as string[]) : [],
+  }));
+
   return (
     <Shell>
-      <header className="mb-8">
-        <h1 className="font-serif text-3xl text-ink">{name}</h1>
-        {provider.city && (
-          <p className="mt-1 text-sm text-ink-3">{provider.city}</p>
-        )}
-        <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sage px-3 py-1 text-xs font-medium text-ok">
+      <div className="mb-8">
+        <ProviderBanner
+          name={name}
+          city={provider.city}
+          bannerPath={provider.banner_path}
+        />
+        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-sage px-3 py-1 text-xs font-medium text-ok">
           {fill(t.client.reassureTop, {
             hours: provider.cancellation_window_hours,
           })}
         </p>
-      </header>
+      </div>
       <BookingFlow
         slug={slug}
         cancellationWindowHours={provider.cancellation_window_hours}
-        services={services ?? []}
+        services={normalizedServices}
       />
       <footer className="mt-12 border-t border-line pt-4 text-center">
         <a href="/privacy" className="text-xs text-ink-4 underline">

@@ -76,11 +76,8 @@ export function SettingsForm({ initial }: { initial: Initial }) {
   }, [slug, initial.slug]);
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-10">
-        <a href="/dashboard" className="text-sm text-ink-3 underline">
-          ← Dashboard
-        </a>
+    <div>
+      <div>
 
         <div className="mt-4">
           <PageTitle>{t.settings.title}</PageTitle>
@@ -256,7 +253,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             {pending ? t.common.loading : t.common.save}
           </PrimaryButton>
         </form>
-      </main>
+      </div>
     </div>
   );
 }

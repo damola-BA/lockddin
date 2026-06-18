@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { storageUrl } from "@/lib/storage-url";
 import {
   placeHold,
   releaseHold,
@@ -29,6 +30,7 @@ type Service = {
   duration_minutes: number;
   price_cents: number;
   prep_instructions: string | null;
+  work_photos: string[];
 };
 
 type PublicSlot = { startsAt: string; endsAt: string };
@@ -82,6 +84,7 @@ export function BookingFlow({
   const [daySlots, setDaySlots] = useState<PublicSlot[] | null>(null);
   const [picked, setPicked] = useState<PublicSlot | null>(null);
   const [notice, setNotice] = useState<"released" | "taken" | null>(null);
+  const [galleryService, setGalleryService] = useState<Service | null>(null);
 
   const serviceCsv = selected.map((s) => s.id).join(",");
   const totalDuration = selected.reduce((n, s) => n + s.duration_minutes, 0);
@@ -140,36 +143,61 @@ export function BookingFlow({
           {services.map((s) => {
             const on = selected.some((x) => x.id === s.id);
             return (
-              <button
+              <div
                 key={s.id}
-                type="button"
-                onClick={() =>
-                  setSelected(
-                    on ? selected.filter((x) => x.id !== s.id) : [...selected, s],
-                  )
-                }
-                className={`w-full rounded-xl border bg-white p-4 text-left shadow-sm ${
+                className={`rounded-xl border bg-white shadow-sm ${
                   on ? "border-ink ring-1 ring-ink" : "border-line"
                 }`}
               >
-                <span className="flex items-baseline justify-between">
-                  <span className="font-serif text-lg text-ink">
-                    {on ? "✓ " : ""}
-                    {s.name}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelected(
+                      on ? selected.filter((x) => x.id !== s.id) : [...selected, s],
+                    )
+                  }
+                  className="w-full p-4 text-left"
+                >
+                  <span className="flex items-baseline justify-between">
+                    <span className="font-serif text-lg text-ink">
+                      {on ? "✓ " : ""}
+                      {s.name}
+                    </span>
+                    <span className="font-mono text-sm text-ink-2">
+                      {euros(s.price_cents)}
+                    </span>
                   </span>
-                  <span className="font-mono text-sm text-ink-2">
-                    {euros(s.price_cents)}
+                  <span className="mt-1 block font-mono text-xs text-ink-3">
+                    {fill(t.client.minutes, { n: s.duration_minutes })}
                   </span>
-                </span>
-                <span className="mt-1 block font-mono text-xs text-ink-3">
-                  {fill(t.client.minutes, { n: s.duration_minutes })}
-                </span>
-                {s.prep_instructions && (
-                  <span className="mt-2 block text-sm text-ink-3">
-                    {t.client.prep}: {s.prep_instructions}
-                  </span>
+                  {s.prep_instructions && (
+                    <span className="mt-2 block text-sm text-ink-3">
+                      {t.client.prep}: {s.prep_instructions}
+                    </span>
+                  )}
+                </button>
+                {s.work_photos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setGalleryService(s)}
+                    className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-left"
+                  >
+                    <div className="flex -space-x-1.5">
+                      {s.work_photos.slice(0, 3).map((p) => (
+                        <img
+                          key={p}
+                          src={storageUrl(p)}
+                          alt=""
+                          className="h-7 w-7 rounded-full border-2 border-white object-cover"
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-ink-3">
+                      See {s.work_photos.length} photo{s.work_photos.length !== 1 ? "s" : ""}
+                    </span>
+                  </button>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -182,6 +210,13 @@ export function BookingFlow({
             {t.common.continue} · {euros(totalPrice)} ·{" "}
             <span className="font-mono">{fill(t.client.minutes, { n: totalDuration })}</span>
           </button>
+        )}
+
+        {galleryService && (
+          <ServiceGallery
+            service={galleryService}
+            onClose={() => setGalleryService(null)}
+          />
         )}
       </section>
     );
@@ -697,6 +732,96 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
           {pending ? t.common.loading : t.client.waitlistTitle}
         </button>
       </form>
+    </div>
+  );
+}
+
+// ── Service photo gallery overlay ─────────────────────────────────────────────
+
+function ServiceGallery({
+  service,
+  onClose,
+}: {
+  service: Service;
+  onClose: () => void;
+}) {
+  const [active, setActive] = useState(0);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black/90"
+      onClick={onClose}
+    >
+      <div
+        className="flex flex-col flex-1 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* header */}
+        <div className="flex items-center justify-between px-4 py-4 text-white">
+          <div>
+            <p className="font-serif text-lg">{service.name}</p>
+            <p className="text-xs text-white/60">
+              {active + 1} / {service.work_photos.length}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-2 text-white/80 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* main photo */}
+        <div className="relative flex-1 overflow-hidden">
+          <img
+            src={storageUrl(service.work_photos[active])}
+            alt={service.name}
+            className="h-full w-full object-contain"
+          />
+          {active > 0 && (
+            <button
+              type="button"
+              onClick={() => setActive(active - 1)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
+            >
+              ‹
+            </button>
+          )}
+          {active < service.work_photos.length - 1 && (
+            <button
+              type="button"
+              onClick={() => setActive(active + 1)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
+            >
+              ›
+            </button>
+          )}
+        </div>
+
+        {/* thumbnail strip */}
+        {service.work_photos.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto px-4 py-3">
+            {service.work_photos.map((p, i) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setActive(i)}
+                className={`shrink-0 overflow-hidden rounded-lg border-2 ${
+                  i === active ? "border-white" : "border-transparent"
+                }`}
+              >
+                <img
+                  src={storageUrl(p)}
+                  alt=""
+                  className="h-14 w-14 object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

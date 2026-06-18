@@ -16,6 +16,7 @@ export type PublicProvider = {
   city: string | null;
   location_text: string | null;
   work_photos: unknown[];
+  banner_path: string | null;
   timezone: string;
   booking_window: "3_days" | "current_week" | "current_month" | "3_months";
   cancellation_window_hours: number;
@@ -31,7 +32,7 @@ export async function getProviderBySlug(
   const { data } = await admin
     .from("providers")
     .select(
-      "id, email, business_name, provider_name, city, location_text, work_photos, timezone, booking_window, cancellation_window_hours, global_buffer_minutes, schedule_type, is_active, onboarding_step",
+      "id, email, business_name, provider_name, city, location_text, work_photos, banner_path, timezone, booking_window, cancellation_window_hours, global_buffer_minutes, schedule_type, is_active, onboarding_step",
     )
     .eq("slug", slug)
     .maybeSingle();
