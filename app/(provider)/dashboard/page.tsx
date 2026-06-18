@@ -2,7 +2,7 @@ import { signOut } from "@/lib/auth/actions";
 import { VerifyBanner } from "@/components/provider/verify-banner";
 import { BookingLinkCard } from "@/components/provider/booking-link";
 import { appUrl } from "@/lib/app-url";
-import { getDictionary, fill } from "@/lib/i18n";
+import { getDictionary, formatDuration } from "@/lib/i18n";
 import {
   getProviderContext,
   getDayBookings,
@@ -192,7 +192,7 @@ function TimelineRow({ seg }: { seg: TimelineSegment }) {
       >
         <span className="w-24 shrink-0 font-mono text-xs text-ink-3">{seg.timeText}</span>
         <span className="text-sm text-ink-3">
-          {t.dashboard.freeGap} · {seg.minutes} {t.dashboard.minutesShort}
+          {t.dashboard.freeGap} · {formatDuration(seg.minutes)}
         </span>
       </li>
     );
