@@ -3,16 +3,15 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "crypto";
 
-function ext(filename: string): string {
-  const parts = filename.split(".");
-  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "jpg";
-}
+// Files are uploaded directly from the browser to Supabase Storage (the
+// authenticated provider can write to their own {uid}/… folder via RLS). That
+// avoids the 1 MB server-action body limit and Vercel's 4.5 MB request cap.
+// These actions only record/clear the resulting path — tiny bodies.
 
 // ── Banner ────────────────────────────────────────────────────────────────────
 
-export async function uploadBanner(
+export async function recordBanner(
   _prev: unknown,
   formData: FormData,
 ): Promise<{ error?: string; ok?: true }> {
@@ -20,26 +19,20 @@ export async function uploadBanner(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "unauthenticated" };
 
-  const file = formData.get("banner") as File | null;
-  if (!file || file.size === 0) return { error: "no_file" };
-  if (file.size > 5 * 1024 * 1024) return { error: "too_large" };
+  const path = formData.get("path") as string | null;
+  if (!path) return { error: "missing" };
+  // Guard: the path must live under this provider's own folder.
+  if (!path.startsWith(`${user.id}/`)) return { error: "forbidden" };
 
   const admin = createAdminClient();
-  const path = `${user.id}/banner/${randomUUID()}.${ext(file.name)}`;
-  const bytes = await file.arrayBuffer();
 
-  const { error: upErr } = await admin.storage
-    .from("work-photos")
-    .upload(path, bytes, { contentType: file.type, upsert: true });
-  if (upErr) return { error: "upload_failed" };
-
-  // Delete old banner from storage if set
+  // Remove the previous banner from storage if there was one.
   const { data: row } = await admin
     .from("providers")
     .select("banner_path")
     .eq("id", user.id)
     .single();
-  if (row?.banner_path) {
+  if (row?.banner_path && row.banner_path !== path) {
     await admin.storage.from("work-photos").remove([row.banner_path]);
   }
 
@@ -77,7 +70,7 @@ export async function deleteBanner(
 
 // ── Service photos ────────────────────────────────────────────────────────────
 
-export async function uploadServicePhoto(
+export async function recordServicePhoto(
   _prev: unknown,
   formData: FormData,
 ): Promise<{ error?: string; ok?: true }> {
@@ -86,33 +79,32 @@ export async function uploadServicePhoto(
   if (!user) return { error: "unauthenticated" };
 
   const serviceId = formData.get("service_id") as string | null;
-  const file = formData.get("photo") as File | null;
-  if (!serviceId || !file || file.size === 0) return { error: "missing" };
-  if (file.size > 8 * 1024 * 1024) return { error: "too_large" };
+  const path = formData.get("path") as string | null;
+  if (!serviceId || !path) return { error: "missing" };
+  if (!path.startsWith(`${user.id}/`)) return { error: "forbidden" };
 
   const admin = createAdminClient();
 
-  // Verify service belongs to this provider
+  // Verify service belongs to this provider.
   const { data: service } = await admin
     .from("services")
     .select("id, photos")
     .eq("id", serviceId)
     .eq("provider_id", user.id)
     .single();
-  if (!service) return { error: "not_found" };
+  if (!service) {
+    // Orphan cleanup: the file was uploaded but we can't attach it.
+    await admin.storage.from("work-photos").remove([path]);
+    return { error: "not_found" };
+  }
 
   const photos: string[] = Array.isArray(service.photos)
     ? (service.photos as string[])
     : [];
-  if (photos.length >= 6) return { error: "limit_reached" };
-
-  const path = `${user.id}/services/${serviceId}/${randomUUID()}.${ext(file.name)}`;
-  const bytes = await file.arrayBuffer();
-
-  const { error: upErr } = await admin.storage
-    .from("work-photos")
-    .upload(path, bytes, { contentType: file.type });
-  if (upErr) return { error: "upload_failed" };
+  if (photos.length >= 6) {
+    await admin.storage.from("work-photos").remove([path]);
+    return { error: "limit_reached" };
+  }
 
   await admin
     .from("services")

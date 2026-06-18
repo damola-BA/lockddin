@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, useRef, useOptimistic } from "react";
-import { uploadServicePhoto, deleteServicePhoto } from "@/lib/dashboard/photo-actions";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { recordServicePhoto, deleteServicePhoto } from "@/lib/dashboard/photo-actions";
+import { uploadToWorkPhotos } from "@/lib/upload-photo";
 import { storageUrl } from "@/lib/storage-url";
-
-type State = { error?: string; ok?: true };
 
 export function ServicePhotoGrid({
   serviceId,
@@ -13,121 +13,103 @@ export function ServicePhotoGrid({
   serviceId: string;
   photos: string[];
 }) {
-  const [optimisticPhotos, addOptimistic] = useOptimistic(
-    photos,
-    (current, action: { type: "add"; url: string } | { type: "remove"; path: string }) => {
-      if (action.type === "remove") return current.filter((p) => p !== action.path);
-      return current;
-    },
-  );
-
-  const [uploadState, uploadAction, uploading] = useActionState<State, FormData>(
-    uploadServicePhoto,
-    {},
-  );
-  const [, deleteAction] = useActionState<State, FormData>(deleteServicePhoto, {});
+  const router = useRouter();
+  const [busy, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const atLimit = optimisticPhotos.length >= 6;
+  const atLimit = photos.length >= 6;
+
+  async function handleFile(file: File) {
+    setError(null);
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Photo must be under 8 MB.");
+      return;
+    }
+    if (atLimit) {
+      setError("Maximum 6 photos per service.");
+      return;
+    }
+    try {
+      const path = await uploadToWorkPhotos(file, `services/${serviceId}`);
+      const fd = new FormData();
+      fd.set("service_id", serviceId);
+      fd.set("path", path);
+      const res = await recordServicePhoto({}, fd);
+      if (res.error) {
+        setError(
+          res.error === "limit_reached"
+            ? "Maximum 6 photos per service."
+            : "Upload failed — please try again.",
+        );
+        return;
+      }
+      startTransition(() => router.refresh());
+    } catch {
+      setError("Upload failed — please try again.");
+    }
+  }
+
+  function handleDelete(path: string) {
+    setError(null);
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("service_id", serviceId);
+      fd.set("path", path);
+      await deleteServicePhoto({}, fd);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-3 border-t border-line pt-3 mt-3">
       <p className="text-xs font-semibold uppercase tracking-widest text-ink-4">
-        Photos ({optimisticPhotos.length}/6)
+        Photos ({photos.length}/6)
       </p>
 
-      {optimisticPhotos.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {optimisticPhotos.map((path) => (
-            <div key={path} className="group relative aspect-square overflow-hidden rounded-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={storageUrl(path)}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-              <form
-                action={async (fd) => {
-                  addOptimistic({ type: "remove", path });
-                  await deleteAction(fd);
-                }}
-                className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-              >
-                <input type="hidden" name="service_id" value={serviceId} />
-                <input type="hidden" name="path" value={path} />
-                <button
-                  type="submit"
-                  className="rounded-full bg-black/60 px-2 py-1 text-xs text-white"
-                >
-                  Remove
-                </button>
-              </form>
-            </div>
-          ))}
+      <div className="grid grid-cols-3 gap-2">
+        {photos.map((path) => (
+          <div key={path} className="group relative aspect-square overflow-hidden rounded-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={storageUrl(path)} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => handleDelete(path)}
+              disabled={busy}
+              className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100 group-focus-within:opacity-100"
+            >
+              <span className="rounded-full bg-black/60 px-2 py-1 text-xs text-white">
+                Remove
+              </span>
+            </button>
+          </div>
+        ))}
 
-          {!atLimit && (
-            <form action={uploadAction}>
-              <input type="hidden" name="service_id" value={serviceId} />
-              <input
-                ref={inputRef}
-                type="file"
-                name="photo"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) e.target.form?.requestSubmit();
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading}
-                className="flex aspect-square w-full items-center justify-center rounded-lg border-2 border-dashed border-line text-ink-4 disabled:opacity-50"
-              >
-                {uploading ? (
-                  <span className="text-xl">…</span>
-                ) : (
-                  <span className="text-2xl">+</span>
-                )}
-              </button>
-            </form>
-          )}
-        </div>
-      )}
-
-      {optimisticPhotos.length === 0 && (
-        <form action={uploadAction}>
-          <input type="hidden" name="service_id" value={serviceId} />
-          <input
-            ref={inputRef}
-            type="file"
-            name="photo"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.[0]) e.target.form?.requestSubmit();
-            }}
-          />
+        {!atLimit && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="w-full rounded-lg border border-dashed border-line px-4 py-2.5 text-sm text-ink-3 disabled:opacity-50"
+            disabled={busy}
+            className="flex aspect-square w-full items-center justify-center rounded-lg border-2 border-dashed border-line text-ink-4 disabled:opacity-50"
           >
-            {uploading ? "Uploading…" : "+ Add photos"}
+            <span className="text-2xl">{busy ? "…" : "+"}</span>
           </button>
-        </form>
-      )}
+        )}
+      </div>
 
-      {uploadState.error && (
-        <p className="text-xs text-red-600">
-          {uploadState.error === "limit_reached"
-            ? "Maximum 6 photos per service."
-            : uploadState.error === "too_large"
-              ? "Photo must be under 8 MB."
-              : "Upload failed — please try again."}
-        </p>
-      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+          e.target.value = "";
+        }}
+      />
+
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }
