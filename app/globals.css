@@ -83,9 +83,10 @@ body {
    would otherwise strand as a thin strip in a sea of canvas, so frame it as a
    centered, floating app panel — it reads as intentional rather than broken.
    Scoped to content columns; the full-height centered auth/404 screens (whose
-   <main> carries min-h-dvh) are left as-is. */
+   <main> carries min-h-dvh) are left as-is, as are screens that build their own
+   wide desktop layout (.no-frame, e.g. the dashboard). */
 @media (min-width: 768px) {
-  main.max-w-md:not(.min-h-dvh) {
+  main.max-w-md:not(.min-h-dvh):not(.no-frame) {
     margin-top: 2.25rem;
     margin-bottom: 2.25rem;
     border: 1px solid var(--line);

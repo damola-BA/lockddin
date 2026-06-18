@@ -52,7 +52,7 @@ export default async function DashboardPage({
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-8">
+      <main className="no-frame mx-auto w-full max-w-md px-5 py-8 md:max-w-5xl md:px-8">
         {!provider.emailVerified && <VerifyBanner email={provider.email} />}
         <header className="mb-6 flex items-center justify-between">
           <p className="font-serif text-lg">{provider.businessName}</p>
@@ -63,73 +63,88 @@ export default async function DashboardPage({
           </form>
         </header>
 
-        <BookingLinkCard
-          url={appUrl(`/b/${provider.slug}`)}
-          businessName={provider.businessName}
-        />
+        {/* Single column on phone; on desktop the schedule takes the wide left
+            column and a side rail (booking link + actions) sits on the right.
+            Explicit grid placement keeps the mobile DOM order intact. */}
+        <div className="md:grid md:grid-cols-[minmax(0,1fr)_320px] md:grid-rows-[auto_1fr] md:gap-x-8 md:gap-y-5">
+          {/* Booking link — page top on phone, top of rail on desktop */}
+          <div className="md:col-start-2 md:row-start-1">
+            <BookingLinkCard
+              url={appUrl(`/b/${provider.slug}`)}
+              businessName={provider.businessName}
+            />
+          </div>
 
-        <nav className="mb-5 flex gap-2 text-sm">
-          {(["day", "week", "month"] as const).map((v) => (
+          {/* Primary: the schedule (wide left column on desktop) */}
+          <div className="md:col-start-1 md:row-start-1 md:row-span-2">
+            <nav className="mb-5 mt-5 flex gap-2 text-sm md:mt-0">
+              {(["day", "week", "month"] as const).map((v) => (
+                <a
+                  key={v}
+                  href={`/dashboard?view=${v}&date=${date}`}
+                  className={`rounded-lg px-3 py-1.5 ${
+                    view === v
+                      ? "bg-accent font-semibold text-white"
+                      : "border border-line text-ink-2"
+                  }`}
+                >
+                  {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
+                </a>
+              ))}
+              <a
+                href="/dashboard/clients"
+                className="ml-auto rounded-lg border border-line px-3 py-1.5 text-ink-2"
+              >
+                {t.dashboard.clients}
+              </a>
+            </nav>
+
+            {view === "day" && (
+              <DayView provider={provider} date={date} today={today} maxDate={maxDate} />
+            )}
+            {view === "week" && (
+              <WeekView provider={provider} date={date} maxDate={maxDate} />
+            )}
+            {view === "month" && (
+              <MonthView provider={provider} date={date} />
+            )}
+          </div>
+
+          {/* Actions + management nav — below the schedule on phone, lower rail
+              on desktop */}
+          <div className="mt-8 md:col-start-2 md:row-start-2 md:mt-0">
             <a
-              key={v}
-              href={`/dashboard?view=${v}&date=${date}`}
-              className={`rounded-lg px-3 py-1.5 ${
-                view === v
-                  ? "bg-accent font-semibold text-white"
-                  : "border border-line text-ink-2"
-              }`}
+              href="/dashboard/booking/new"
+              className="block rounded-lg border border-accent/50 bg-surface p-3 text-center text-sm font-semibold text-accent"
             >
-              {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
+              {t.dashboard.walkIn}
             </a>
-          ))}
-          <a
-            href="/dashboard/clients"
-            className="ml-auto rounded-lg border border-line px-3 py-1.5 text-ink-2"
-          >
-            {t.dashboard.clients}
-          </a>
-        </nav>
 
-        {view === "day" && (
-          <DayView provider={provider} date={date} today={today} maxDate={maxDate} />
-        )}
-        {view === "week" && (
-          <WeekView provider={provider} date={date} maxDate={maxDate} />
-        )}
-        {view === "month" && (
-          <MonthView provider={provider} date={date} />
-        )}
+            <p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-ink-4">
+              {t.dashboard.groupAvailability}
+            </p>
+            <nav className="grid grid-cols-2 gap-2 text-center text-xs">
+              <a href="/dashboard/schedule" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
+                {t.schedule.title}
+              </a>
+              <a href={`/dashboard/days?date=${date}`} className="rounded-lg border border-line bg-surface p-3 text-ink-2">
+                {t.dashboard.manageDay}
+              </a>
+            </nav>
 
-        <a
-          href="/dashboard/booking/new"
-          className="mt-8 block rounded-lg border border-accent/50 bg-surface p-3 text-center text-sm font-semibold text-accent"
-        >
-          {t.dashboard.walkIn}
-        </a>
-
-        <p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-ink-4">
-          {t.dashboard.groupAvailability}
-        </p>
-        <nav className="grid grid-cols-2 gap-2 text-center text-xs">
-          <a href="/dashboard/schedule" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
-            {t.schedule.title}
-          </a>
-          <a href={`/dashboard/days?date=${date}`} className="rounded-lg border border-line bg-surface p-3 text-ink-2">
-            {t.dashboard.manageDay}
-          </a>
-        </nav>
-
-        <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-ink-4">
-          {t.dashboard.groupBusiness}
-        </p>
-        <nav className="grid grid-cols-2 gap-2 text-center text-xs">
-          <a href="/dashboard/services" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
-            {t.dashboard.services}
-          </a>
-          <a href="/dashboard/settings" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
-            {t.dashboard.settings}
-          </a>
-        </nav>
+            <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-ink-4">
+              {t.dashboard.groupBusiness}
+            </p>
+            <nav className="grid grid-cols-2 gap-2 text-center text-xs">
+              <a href="/dashboard/services" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
+                {t.dashboard.services}
+              </a>
+              <a href="/dashboard/settings" className="rounded-lg border border-line bg-surface p-3 text-ink-2">
+                {t.dashboard.settings}
+              </a>
+            </nav>
+          </div>
+        </div>
       </main>
     </div>
   );
