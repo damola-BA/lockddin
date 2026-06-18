@@ -7,7 +7,7 @@ import {
   deleteService,
   type ActionState,
 } from "@/lib/onboarding/actions";
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, formatDuration } from "@/lib/i18n";
 import { Label, TextInput, ErrorText } from "@/components/provider/ui";
 import { ServicePhotoGrid } from "@/components/provider/service-photos";
 
@@ -200,7 +200,7 @@ export function ServicesEditor({ services }: { services: Service[] }) {
               <div>
                 <p className="font-medium text-ink">{service.name}</p>
                 <p className="text-sm text-ink-3">
-                  {service.duration_minutes} min · {euros(service.price_cents)}
+                  {formatDuration(service.duration_minutes)} · {euros(service.price_cents)}
                   {service.buffer_minutes !== null && ` · +${service.buffer_minutes} min gap`}
                 </p>
                 {service.prep_instructions && (

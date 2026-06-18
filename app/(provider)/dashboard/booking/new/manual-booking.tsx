@@ -9,7 +9,7 @@ import {
   createManualBooking,
   type ManualClient,
 } from "@/lib/booking/manual";
-import { getDictionary, fill } from "@/lib/i18n";
+import { getDictionary, formatDuration } from "@/lib/i18n";
 
 const t = getDictionary();
 const TZ = "Europe/Brussels";
@@ -82,7 +82,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
                     {on ? "✓ " : ""}
                     {s.name}
                     <span className="ml-2 font-mono text-xs text-ink-3">
-                      {fill(t.client.minutes, { n: s.duration_minutes })}
+                      {formatDuration(s.duration_minutes)}
                     </span>
                   </span>
                   <span className="font-mono text-sm text-ink-2">{euros(s.price_cents)}</span>
@@ -147,7 +147,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
         <p className="font-serif text-lg">{picked.map((s) => s.name).join(" + ")}</p>
         <p className="font-mono text-sm text-ink-2">{slotLabel}</p>
         <p className="mt-1 font-mono text-sm text-accent">
-          {euros(totalPrice)} · {fill(t.client.minutes, { n: totalDuration })}
+          {euros(totalPrice)} · {formatDuration(totalDuration)}
         </p>
         <button
           type="button"

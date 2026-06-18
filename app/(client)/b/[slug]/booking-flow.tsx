@@ -20,7 +20,7 @@ import {
   type RecognizeResult,
   type WaitlistState,
 } from "@/lib/booking/actions";
-import { getDictionary, fill } from "@/lib/i18n";
+import { getDictionary, fill, formatDuration } from "@/lib/i18n";
 
 const t = getDictionary();
 
@@ -168,7 +168,7 @@ export function BookingFlow({
                     </span>
                   </span>
                   <span className="mt-1 block font-mono text-xs text-ink-3">
-                    {fill(t.client.minutes, { n: s.duration_minutes })}
+                    {formatDuration(s.duration_minutes)}
                   </span>
                   {s.prep_instructions && (
                     <span className="mt-2 block text-sm text-ink-3">
@@ -208,7 +208,7 @@ export function BookingFlow({
             className="sticky bottom-4 mt-4 w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas"
           >
             {t.common.continue} · {euros(totalPrice)} ·{" "}
-            <span className="font-mono">{fill(t.client.minutes, { n: totalDuration })}</span>
+            <span className="font-mono">{formatDuration(totalDuration)}</span>
           </button>
         )}
 
@@ -252,7 +252,7 @@ export function BookingFlow({
         className="mb-1 text-left text-sm text-ink-3"
       >
         {comboLabel} ·{" "}
-        <span className="font-mono">{fill(t.client.minutes, { n: totalDuration })}</span>
+        <span className="font-mono">{formatDuration(totalDuration)}</span>
         <span className="underline"> ✎</span>
       </button>
 
