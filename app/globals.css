@@ -26,8 +26,10 @@
   --ok: #1f6e42;
   --ok-l: #e7f2ec;
   --line: #ece3d9;
+  --desk: #d8d1c2;
   --shadow: 0 14px 38px -18px rgba(74, 46, 28, 0.3);
   --shadow-sm: 0 6px 18px -10px rgba(74, 46, 28, 0.22);
+  --shadow-panel: 0 24px 60px -28px rgba(74, 46, 28, 0.4);
 }
 
 /* Future provider dark mode (DD33: "light now, dark toggle later").
@@ -71,6 +73,7 @@
   --color-ok: var(--ok);
   --color-ok-l: var(--ok-l);
   --color-line: var(--line);
+  --color-desk: var(--desk);
 }
 
 body {

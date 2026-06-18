@@ -109,7 +109,13 @@ export async function getDayBookings(
   });
 }
 
-export type DayStats = { count: number; valueCents: number; gaps: number };
+export type DayStats = {
+  count: number;
+  valueCents: number;
+  gaps: number;
+  freeMinutes: number;
+  bookedPct: number;
+};
 
 type DayShape = {
   hours: { start: number; end: number } | null;
@@ -186,7 +192,7 @@ export async function getDayStats(
   const valueCents = bookings.reduce((sum, b) => sum + b.priceCents, 0);
   const count = bookings.length;
   const { hours, breaks } = await getDayShape(provider, date);
-  if (!hours) return { count, valueCents, gaps: 0 };
+  if (!hours) return { count, valueCents, gaps: 0, freeMinutes: 0, bookedPct: 0 };
 
   const blocks = [
     ...breaks.map((b) => ({ start: minutesToHHMM(b.start), end: minutesToHHMM(b.end) })),
@@ -195,8 +201,18 @@ export async function getDayStats(
       end: formatInTimeZone(new Date(b.endsAt), provider.timezone, "HH:mm"),
     })),
   ];
-  const free = buildLocalWindows(hours, blocks).filter((w) => w.endMin - w.startMin >= 15);
-  return { count, valueCents, gaps: free.length };
+  const allFree = buildLocalWindows(hours, blocks);
+  const gaps = allFree.filter((w) => w.endMin - w.startMin >= 15).length;
+  const freeMinutes = allFree.reduce((sum, w) => sum + (w.endMin - w.startMin), 0);
+
+  // "Day booked %" = booked time as a share of the bookable day (working hours
+  // minus breaks). Free minutes already exclude breaks, so booked = available − free.
+  const breakMinutes = breaks.reduce((sum, b) => sum + (b.end - b.start), 0);
+  const available = hours.end - hours.start - breakMinutes;
+  const bookedPct =
+    available > 0 ? Math.round(((available - freeMinutes) / available) * 100) : 0;
+
+  return { count, valueCents, gaps, freeMinutes, bookedPct };
 }
 
 export type TimelineSegment =
