@@ -51,71 +51,108 @@ export default async function DashboardPage({
   const maxDate = maxNavDate(provider);
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="no-frame mx-auto w-full max-w-md px-5 py-8 md:max-w-5xl md:px-8">
-        {!provider.emailVerified && <VerifyBanner email={provider.email} />}
-        <header className="mb-6 flex items-center justify-between">
-          <p className="font-serif text-lg">{provider.businessName}</p>
+    <div className="min-h-dvh bg-canvas text-ink md:flex">
+      {/* Desktop app-shell sidebar — full-height nav anchored to the edge so the
+          dashboard reads as an app, not a centered card. Hidden on phone, which
+          keeps the single-column layout below. */}
+      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-line bg-surface px-4 py-7 md:flex lg:w-64 lg:px-5">
+        <p className="mb-7 px-2 font-serif text-lg">{provider.businessName}</p>
+
+        <nav className="flex flex-col gap-0.5">
+          <SideLink href="/dashboard" active>{t.dashboard.today}</SideLink>
+          <SideLink href="/dashboard/clients">{t.dashboard.clients}</SideLink>
+        </nav>
+
+        <SideHeading>{t.dashboard.groupAvailability}</SideHeading>
+        <nav className="flex flex-col gap-0.5">
+          <SideLink href="/dashboard/schedule">{t.schedule.title}</SideLink>
+          <SideLink href={`/dashboard/days?date=${date}`}>{t.dashboard.manageDay}</SideLink>
+        </nav>
+
+        <SideHeading>{t.dashboard.groupBusiness}</SideHeading>
+        <nav className="flex flex-col gap-0.5">
+          <SideLink href="/dashboard/services">{t.dashboard.services}</SideLink>
+          <SideLink href="/dashboard/settings">{t.dashboard.settings}</SideLink>
+        </nav>
+
+        <a
+          href="/dashboard/booking/new"
+          className="mt-5 block rounded-lg bg-accent px-4 py-2.5 text-center text-sm font-semibold text-white"
+        >
+          {t.dashboard.walkIn}
+        </a>
+
+        <div className="mt-auto space-y-4 pt-6">
+          <BookingLinkCard
+            url={appUrl(`/b/${provider.slug}`)}
+            businessName={provider.businessName}
+          />
           <form action={signOut}>
-            <button type="submit" className="text-sm text-ink-3 underline">
+            <button type="submit" className="px-2 text-sm text-ink-3 underline">
               {t.auth.signOut}
             </button>
           </form>
-        </header>
+        </div>
+      </aside>
 
-        {/* Single column on phone; on desktop the schedule takes the wide left
-            column and a side rail (booking link + actions) sits on the right.
-            Explicit grid placement keeps the mobile DOM order intact. */}
-        <div className="md:grid md:grid-cols-[minmax(0,1fr)_320px] md:grid-rows-[auto_1fr] md:gap-x-12 md:gap-y-5 lg:gap-x-20">
-          {/* Booking link — page top on phone, top of rail on desktop */}
-          <div className="md:col-start-2 md:row-start-1">
+      {/* Main content area */}
+      <div className="min-w-0 flex-1">
+        <main className="no-frame mx-auto w-full max-w-md px-5 py-8 md:mx-0 md:max-w-3xl md:px-10 md:py-10 lg:max-w-5xl">
+          {!provider.emailVerified && <VerifyBanner email={provider.email} />}
+
+          {/* Phone-only header + booking link (the sidebar carries these on desktop) */}
+          <header className="mb-6 flex items-center justify-between md:hidden">
+            <p className="font-serif text-lg">{provider.businessName}</p>
+            <form action={signOut}>
+              <button type="submit" className="text-sm text-ink-3 underline">
+                {t.auth.signOut}
+              </button>
+            </form>
+          </header>
+          <div className="md:hidden">
             <BookingLinkCard
               url={appUrl(`/b/${provider.slug}`)}
               businessName={provider.businessName}
             />
           </div>
 
-          {/* Primary: the schedule (wide left column on desktop) */}
-          <div className="md:col-start-1 md:row-start-1 md:row-span-2">
-            <nav className="mb-5 mt-5 flex gap-2 text-sm md:mt-0">
-              {(["day", "week", "month"] as const).map((v) => (
-                <a
-                  key={v}
-                  href={`/dashboard?view=${v}&date=${date}`}
-                  className={`rounded-lg px-3 py-1.5 ${
-                    view === v
-                      ? "bg-accent font-semibold text-white"
-                      : "border border-line text-ink-2"
-                  }`}
-                >
-                  {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
-                </a>
-              ))}
+          <nav className="mb-5 flex gap-2 text-sm">
+            {(["day", "week", "month"] as const).map((v) => (
               <a
-                href="/dashboard/clients"
-                className="ml-auto rounded-lg border border-line px-3 py-1.5 text-ink-2"
+                key={v}
+                href={`/dashboard?view=${v}&date=${date}`}
+                className={`rounded-lg px-3 py-1.5 ${
+                  view === v
+                    ? "bg-accent font-semibold text-white"
+                    : "border border-line text-ink-2"
+                }`}
               >
-                {t.dashboard.clients}
+                {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
               </a>
-            </nav>
+            ))}
+            <a
+              href="/dashboard/clients"
+              className="ml-auto rounded-lg border border-line px-3 py-1.5 text-ink-2 md:hidden"
+            >
+              {t.dashboard.clients}
+            </a>
+          </nav>
 
-            {view === "day" && (
-              <DayView provider={provider} date={date} today={today} maxDate={maxDate} />
-            )}
-            {view === "week" && (
-              <WeekView provider={provider} date={date} maxDate={maxDate} />
-            )}
-            {view === "month" && (
-              <MonthView provider={provider} date={date} />
-            )}
-          </div>
+          {view === "day" && (
+            <DayView provider={provider} date={date} today={today} maxDate={maxDate} />
+          )}
+          {view === "week" && (
+            <WeekView provider={provider} date={date} maxDate={maxDate} />
+          )}
+          {view === "month" && (
+            <MonthView provider={provider} date={date} />
+          )}
 
-          {/* Actions + management nav — below the schedule on phone, lower rail
-              on desktop */}
-          <div className="mt-8 md:col-start-2 md:row-start-2 md:mt-0">
+          {/* Phone-only actions + management nav (the sidebar carries these on desktop) */}
+          <div className="md:hidden">
             <a
               href="/dashboard/booking/new"
-              className="block rounded-lg border border-accent/50 bg-surface p-3 text-center text-sm font-semibold text-accent"
+              className="mt-8 block rounded-lg border border-accent/50 bg-surface p-3 text-center text-sm font-semibold text-accent"
             >
               {t.dashboard.walkIn}
             </a>
@@ -144,9 +181,38 @@ export default async function DashboardPage({
               </a>
             </nav>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
+  );
+}
+
+function SideLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      className={`rounded-lg px-3 py-2 text-sm ${
+        active ? "bg-accent/10 font-semibold text-accent" : "text-ink-2 hover:bg-canvas-2"
+      }`}
+    >
+      {children}
+    </a>
+  );
+}
+
+function SideHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-1 mt-6 px-3 text-xs font-semibold uppercase tracking-wide text-ink-4">
+      {children}
+    </p>
   );
 }
 
