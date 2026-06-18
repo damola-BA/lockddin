@@ -81,31 +81,3 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
 }
-
-/* Fluid sizing: the root font size tracks the viewport width, so the whole
-   rem-based UI (text, spacing, the rem-width panel + rail) grows and shrinks
-   with the window — the layout fills the screen at any size instead of sitting
-   as a fixed box, while proportions stay identical so nothing looks stretched.
-   Below ~1300px the clamp floors at 16px, so phones, tablets, and small
-   laptops are unchanged; above that it scales up to fill large monitors and
-   TVs. (rem in Tailwind's media-query breakpoints is resolved against the
-   browser's initial 16px, so this doesn't shift any breakpoints.) */
-:root {
-  font-size: clamp(16px, 1.28vw, 34px);
-}
-
-/* The app is mobile-first (max-w-md columns). On wider screens that column
-   would otherwise strand as a thin strip in a sea of canvas, so frame it as a
-   centered, floating app panel — it reads as intentional rather than broken.
-   Scoped to content columns; the full-height centered auth/404 screens (whose
-   <main> carries min-h-dvh) are left as-is, as are screens that build their own
-   wide desktop layout (.no-frame, e.g. the dashboard). */
-@media (min-width: 768px) {
-  main.max-w-md:not(.min-h-dvh):not(.no-frame) {
-    margin-top: 2.25rem;
-    margin-bottom: 2.25rem;
-    border: 1px solid var(--line);
-    border-radius: 1.5rem;
-    box-shadow: var(--shadow);
-  }
-}
