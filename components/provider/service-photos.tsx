@@ -16,6 +16,7 @@ export function ServicePhotoGrid({
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const atLimit = photos.length >= 6;
@@ -69,18 +70,23 @@ export function ServicePhotoGrid({
 
       <div className="grid grid-cols-3 gap-2">
         {photos.map((path) => (
-          <div key={path} className="group relative aspect-square overflow-hidden rounded-lg">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={storageUrl(path)} alt="" className="h-full w-full object-cover" />
+          <div key={path} className="relative aspect-square overflow-hidden rounded-lg">
+            <button
+              type="button"
+              onClick={() => setViewing(path)}
+              className="block h-full w-full"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={storageUrl(path)} alt="" className="h-full w-full object-cover" />
+            </button>
             <button
               type="button"
               onClick={() => handleDelete(path)}
               disabled={busy}
-              className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity group-hover:bg-black/40 group-hover:opacity-100 group-focus-within:opacity-100"
+              aria-label="Remove photo"
+              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-sm text-white disabled:opacity-50"
             >
-              <span className="rounded-full bg-black/60 px-2 py-1 text-xs text-white">
-                Remove
-              </span>
+              ✕
             </button>
           </div>
         ))}
@@ -110,6 +116,28 @@ export function ServicePhotoGrid({
       />
 
       {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {viewing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setViewing(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={storageUrl(viewing)}
+            alt=""
+            className="max-h-full max-w-full object-contain"
+          />
+          <button
+            type="button"
+            onClick={() => setViewing(null)}
+            aria-label="Close"
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
