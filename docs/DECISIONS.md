@@ -6,6 +6,18 @@ AD01–AD12: beta adaptation decisions — see docs/BETA_SCOPE.md.
 
 Append new decisions below as DD07+, one line of rationale each.
 
+DD38: provider banner + service photos. Service photos reuse the existing
+services.work_photos jsonb array (no new table) capped at 6 per service,
+Hinge-style; the only schema change is providers.banner_path text (migration
+20260618000000_photos). The booking page shows an auto-generated CSS banner
+(name + city, terracotta gradient) so every provider has a branded header from
+day one with zero effort; they can replace it with their own photo from Settings
+or the onboarding profile step. Service cards show a photo-preview strip that
+opens a full-screen swipeable gallery (the booking flow stays mounted underneath).
+Uploads go through lib/dashboard/photo-actions.ts (service role, ownership-checked,
+5 MB banner / 8 MB photo) into the existing public work-photos bucket; public
+URLs via lib/storage-url.ts. No payment/deposit work — that stays deferred.
+
 DD07: M0 smoke page (/smoke) reads/writes notification_log rows (template_key
 "m0.smoke", status "suppressed") — reuses a real table instead of adding a
 throwaway one, and suppressed rows can never be mistaken for sent email.
