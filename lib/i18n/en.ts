@@ -152,6 +152,8 @@ export const en = {
     returningNone: "No upcoming appointment for this number — pick a service below to book.",
     minutes: "{n} min",
     nextSlots: "Next available",
+    pickTime: "Pick a time",
+    soonest: "Soonest",
     chooseDifferentDay: "Choose a different day",
     backToNext: "Back to next available",
     noSlotsDay: "Nothing free this day.",

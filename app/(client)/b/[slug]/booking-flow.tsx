@@ -145,8 +145,8 @@ export function BookingFlow({
             return (
               <div
                 key={s.id}
-                className={`rounded-xl border bg-white shadow-sm ${
-                  on ? "border-ink ring-1 ring-ink" : "border-line"
+                className={`rounded-2xl border bg-white shadow-sm transition-colors ${
+                  on ? "border-accent ring-1 ring-accent" : "border-line"
                 }`}
               >
                 <button
@@ -156,25 +156,31 @@ export function BookingFlow({
                       on ? selected.filter((x) => x.id !== s.id) : [...selected, s],
                     )
                   }
-                  className="w-full p-4 text-left"
+                  className="flex w-full items-start gap-3 p-4 text-left"
                 >
-                  <span className="flex items-baseline justify-between">
-                    <span className="font-serif text-lg text-ink">
-                      {on ? "✓ " : ""}
-                      {s.name}
-                    </span>
-                    <span className="font-mono text-sm text-ink-2">
-                      {euros(s.price_cents)}
-                    </span>
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] ${
+                      on ? "border-accent bg-accent text-white" : "border-line text-transparent"
+                    }`}
+                  >
+                    ✓
                   </span>
-                  <span className="mt-1 block font-mono text-xs text-ink-3">
-                    {formatDuration(s.duration_minutes)}
-                  </span>
-                  {s.prep_instructions && (
-                    <span className="mt-2 block text-sm text-ink-3">
-                      {t.client.prep}: {s.prep_instructions}
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="font-serif text-lg text-ink">{s.name}</span>
+                      <span className="font-mono text-sm text-ink-2">
+                        {euros(s.price_cents)}
+                      </span>
                     </span>
-                  )}
+                    <span className="mt-1 block font-mono text-xs text-ink-3">
+                      {formatDuration(s.duration_minutes)}
+                    </span>
+                    {s.prep_instructions && (
+                      <span className="mt-2 block text-sm text-ink-3">
+                        {t.client.prep}: {s.prep_instructions}
+                      </span>
+                    )}
+                  </span>
                 </button>
                 {s.photos.length > 0 && (
                   <button
@@ -202,14 +208,22 @@ export function BookingFlow({
           })}
         </div>
         {selected.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setSelectionDone(true)}
-            className="sticky bottom-4 mt-4 w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas"
-          >
-            {t.common.continue} · {euros(totalPrice)} ·{" "}
-            <span className="font-mono">{formatDuration(totalDuration)}</span>
-          </button>
+          <div className="sticky bottom-4 mt-4 flex items-center gap-3 rounded-2xl border border-line bg-white/95 p-2 pl-4 shadow-[var(--shadow)] backdrop-blur">
+            <div className="min-w-0 flex-1 text-sm">
+              <p className="truncate text-ink-3">
+                {selected.length} service{selected.length !== 1 ? "s" : ""} ·{" "}
+                <span className="font-mono">{formatDuration(totalDuration)}</span>
+              </p>
+              <p className="font-serif text-lg text-ink">{euros(totalPrice)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectionDone(true)}
+              className="shrink-0 rounded-xl bg-accent px-5 py-3 font-semibold text-white"
+            >
+              {t.common.continue} →
+            </button>
+          </div>
         )}
 
         {galleryService && (
@@ -255,12 +269,18 @@ export function BookingFlow({
           ← {t.client.editServices}
         </button>
       )}
-      <div className="mb-4 rounded-lg border border-line bg-white px-3.5 py-2.5 text-sm text-ink-2">
-        <span className="text-ink">{comboLabel}</span>
-        {" · "}
-        <span className="font-mono">{formatDuration(totalDuration)}</span>
-        {" · "}
-        <span className="font-mono">{euros(totalPrice)}</span>
+      <div className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-l text-accent">
+          ✓
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-serif text-ink">{comboLabel}</p>
+          <p className="text-sm text-ink-3">
+            <span className="font-mono">{formatDuration(totalDuration)}</span>
+            {" · "}
+            <span className="font-mono">{euros(totalPrice)}</span>
+          </p>
+        </div>
       </div>
 
       {notice === "released" && (
@@ -274,34 +294,55 @@ export function BookingFlow({
         </p>
       )}
 
-      <h2 className="mb-3 font-serif text-xl text-ink">
-        {calendarOpen && dayDate ? slotDay(`${dayDate}T12:00:00Z`) : t.client.nextSlots}
-      </h2>
+      <h2 className="mb-3 font-serif text-xl text-ink">{t.client.pickTime}</h2>
 
-      {calendarOpen && (
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {bookableDays.map((date) => (
-            <button
-              key={date}
-              type="button"
-              onClick={() => {
-                setDayDate(date);
-                void loadDay(serviceCsv, date);
-              }}
-              className={`rounded-lg px-2.5 py-1.5 font-mono text-xs ${
-                dayDate === date
-                  ? "bg-ink text-canvas"
-                  : "border border-line bg-white text-ink-2"
-              }`}
-            >
-              {new Intl.DateTimeFormat("en-BE", {
-                timeZone: TZ,
-                day: "numeric",
-                month: "short",
-              }).format(new Date(`${date}T12:00:00Z`))}
-            </button>
-          ))}
+      {/* Day strip — "Soonest" plus each bookable day, per the design */}
+      {bookableDays.length > 0 && (
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            onClick={() => {
+              setCalendarOpen(false);
+              setDayDate(null);
+              setDaySlots(null);
+            }}
+            className={`flex shrink-0 flex-col items-center justify-center rounded-xl px-3 py-2 ${
+              !calendarOpen ? "bg-accent text-white" : "border border-line bg-white text-ink-2"
+            }`}
+          >
+            <span className="text-[10px] uppercase tracking-wide opacity-80">{t.client.soonest}</span>
+            <span className="text-sm font-semibold">★</span>
+          </button>
+          {bookableDays.map((date) => {
+            const d = new Date(`${date}T12:00:00Z`);
+            const active = calendarOpen && dayDate === date;
+            return (
+              <button
+                key={date}
+                type="button"
+                onClick={() => {
+                  setCalendarOpen(true);
+                  setDayDate(date);
+                  void loadDay(serviceCsv, date);
+                }}
+                className={`flex shrink-0 flex-col items-center justify-center rounded-xl px-3 py-2 ${
+                  active ? "bg-accent text-white" : "border border-line bg-white text-ink-2"
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wide opacity-80">
+                  {new Intl.DateTimeFormat("en-BE", { timeZone: TZ, weekday: "short" }).format(d)}
+                </span>
+                <span className="text-sm font-semibold">
+                  {new Intl.DateTimeFormat("en-BE", { timeZone: TZ, day: "numeric" }).format(d)}
+                </span>
+              </button>
+            );
+          })}
         </div>
+      )}
+
+      {calendarOpen && dayDate && (
+        <p className="mb-2 font-serif text-ink">{slotDay(`${dayDate}T12:00:00Z`)}</p>
       )}
 
       {visibleSlots === null ? (
@@ -310,8 +351,22 @@ export function BookingFlow({
         calendarOpen ? (
           <p className="text-sm text-ink-3">{t.client.noSlotsDay}</p>
         ) : null
+      ) : calendarOpen ? (
+        // A single chosen day — a clean grid of times.
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {visibleSlots.map((slot) => (
+            <button
+              key={slot.startsAt}
+              type="button"
+              onClick={() => setPicked(slot)}
+              className="rounded-xl border border-line bg-white py-2.5 text-center font-mono text-ink shadow-sm hover:border-accent"
+            >
+              {slotTime(slot.startsAt)}
+            </button>
+          ))}
+        </div>
       ) : (
-        // All of a day's times together, earliest day first (DD24).
+        // "Soonest": all of a day's times together, earliest day first (DD24).
         <div className="space-y-4">
           {[...new Set(visibleSlots.map((s) => localDateOf(s.startsAt)))].map(
             (day) => (
@@ -319,7 +374,7 @@ export function BookingFlow({
                 <p className="mb-2 font-serif text-ink">
                   {slotDay(`${day}T12:00:00Z`)}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {visibleSlots
                     .filter((s) => localDateOf(s.startsAt) === day)
                     .map((slot) => (
@@ -327,7 +382,7 @@ export function BookingFlow({
                         key={slot.startsAt}
                         type="button"
                         onClick={() => setPicked(slot)}
-                        className="rounded-lg border border-line bg-white px-3.5 py-2 font-mono text-ink shadow-sm"
+                        className="rounded-xl border border-line bg-white py-2.5 text-center font-mono text-ink shadow-sm hover:border-accent"
                       >
                         {slotTime(slot.startsAt)}
                       </button>
@@ -339,21 +394,7 @@ export function BookingFlow({
         </div>
       )}
 
-      {showWaitlist ? (
-        <WaitlistJoin slug={slug} serviceId={selected[0].id} />
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            setCalendarOpen(!calendarOpen);
-            setDayDate(null);
-            setDaySlots(null);
-          }}
-          className="mt-4 text-sm text-ink-3 underline"
-        >
-          {calendarOpen ? t.client.backToNext : t.client.chooseDifferentDay}
-        </button>
-      )}
+      {showWaitlist && <WaitlistJoin slug={slug} serviceId={selected[0].id} />}
     </section>
   );
 }
