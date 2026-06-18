@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { getDictionary } from "@/lib/i18n";
+import { PanelPage } from "@/components/provider/panel-page";
 import { TemplateEditor, type TemplateDayData } from "./template-editor";
 import { FlexibleBatchAdd } from "./flexible-batch-add";
 
@@ -46,23 +47,21 @@ export default async function SchedulePage() {
   }));
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-10">
-        <a href="/dashboard" className="text-sm text-ink-3 underline">
-          ← Dashboard
-        </a>
-        <a
-          href="/dashboard/days"
-          className="mt-2 block text-sm text-accent underline"
-        >
-          {t.dashboard.crossToExceptions}
-        </a>
-        {provider?.schedule_type === "flexible" ? (
-          <FlexibleBatchAdd />
-        ) : (
-          <TemplateEditor days={dayData} services={services ?? []} />
-        )}
-      </main>
-    </div>
+    <PanelPage>
+      <a href="/dashboard" className="text-sm text-ink-3 underline">
+        ← Dashboard
+      </a>
+      <a
+        href="/dashboard/days"
+        className="mt-2 block text-sm text-accent underline"
+      >
+        {t.dashboard.crossToExceptions}
+      </a>
+      {provider?.schedule_type === "flexible" ? (
+        <FlexibleBatchAdd />
+      ) : (
+        <TemplateEditor days={dayData} services={services ?? []} />
+      )}
+    </PanelPage>
   );
 }

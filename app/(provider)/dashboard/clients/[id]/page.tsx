@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/lib/i18n";
 import { getProviderContext, getClientDetail } from "@/lib/dashboard/queries";
+import { PanelPage } from "@/components/provider/panel-page";
 import { DeleteClient } from "./delete-client";
 
 const t = getDictionary();
@@ -21,8 +22,7 @@ export default async function ClientDetailPage({
   if (!client) notFound();
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-8">
+    <PanelPage>
         <a href="/dashboard/clients" className="text-sm text-ink-3 underline">
           ← {t.dashboard.clientsTitle}
         </a>
@@ -59,8 +59,7 @@ export default async function ClientDetailPage({
         )}
 
         <DeleteClient clientId={client.id} />
-      </main>
-    </div>
+    </PanelPage>
   );
 }
 

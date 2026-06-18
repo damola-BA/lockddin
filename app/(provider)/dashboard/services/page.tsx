@@ -1,6 +1,7 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { getDictionary } from "@/lib/i18n";
 import { PageTitle, Hint } from "@/components/provider/ui";
+import { PanelPage } from "@/components/provider/panel-page";
 import { ServicesEditor, type Service } from "@/components/provider/services-editor";
 
 const t = getDictionary();
@@ -20,22 +21,20 @@ export default async function ServicesPage() {
     .order("sort_order");
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-10">
-        <a href="/dashboard" className="text-sm text-ink-3 underline">
-          ← Dashboard
-        </a>
-        <div className="mt-4">
-          <PageTitle>{t.settings.servicesTitle}</PageTitle>
-          <Hint>{t.settings.servicesIntro}</Hint>
-        </div>
-        <ServicesEditor
-          services={(services ?? []).map((s) => ({
-            ...s,
-            photos: Array.isArray(s.photos) ? (s.photos as string[]) : [],
-          }))}
-        />
-      </main>
-    </div>
+    <PanelPage>
+      <a href="/dashboard" className="text-sm text-ink-3 underline">
+        ← Dashboard
+      </a>
+      <div className="mt-4">
+        <PageTitle>{t.settings.servicesTitle}</PageTitle>
+        <Hint>{t.settings.servicesIntro}</Hint>
+      </div>
+      <ServicesEditor
+        services={(services ?? []).map((s) => ({
+          ...s,
+          photos: Array.isArray(s.photos) ? (s.photos as string[]) : [],
+        }))}
+      />
+    </PanelPage>
   );
 }

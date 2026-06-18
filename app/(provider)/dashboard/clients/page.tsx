@@ -1,5 +1,6 @@
 import { getDictionary } from "@/lib/i18n";
 import { getProviderContext, searchClients } from "@/lib/dashboard/queries";
+import { PanelPage } from "@/components/provider/panel-page";
 
 const t = getDictionary();
 
@@ -14,8 +15,7 @@ export default async function ClientsPage({
   const clients = await searchClients(provider, q);
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-8">
+    <PanelPage>
         <div className="mb-4 flex items-center justify-between">
           <a href="/dashboard" className="text-sm text-ink-3 underline">
             ← {t.dashboard.viewDay}
@@ -61,7 +61,6 @@ export default async function ClientsPage({
             ))}
           </ul>
         )}
-      </main>
-    </div>
+    </PanelPage>
   );
 }

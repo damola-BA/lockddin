@@ -5,6 +5,7 @@ import {
   todayLocal,
   maxNavDate,
 } from "@/lib/dashboard/queries";
+import { PanelPage } from "@/components/provider/panel-page";
 import { DayBookingsList } from "./day-bookings";
 import { DaySettings } from "./day-settings";
 import { DayOverrides } from "./day-overrides";
@@ -43,8 +44,7 @@ export default async function DaysPage({
   const next = addDays(date, 1);
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-8">
+    <PanelPage>
         <a href={`/dashboard?view=day&date=${date}`} className="text-sm text-ink-3 underline">
           ← {t.dashboard.viewDay}
         </a>
@@ -98,7 +98,6 @@ export default async function DaysPage({
             />
           </div>
         </details>
-      </main>
-    </div>
+    </PanelPage>
   );
 }

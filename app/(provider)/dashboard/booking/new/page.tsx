@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { getDictionary } from "@/lib/i18n";
+import { PanelPage } from "@/components/provider/panel-page";
 import { ManualBooking } from "./manual-booking";
 
 const t = getDictionary();
@@ -17,14 +18,12 @@ export default async function NewBookingPage() {
     .order("sort_order");
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-8">
-        <a href="/dashboard" className="text-sm text-ink-3 underline">
-          ← {t.dashboard.viewDay}
-        </a>
-        <h1 className="mt-4 mb-6 font-serif text-2xl">{t.dashboard.walkInTitle}</h1>
-        <ManualBooking services={services ?? []} />
-      </main>
-    </div>
+    <PanelPage>
+      <a href="/dashboard" className="text-sm text-ink-3 underline">
+        ← {t.dashboard.viewDay}
+      </a>
+      <h1 className="mt-4 mb-6 font-serif text-2xl">{t.dashboard.walkInTitle}</h1>
+      <ManualBooking services={services ?? []} />
+    </PanelPage>
   );
 }

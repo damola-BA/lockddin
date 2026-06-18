@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { BannerUpload } from "@/components/provider/banner-upload";
+import { PanelPage } from "@/components/provider/panel-page";
 import { SettingsForm } from "./settings-form";
 
 export default async function SettingsPage() {
@@ -19,8 +20,8 @@ export default async function SettingsPage() {
   if (!provider) return null;
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-10 space-y-10">
+    <PanelPage>
+      <div className="space-y-10">
         <a href="/dashboard" className="text-sm text-ink-3 underline">← Dashboard</a>
 
         <section className="space-y-4">
@@ -33,7 +34,7 @@ export default async function SettingsPage() {
         </section>
 
         <SettingsForm initial={provider} />
-      </main>
-    </div>
+      </div>
+    </PanelPage>
   );
 }

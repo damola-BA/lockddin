@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/lib/i18n";
 import { getProviderContext, getBookingDetail } from "@/lib/dashboard/queries";
+import { PanelPage } from "@/components/provider/panel-page";
 import { BookingActions } from "./booking-actions";
 
 const t = getDictionary();
@@ -23,8 +24,7 @@ export default async function BookingDetailPage({
   const cancelled = booking.status.startsWith("cancelled");
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-8">
+    <PanelPage>
         <a href="/dashboard" className="text-sm text-ink-3 underline">
           ← {t.dashboard.viewDay}
         </a>
@@ -69,8 +69,7 @@ export default async function BookingDetailPage({
             timezone={provider.timezone}
           />
         )}
-      </main>
-    </div>
+    </PanelPage>
   );
 }
 
