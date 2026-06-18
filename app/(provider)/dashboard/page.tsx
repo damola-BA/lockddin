@@ -66,7 +66,7 @@ export default async function DashboardPage({
         {/* Single column on phone; on desktop the schedule takes the wide left
             column and a side rail (booking link + actions) sits on the right.
             Explicit grid placement keeps the mobile DOM order intact. */}
-        <div className="md:grid md:grid-cols-[minmax(0,1fr)_320px] md:grid-rows-[auto_1fr] md:gap-x-8 md:gap-y-5">
+        <div className="md:grid md:grid-cols-[minmax(0,1fr)_320px] md:grid-rows-[auto_1fr] md:gap-x-12 md:gap-y-5 lg:gap-x-20">
           {/* Booking link — page top on phone, top of rail on desktop */}
           <div className="md:col-start-2 md:row-start-1">
             <BookingLinkCard
