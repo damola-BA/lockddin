@@ -74,10 +74,10 @@ export default async function DashboardPage({
   const bookingUrl = appUrl(`/b/${provider.slug}`);
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink md:flex md:justify-center md:bg-desk md:px-6 md:py-8">
-      {/* On desktop the app is a contained cream panel floating on the taupe
-          "desk"; on phone it's full-bleed with a bottom tab bar. */}
-      <div className="w-full pb-24 md:max-w-[77.5rem] md:rounded-[28px] md:bg-canvas md:pb-8 md:shadow-[var(--shadow-panel)]">
+    <div className="min-h-dvh bg-canvas text-ink md:flex md:justify-center md:px-6 md:py-8">
+      {/* One uniform canvas: the content is a centered max-width column on
+          desktop, full-bleed with a bottom tab bar on phone. */}
+      <div className="w-full pb-24 md:max-w-[77.5rem] md:pb-8">
         <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-none md:px-9 md:py-8">
           {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
