@@ -80,6 +80,15 @@ booking is cancelled, which made perfectly free times fail with a false
 "slot taken". Races remain settled by the claim transaction + EXCLUDE
 constraints.
 
+DD37: large-screen responsiveness. The app is mobile-first (max-w-md
+columns); on wide screens that column stranded as a thin strip in empty
+canvas. Rather than rebuild every layout into desktop multi-column (fighting
+the 380px rule + mobile-tuned grids/forms), one global rule in globals.css
+frames the content column as a centered floating app panel ≥768px (border,
+24px radius, soft shadow, vertical margin). Scoped to `main.max-w-md:not(.min-h-dvh)`
+so the full-height centered auth/404 screens are untouched; phones stay
+full-bleed (frame off <768px). Verified by measurement + a desktop screenshot.
+
 DD36: provider IA pass (UX subject #9/#10) — labels + grouping only, no logic.
 (A) The recurring-vs-one-off split is now signposted: the dashboard nav item
 "Manage this day" → "Days off & exceptions", "Your week" kept, with reciprocal

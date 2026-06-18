@@ -78,3 +78,18 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
 }
+
+/* The app is mobile-first (max-w-md columns). On wider screens that column
+   would otherwise strand as a thin strip in a sea of canvas, so frame it as a
+   centered, floating app panel — it reads as intentional rather than broken.
+   Scoped to content columns; the full-height centered auth/404 screens (whose
+   <main> carries min-h-dvh) are left as-is. */
+@media (min-width: 768px) {
+  main.max-w-md:not(.min-h-dvh) {
+    margin-top: 2.25rem;
+    margin-bottom: 2.25rem;
+    border: 1px solid var(--line);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+}
