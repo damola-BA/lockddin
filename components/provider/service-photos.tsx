@@ -22,8 +22,8 @@ export function ServicePhotoGrid({
 
   async function handleFile(file: File) {
     setError(null);
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Photo must be under 8 MB.");
+    if (file.size > 40 * 1024 * 1024) {
+      setError("That file is very large — please choose a photo.");
       return;
     }
     if (atLimit) {
