@@ -95,14 +95,14 @@ export async function uploadServicePhoto(
   // Verify service belongs to this provider
   const { data: service } = await admin
     .from("services")
-    .select("id, work_photos")
+    .select("id, photos")
     .eq("id", serviceId)
     .eq("provider_id", user.id)
     .single();
   if (!service) return { error: "not_found" };
 
-  const photos: string[] = Array.isArray(service.work_photos)
-    ? (service.work_photos as string[])
+  const photos: string[] = Array.isArray(service.photos)
+    ? (service.photos as string[])
     : [];
   if (photos.length >= 6) return { error: "limit_reached" };
 
@@ -116,7 +116,7 @@ export async function uploadServicePhoto(
 
   await admin
     .from("services")
-    .update({ work_photos: [...photos, path] })
+    .update({ photos: [...photos, path] })
     .eq("id", serviceId)
     .eq("provider_id", user.id);
 
@@ -141,20 +141,20 @@ export async function deleteServicePhoto(
 
   const { data: service } = await admin
     .from("services")
-    .select("id, work_photos")
+    .select("id, photos")
     .eq("id", serviceId)
     .eq("provider_id", user.id)
     .single();
   if (!service) return { error: "not_found" };
 
-  const photos: string[] = Array.isArray(service.work_photos)
-    ? (service.work_photos as string[])
+  const photos: string[] = Array.isArray(service.photos)
+    ? (service.photos as string[])
     : [];
 
   await admin.storage.from("work-photos").remove([path]);
   await admin
     .from("services")
-    .update({ work_photos: photos.filter((p) => p !== path) })
+    .update({ photos: photos.filter((p) => p !== path) })
     .eq("id", serviceId)
     .eq("provider_id", user.id);
 

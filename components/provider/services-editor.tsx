@@ -22,7 +22,7 @@ export type Service = {
   prep_instructions: string | null;
   is_active: boolean;
   sort_order: number;
-  work_photos: string[];
+  photos: string[];
 };
 
 function euros(cents: number): string {
@@ -220,7 +220,7 @@ export function ServicesEditor({ services }: { services: Service[] }) {
             </div>
             <ServicePhotoGrid
               serviceId={service.id}
-              photos={service.work_photos}
+              photos={service.photos}
             />
           </div>
         ),

@@ -39,14 +39,14 @@ export default async function BookingPage({
   const admin = createAdminClient();
   const { data: services } = await admin
     .from("services")
-    .select("id, name, duration_minutes, price_cents, prep_instructions, work_photos")
+    .select("id, name, duration_minutes, price_cents, prep_instructions, photos")
     .eq("provider_id", provider.id)
     .eq("is_active", true)
     .order("sort_order");
 
   const normalizedServices = (services ?? []).map((s) => ({
     ...s,
-    work_photos: Array.isArray(s.work_photos) ? (s.work_photos as string[]) : [],
+    photos: Array.isArray(s.photos) ? (s.photos as string[]) : [],
   }));
 
   return (

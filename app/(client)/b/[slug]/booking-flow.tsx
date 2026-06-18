@@ -30,7 +30,7 @@ type Service = {
   duration_minutes: number;
   price_cents: number;
   prep_instructions: string | null;
-  work_photos: string[];
+  photos: string[];
 };
 
 type PublicSlot = { startsAt: string; endsAt: string };
@@ -176,14 +176,14 @@ export function BookingFlow({
                     </span>
                   )}
                 </button>
-                {s.work_photos.length > 0 && (
+                {s.photos.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setGalleryService(s)}
                     className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-left"
                   >
                     <div className="flex -space-x-1.5">
-                      {s.work_photos.slice(0, 3).map((p) => (
+                      {s.photos.slice(0, 3).map((p) => (
                         <img
                           key={p}
                           src={storageUrl(p)}
@@ -193,7 +193,7 @@ export function BookingFlow({
                       ))}
                     </div>
                     <span className="text-xs text-ink-3">
-                      See {s.work_photos.length} photo{s.work_photos.length !== 1 ? "s" : ""}
+                      See {s.photos.length} photo{s.photos.length !== 1 ? "s" : ""}
                     </span>
                   </button>
                 )}
@@ -761,7 +761,7 @@ function ServiceGallery({
           <div>
             <p className="font-serif text-lg">{service.name}</p>
             <p className="text-xs text-white/60">
-              {active + 1} / {service.work_photos.length}
+              {active + 1} / {service.photos.length}
             </p>
           </div>
           <button
@@ -776,7 +776,7 @@ function ServiceGallery({
         {/* main photo */}
         <div className="relative flex-1 overflow-hidden">
           <img
-            src={storageUrl(service.work_photos[active])}
+            src={storageUrl(service.photos[active])}
             alt={service.name}
             className="h-full w-full object-contain"
           />
@@ -789,7 +789,7 @@ function ServiceGallery({
               ‹
             </button>
           )}
-          {active < service.work_photos.length - 1 && (
+          {active < service.photos.length - 1 && (
             <button
               type="button"
               onClick={() => setActive(active + 1)}
@@ -801,9 +801,9 @@ function ServiceGallery({
         </div>
 
         {/* thumbnail strip */}
-        {service.work_photos.length > 1 && (
+        {service.photos.length > 1 && (
           <div className="flex gap-2 overflow-x-auto px-4 py-3">
-            {service.work_photos.map((p, i) => (
+            {service.photos.map((p, i) => (
               <button
                 key={p}
                 type="button"

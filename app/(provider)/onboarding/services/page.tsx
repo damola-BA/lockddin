@@ -10,14 +10,14 @@ export default async function ServicesPage() {
   const { data: services } = await supabase
     .from("services")
     .select(
-      "id, name, duration_minutes, price_cents, buffer_minutes, prep_instructions, is_active, sort_order, work_photos",
+      "id, name, duration_minutes, price_cents, buffer_minutes, prep_instructions, is_active, sort_order, photos",
     )
     .eq("provider_id", user!.id)
     .order("sort_order");
 
   const normalized = (services ?? []).map((s) => ({
     ...s,
-    work_photos: Array.isArray(s.work_photos) ? (s.work_photos as string[]) : [],
+    photos: Array.isArray(s.photos) ? (s.photos as string[]) : [],
   }));
   return <ServicesStep services={normalized} />;
 }
