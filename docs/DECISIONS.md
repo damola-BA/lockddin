@@ -6,6 +6,17 @@ AD01–AD12: beta adaptation decisions — see docs/BETA_SCOPE.md.
 
 Append new decisions below as DD07+, one line of rationale each.
 
+DD42: the "how far ahead can people book?" booking window does NOT apply to
+flexible providers. They open specific dates themselves, so a relative window is
+contradictory — they could open a day clients can't book. The engine now bypasses
+the window for flexible (only the not-in-the-past floor applies, new
+isDateInPast); getBookableDays bounds a flexible provider's horizon by the
+furthest date they've opened; maxNavDate gives flexible a generous year for
+dashboard nav; and the Availability "Booking rules" hides the window control in
+calendar mode (still submits the stored value so saves validate). Covered by a new
+engine test (flexible + opened date beyond a 3_days window is bookable; a past
+opened date is not). Regular providers are unchanged.
+
 DD41: schedule mode is a choice, not a toggle. The persistent "regular/flexible"
 segmented control is removed from Availability; the mode is chosen once at
 onboarding ("How do your hours work?") and changed only in Settings (forward-only —

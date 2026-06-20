@@ -1,5 +1,5 @@
 import type { AvailabilityInput, OccupiedRange, Slot } from "./types";
-import { isDateBookable } from "./booking-window";
+import { isDateBookable, isDateInPast } from "./booking-window";
 import { buildLocalWindows, effectiveHours, toUtcRange } from "./windows";
 
 // The 8-step availability algorithm (F4) as a pure, deterministic function.
@@ -11,8 +11,13 @@ const MS = 60_000;
 export function getAvailableSlots(input: AvailabilityInput): Slot[] {
   const { provider, service, date, now, templateDay, override, occupied } = input;
 
-  // Step 0 — booking window: calendar boundary in the provider's timezone.
-  if (!isDateBookable(date, provider.bookingWindow, now, provider.timezone)) {
+  // Step 0 — horizon. Regular providers are bounded by the relative booking
+  // window ("how far ahead can people book?"). Flexible providers set their own
+  // horizon by the specific dates they open, so the window doesn't apply to them
+  // — only the floor that you can't book a date in the past.
+  if (provider.scheduleType === "flexible") {
+    if (isDateInPast(date, now, provider.timezone)) return [];
+  } else if (!isDateBookable(date, provider.bookingWindow, now, provider.timezone)) {
     return [];
   }
 

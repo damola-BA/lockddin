@@ -241,6 +241,40 @@ describe("8-step semantics", () => {
       local("2026-07-14", "11:00"),
     ]);
   });
+
+  it("flexible mode ignores the booking window: an opened date beyond it is still bookable", () => {
+    // now = 2026-07-01, target = 2026-07-14 (13 days out). With a "3_days"
+    // window a REGULAR provider can't be booked that far — a flexible provider
+    // can, because they explicitly opened the date.
+    const shortWindow = { ...baseProvider, bookingWindow: "3_days" as const };
+    expect(getAvailableSlots(input({ provider: shortWindow }))).toEqual([]);
+
+    const flexible = { ...shortWindow, scheduleType: "flexible" as const };
+    const slots = getAvailableSlots(
+      input({
+        provider: flexible,
+        templateDay: null,
+        override: { kind: "open", start: "09:00", end: "12:00", extraBlocks: [], dailyCap: null },
+      }),
+    );
+    expect(startTimes(slots)).toEqual([
+      local("2026-07-14", "09:00"),
+      local("2026-07-14", "10:00"),
+      local("2026-07-14", "11:00"),
+    ]);
+
+    // ...but still not a date in the past, even when opened.
+    expect(
+      getAvailableSlots(
+        input({
+          provider: flexible,
+          date: "2026-06-20",
+          templateDay: null,
+          override: { kind: "open", start: "09:00", end: "12:00", extraBlocks: [], dailyCap: null },
+        }),
+      ),
+    ).toEqual([]);
+  });
 });
 
 // ── localInstant day-boundary regression ─────────────────────────────

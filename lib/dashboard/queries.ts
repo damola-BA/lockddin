@@ -371,8 +371,15 @@ export async function getMonthCounts(
   return counts;
 }
 
-/** Forward nav bound: the last date the booking window reaches. */
+/** Forward nav bound: the last date the booking window reaches. Flexible
+ *  providers aren't bound by the window (they open their own dates, DD42), so
+ *  the dashboard lets them navigate a generous year ahead to reach those dates. */
 export function maxNavDate(provider: ProviderContext): string {
+  if (provider.scheduleType === "flexible") {
+    const d = new Date();
+    d.setUTCFullYear(d.getUTCFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  }
   return lastBookableDate(provider.bookingWindow, new Date(), provider.timezone);
 }
 

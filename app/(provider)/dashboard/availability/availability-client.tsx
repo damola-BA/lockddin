@@ -421,25 +421,33 @@ function leadLabel(minutes: number): string {
 
 function BookingRules({ rules }: { rules: AvailabilityRules }) {
   const [state, action, pending] = useActionState<SettingsState, FormData>(updateBookingRules, {});
+  // "How far ahead can people book?" is meaningless for a calendar provider —
+  // they open the exact dates themselves, so the relative window never applies
+  // (DD42). Hide it, but keep submitting the stored value so the save validates.
+  const isFlexible = rules.scheduleType === "flexible";
 
   return (
     <section className="mt-7">
       <h2 className="font-serif text-[18px] font-semibold">{A.bookingRules}</h2>
       <p className="mb-3 text-[13px] text-ink-3">{A.bookingRulesHint}</p>
       <form action={action} className="space-y-4 rounded-2xl border border-line bg-surface p-4">
-        <Rule label={A.ruleWindow}>
-          <select
-            name="booking_window"
-            defaultValue={rules.bookingWindow}
-            className="max-w-[55%] rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-right text-[13px] font-semibold text-accent-d focus:border-accent focus:outline-none"
-          >
-            {(["3_days", "current_week", "current_month", "3_months"] as const).map((v) => (
-              <option key={v} value={v}>
-                {t.onboarding[`bookingWindow_${v}`]}
-              </option>
-            ))}
-          </select>
-        </Rule>
+        {isFlexible ? (
+          <input type="hidden" name="booking_window" value={rules.bookingWindow} />
+        ) : (
+          <Rule label={A.ruleWindow}>
+            <select
+              name="booking_window"
+              defaultValue={rules.bookingWindow}
+              className="max-w-[55%] rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-right text-[13px] font-semibold text-accent-d focus:border-accent focus:outline-none"
+            >
+              {(["3_days", "current_week", "current_month", "3_months"] as const).map((v) => (
+                <option key={v} value={v}>
+                  {t.onboarding[`bookingWindow_${v}`]}
+                </option>
+              ))}
+            </select>
+          </Rule>
+        )}
         <Rule label={A.ruleLead}>
           <select
             name="min_lead_time_minutes"

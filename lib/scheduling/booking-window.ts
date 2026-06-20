@@ -56,3 +56,11 @@ export function isDateBookable(
   const today = ymd(year, month, day);
   return date >= today && date <= lastBookableDate(window, now, timeZone);
 }
+
+/** Is the local date before today (in the provider's timezone)? The only
+ *  horizon floor that applies to flexible providers — their booking window is
+ *  the set of dates they've explicitly opened, not a relative range. */
+export function isDateInPast(date: string, now: Date, timeZone: string): boolean {
+  const { year, month, day } = localParts(now, timeZone);
+  return date < ymd(year, month, day);
+}

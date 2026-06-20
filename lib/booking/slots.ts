@@ -60,7 +60,25 @@ export async function getBookableDays(
   now = new Date(),
 ): Promise<string[]> {
   const admin = createAdminClient();
-  const last = lastBookableDate(provider.booking_window, now, provider.timezone);
+
+  // Horizon: regular providers are bounded by the relative booking window;
+  // flexible providers by the furthest date they've actually opened (the window
+  // doesn't apply — they pick their own days, see DD42).
+  let last: string;
+  if (provider.schedule_type === "flexible") {
+    const { data: furthest } = await admin
+      .from("day_overrides")
+      .select("date")
+      .eq("provider_id", provider.id)
+      .eq("kind", "open")
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!furthest) return []; // nothing opened yet → nothing to book
+    last = furthest.date as string;
+  } else {
+    last = lastBookableDate(provider.booking_window, now, provider.timezone);
+  }
 
   const [{ data: templateDays }, { data: overrides }] = await Promise.all([
     admin
