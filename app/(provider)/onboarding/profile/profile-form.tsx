@@ -1,17 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { Check, Info } from "lucide-react";
 import { saveProfile, type ActionState } from "@/lib/onboarding/actions";
 import { normalizeSlug } from "@/lib/onboarding/slug";
 import { getDictionary, fill } from "@/lib/i18n";
-import {
-  PageTitle,
-  Hint,
-  Label,
-  TextInput,
-  PrimaryButton,
-  ErrorText,
-} from "@/components/provider/ui";
+import { Label, TextInput, PrimaryButton, ErrorText } from "@/components/provider/ui";
+import { OnboardingProgress } from "@/components/provider/onboarding-progress";
 
 const t = getDictionary();
 
@@ -59,12 +54,11 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   }, [slug, initial?.slug]);
 
   return (
-    <main className="mx-auto w-full max-w-md px-5 py-10">
-      <p className="mb-2 text-xs tracking-widest text-ink-3">
-        {fill(t.onboarding.stepOf, { current: 1, total: 3 })}
-      </p>
-      <PageTitle>{t.onboarding.profileTitle}</PageTitle>
-      <Hint>&nbsp;</Hint>
+    <main className="mx-auto w-full max-w-md px-5 py-8">
+      <OnboardingProgress step={1} />
+      <h1 className="mb-6 mt-1.5 font-serif text-[25px] font-semibold leading-tight text-ink">
+        {t.onboarding.profileTitle}
+      </h1>
 
       <form action={formAction} className="space-y-5">
         <div>
@@ -93,23 +87,32 @@ export function ProfileForm({ initial }: { initial: Initial }) {
 
         <div>
           <Label htmlFor="slug">{t.onboarding.slugLabel}</Label>
-          <div className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3.5 focus-within:border-accent">
-            <span className="shrink-0 text-sm text-ink-3">lockddin.app/b/</span>
+          <div
+            className={`flex items-center gap-1 rounded-lg border bg-surface px-3.5 ${
+              slugStatus === "available"
+                ? "border-[1.5px] border-ok [box-shadow:0_0_0_3px_var(--ok-l)]"
+                : "border-line focus-within:border-accent"
+            }`}
+          >
+            <span className="shrink-0 text-sm text-ink-4">lockddin.app/b/</span>
             <input
               id="slug"
               name="slug"
               value={slug}
               onChange={(e) => setSlug(normalizeSlug(e.target.value))}
               required
-              className="w-full bg-transparent py-3 text-base text-ink focus:outline-none"
+              className="w-full bg-transparent py-3 text-base font-semibold text-ink focus:outline-none"
             />
+            {slugStatus === "available" && (
+              <Check size={18} strokeWidth={2.4} className="shrink-0 text-ok" />
+            )}
           </div>
-          <p className="mt-1.5 text-sm">
+          <p className="mt-1.5 text-sm font-medium">
             {slugStatus === "checking" && (
               <span className="text-ink-3">{t.onboarding.slugChecking}</span>
             )}
-            {slugStatus === "available" && (
-              <span className="text-ok">{t.onboarding.slugAvailable}</span>
+            {slugStatus === "available" && slug && (
+              <span className="text-ok">{fill(t.onboarding.slugAvailableNamed, { slug })}</span>
             )}
             {slugStatus === "taken" && (
               <span className="text-red-600">{t.onboarding.slugTaken}</span>
@@ -135,11 +138,12 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         </div>
 
         {/* Booking rules (window, cancellation, lead time, buffer) start on
-            sensible defaults and are tuned later in Settings (DD34) — a new
-            provider has no basis to decide them cold. */}
-        <p className="rounded-lg border border-line bg-surface-2 p-3 text-sm text-ink-3">
-          {t.onboarding.rulesNote}
-        </p>
+            sensible defaults and are tuned later in Availability (DD34/DD40) — a
+            new provider has no basis to decide them cold. */}
+        <div className="flex gap-2.5 rounded-xl bg-surface-2 p-3.5">
+          <Info size={16} strokeWidth={1.9} className="mt-0.5 shrink-0 text-ink-4" />
+          <p className="text-[12.5px] leading-relaxed text-ink-3">{t.onboarding.rulesNote}</p>
+        </div>
 
         {state.error === "missing_fields" && (
           <ErrorText>{t.common.somethingWrong}</ErrorText>

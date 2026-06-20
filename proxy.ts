@@ -80,6 +80,13 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  // The post-onboarding "you're live" moment is reachable only once complete —
+  // it sits between finishing setup and landing on the dashboard.
+  if (pathname.startsWith("/onboarding/live")) {
+    if (step === "complete") return response;
+    return NextResponse.redirect(new URL(target, request.url));
+  }
+
   const guarded =
     pathname === "/" ||
     pathname.startsWith("/onboarding") ||

@@ -281,5 +281,6 @@ export async function completeOnboarding(
     .eq("id", user.id);
   if (error) return { error: "server" };
 
-  redirect("/dashboard");
+  // The activation moment (share-link payoff) before the dashboard.
+  redirect("/onboarding/live");
 }

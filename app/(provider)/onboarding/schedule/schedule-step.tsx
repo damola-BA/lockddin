@@ -2,8 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { completeOnboarding, type ActionState } from "@/lib/onboarding/actions";
-import { getDictionary, fill } from "@/lib/i18n";
-import { PageTitle, Hint, PrimaryButton, ErrorText } from "@/components/provider/ui";
+import { getDictionary } from "@/lib/i18n";
+import { PrimaryButton, ErrorText } from "@/components/provider/ui";
+import { OnboardingProgress } from "@/components/provider/onboarding-progress";
 import type { TemplateDayData } from "@/app/(provider)/dashboard/schedule/template-editor";
 import { FlexibleBatchAdd } from "@/app/(provider)/dashboard/schedule/flexible-batch-add";
 import { QuickWeekSetup } from "./quick-week-setup";
@@ -26,12 +27,12 @@ export function ScheduleStep({
   );
 
   return (
-    <main className="mx-auto w-full max-w-md px-5 py-10">
-      <p className="mb-2 text-xs tracking-widest text-ink-3">
-        {fill(t.onboarding.stepOf, { current: 3, total: 3 })}
-      </p>
-      <PageTitle>{t.onboarding.scheduleTitle}</PageTitle>
-      <Hint>{t.onboarding.scheduleReassurance}</Hint>
+    <main className="mx-auto w-full max-w-md px-5 py-8">
+      <OnboardingProgress step={3} />
+      <h1 className="mt-1.5 font-serif text-[25px] font-semibold leading-tight text-ink">
+        {t.onboarding.scheduleTitle}
+      </h1>
+      <p className="mb-6 mt-2 text-sm text-ink-3">{t.onboarding.scheduleReassurance}</p>
 
       <div className="space-y-3">
         <label className="block cursor-pointer rounded-lg border border-line bg-surface p-4 has-checked:border-accent">
@@ -98,7 +99,7 @@ export function ScheduleStep({
           )}
 
           <PrimaryButton disabled={pending}>
-            {pending ? t.common.loading : t.onboarding.finish}
+            {pending ? t.common.loading : t.onboarding.finishGoLive}
           </PrimaryButton>
         </form>
       </div>
