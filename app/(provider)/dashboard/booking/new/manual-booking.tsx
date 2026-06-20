@@ -203,7 +203,7 @@ function PickedClient({
     <div className="flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-3">
       <span>
         <span className="font-serif">{client.firstName}</span>
-        <span className="block font-mono text-xs text-ink-3">{client.phone}</span>
+        <span className="block text-xs text-ink-3 tabular">{client.email}</span>
       </span>
       <button type="button" onClick={onChange} className="text-xs text-accent underline">
         {t.dashboard.walkInChangeClient}
@@ -219,7 +219,6 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
   const [pending, startTransition] = useTransition();
   // new client fields
   const [firstName, setFirstName] = useState("");
-  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [err, setErr] = useState(false);
 
@@ -252,7 +251,7 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
                 >
                   <span>
                     <span className="font-serif">{c.firstName}</span>
-                    <span className="block font-mono text-xs text-ink-3">{c.phone}</span>
+                    <span className="block text-xs text-ink-3 tabular">{c.email}</span>
                   </span>
                   {c.hasActiveBooking && (
                     <span className="text-xs text-accent">{t.dashboard.walkInHasBooking}</span>
@@ -278,13 +277,6 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
             className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-4"
           />
           <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            type="tel"
-            placeholder={t.dashboard.walkInPhone}
-            className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-ink-4"
-          />
-          <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
@@ -306,7 +298,7 @@ function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
               onClick={() =>
                 startTransition(async () => {
                   setErr(false);
-                  const res = await createClientForBooking(firstName, phone, email);
+                  const res = await createClientForBooking(firstName, email);
                   if (res.ok) onPick(res.client);
                   else setErr(true);
                 })

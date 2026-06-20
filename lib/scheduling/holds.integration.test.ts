@@ -219,7 +219,7 @@ d("hold concurrency (real Postgres)", () => {
 
     const { data: client } = await admin
       .from("clients")
-      .insert({ provider_id: providerId, phone: "+32400000099", first_name: "Multi" })
+      .insert({ provider_id: providerId, email: "multi@lockddin.internal", first_name: "Multi" })
       .select("id")
       .single();
 
@@ -241,7 +241,7 @@ d("hold concurrency (real Postgres)", () => {
     expect(booking!.service_id).toBe(serviceId); // primary = first
   });
 
-  // F5 acceptance: two phones racing for the last slot — exactly one
+  // F5 acceptance: two clients racing for the last slot — exactly one
   // confirms, the other is told the slot is gone.
   it("two parallel client confirms on one hold: exactly one books", async () => {
     const SLOT2 = {
@@ -259,13 +259,12 @@ d("hold concurrency (real Postgres)", () => {
     if (error) throw new Error(error.message);
     expect(holdId).not.toBeNull();
 
-    const confirmAs = (phone: string, token: string) =>
+    const confirmAs = (email: string, token: string) =>
       admin
         .rpc("confirm_client_booking", {
           p_hold_id: holdId,
-          p_phone: phone,
           p_first_name: "Racer",
-          p_email: "racer@lockddin.internal",
+          p_email: email,
           p_manage_token: token,
         })
         .then(({ data, error: e }) => {
@@ -274,8 +273,8 @@ d("hold concurrency (real Postgres)", () => {
         });
 
     const [a, b] = await Promise.all([
-      confirmAs("+32400000011", `race-${Date.now()}-a`),
-      confirmAs("+32400000012", `race-${Date.now()}-b`),
+      confirmAs("racer-a@lockddin.internal", `race-${Date.now()}-a`),
+      confirmAs("racer-b@lockddin.internal", `race-${Date.now()}-b`),
     ]);
     const winners = [a, b].filter((r) => r.booking_id !== null);
     const losers = [a, b].filter((r) => r.booking_id === null);

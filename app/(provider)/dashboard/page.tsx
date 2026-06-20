@@ -1,6 +1,20 @@
+import Link from "next/link";
+import {
+  ArrowRight,
+  Calendar as CalIcon,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Plus,
+  Settings as SettingsIcon,
+  Tag,
+  Users,
+} from "lucide-react";
 import { signOut } from "@/lib/auth/actions";
 import { VerifyBanner } from "@/components/provider/verify-banner";
 import { BookingLinkCard } from "@/components/provider/booking-link";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { appUrl } from "@/lib/app-url";
 import { getDictionary, formatDuration } from "@/lib/i18n";
 import {
@@ -53,6 +67,15 @@ function nowMinutesIn(tz: string): number {
   return h * 60 + m;
 }
 
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -65,7 +88,6 @@ export default async function DashboardPage({
   const date = dateParam ?? today;
   const maxDate = maxNavDate(provider);
 
-  // "Open today · 09:00–18:00" subtitle (today's working hours, if any).
   const todayShape = await getDayTimeline(provider, today, []);
   const openText = todayShape.working
     ? `${t.dashboard.openToday} · ${hhmm(todayShape.startMin)}–${hhmm(todayShape.endMin)}`
@@ -75,58 +97,69 @@ export default async function DashboardPage({
 
   return (
     <div className="min-h-dvh bg-canvas text-ink md:py-8">
-      {/* One uniform canvas, full screen width: content spans the viewport with
-          a small side gutter on desktop, full-bleed with a bottom tab bar on
-          phone. */}
       <div className="w-full pb-24 md:pb-8">
         <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-none md:px-9 md:py-8">
           {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
           {/* Header */}
-          <header className="mb-6 flex items-start justify-between">
-            <div>
-              <h1 className="font-serif text-2xl leading-tight">{provider.businessName}</h1>
-              <p className="mt-0.5 text-sm text-ink-3">{openText}</p>
+          <header className="mb-5 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="font-serif text-[22px] font-semibold leading-tight md:text-[28px]">
+                {provider.businessName}
+              </h1>
+              <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] text-ink-3">
+                <span
+                  className={`h-[7px] w-[7px] rounded-full ${
+                    todayShape.working ? "bg-ok" : "bg-faint"
+                  }`}
+                />
+                <span className="tabular">{openText}</span>
+              </p>
             </div>
-            <div className="flex items-center gap-4">
-              <a
+            <div className="flex shrink-0 items-center gap-3">
+              <Link
                 href="/dashboard/clients"
                 className="hidden rounded-full border border-line px-4 py-1.5 text-sm text-ink-2 md:inline-block"
               >
                 {t.dashboard.clients}
-              </a>
-              <form action={signOut}>
+              </Link>
+              <form action={signOut} className="hidden md:block">
                 <button type="submit" className="text-sm text-ink-3 underline">
                   {t.auth.signOut}
                 </button>
               </form>
+              <ThemeToggle />
+              <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-accent-l font-serif text-sm font-semibold text-accent">
+                {initials(provider.businessName)}
+              </span>
             </div>
           </header>
 
-          {/* View toggle */}
-          <nav className="mb-5 flex gap-2 text-sm">
-            {(["day", "week", "month"] as const).map((v) => (
-              <a
-                key={v}
-                href={`/dashboard?view=${v}&date=${date}`}
-                className={`rounded-full px-4 py-1.5 ${
-                  view === v
-                    ? "bg-accent font-semibold text-white"
-                    : "border border-line text-ink-2"
-                }`}
-              >
-                {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
-              </a>
-            ))}
-            <a
+          {/* View toggle (segmented) + mobile clients link */}
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <nav className="inline-flex rounded-xl bg-surface-2 p-1">
+              {(["day", "week", "month"] as const).map((v) => (
+                <a
+                  key={v}
+                  href={`/dashboard?view=${v}&date=${date}`}
+                  className={`rounded-lg px-4 py-1.5 text-[13px] font-semibold ${
+                    view === v
+                      ? "bg-ctrl text-ctrl-ink shadow-sm"
+                      : "text-ink-3"
+                  }`}
+                >
+                  {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
+                </a>
+              ))}
+            </nav>
+            <Link
               href="/dashboard/clients"
-              className="ml-auto rounded-full border border-line px-4 py-1.5 text-ink-2 md:hidden"
+              className="rounded-full border border-line px-4 py-1.5 text-sm text-ink-2 md:hidden"
             >
               {t.dashboard.clients}
-            </a>
-          </nav>
+            </Link>
+          </div>
 
-          {/* Two columns on desktop: the view fills the wide left, a rail sits right. */}
           <div className="md:grid md:grid-cols-[minmax(0,1fr)_19.5rem] md:gap-8 md:items-start">
             <div className="min-w-0">
               {view === "day" && (
@@ -141,31 +174,37 @@ export default async function DashboardPage({
               {view === "week" && (
                 <WeekView provider={provider} date={date} maxDate={maxDate} />
               )}
-              {view === "month" && (
-                <MonthView provider={provider} date={date} />
-              )}
+              {view === "month" && <MonthView provider={provider} date={date} />}
             </div>
 
             {/* Side rail (desktop) */}
-            <aside className="mt-8 space-y-4 md:mt-0">
-              <a
+            <aside className="mt-8 space-y-3.5 md:mt-0">
+              <Link
                 href="/dashboard/booking/new"
-                className="block rounded-xl bg-accent px-4 py-3 text-center text-sm font-semibold text-white"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold text-white shadow-[0_12px_26px_-14px_rgba(184,66,28,.6)]"
               >
-                + {t.dashboard.walkIn}
-              </a>
+                <Plus size={17} strokeWidth={2.2} /> {t.dashboard.walkIn}
+              </Link>
 
               <BookingLinkCard url={bookingUrl} businessName={provider.businessName} />
 
               {/* Management nav — desktop only; phone uses the bottom tab bar */}
               <div className="hidden md:block">
                 <RailGroup label={t.dashboard.groupAvailability}>
-                  <RailLink href="/dashboard/schedule">{t.schedule.title}</RailLink>
-                  <RailLink href={`/dashboard/days?date=${date}`}>{t.dashboard.manageDay}</RailLink>
+                  <RailLink href="/dashboard/schedule" icon={<CalIcon size={17} strokeWidth={1.8} />}>
+                    {t.schedule.title}
+                  </RailLink>
+                  <RailLink href={`/dashboard/days?date=${date}`} icon={<Clock size={17} strokeWidth={1.8} />}>
+                    {t.dashboard.manageDay}
+                  </RailLink>
                 </RailGroup>
                 <RailGroup label={t.dashboard.groupBusiness}>
-                  <RailLink href="/dashboard/services">{t.dashboard.services}</RailLink>
-                  <RailLink href="/dashboard/settings">{t.dashboard.settings}</RailLink>
+                  <RailLink href="/dashboard/services" icon={<Tag size={17} strokeWidth={1.8} />}>
+                    {t.dashboard.services}
+                  </RailLink>
+                  <RailLink href="/dashboard/settings" icon={<SettingsIcon size={17} strokeWidth={1.8} />}>
+                    {t.dashboard.settings}
+                  </RailLink>
                 </RailGroup>
               </div>
             </aside>
@@ -180,21 +219,34 @@ export default async function DashboardPage({
 
 function RailGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mt-5">
-      <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-ink-4">{label}</p>
+    <div className="mt-5 first:mt-0">
+      <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.08em] text-ink-4">
+        {label}
+      </p>
       <div className="space-y-2">{children}</div>
     </div>
   );
 }
 
-function RailLink({ href, children }: { href: string; children: React.ReactNode }) {
+function RailLink({
+  href,
+  icon,
+  children,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <a
       href={href}
-      className="flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink-2 hover:border-accent/40"
+      className="flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm font-semibold text-ink-2 hover:border-accent/40"
     >
-      {children}
-      <span className="text-ink-4">›</span>
+      <span className="inline-flex items-center gap-2.5">
+        <span className="text-accent">{icon}</span>
+        {children}
+      </span>
+      <ChevronRight size={15} strokeWidth={2} className="text-faint" />
     </a>
   );
 }
@@ -218,28 +270,34 @@ async function DayView({
 
   return (
     <section>
-      <DateNav provider={provider} view="day" date={date} step={1} today={today} maxDate={maxDate} label={dayLabel(date, provider.timezone)} />
+      <DateNav view="day" date={date} step={1} today={today} maxDate={maxDate} label={dayLabel(date, provider.timezone)} />
 
-      {/* Stat bar */}
-      <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-4 rounded-2xl border border-line bg-surface px-5 py-4 sm:grid-cols-4">
-        <Stat label={t.dashboard.statBookings} value={String(stats.count)} />
-        <Stat label={t.dashboard.statValue} value={euros(stats.valueCents)} />
-        <Stat label={t.dashboard.statFreeTime} value={formatDuration(stats.freeMinutes)} />
-        <div>
-          <p className="text-xs uppercase tracking-wide text-ink-4">{t.dashboard.statDayBooked}</p>
-          <p className="mt-1 font-serif text-lg text-ink">{stats.bookedPct}%</p>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-canvas-2">
+      {/* Stat strip */}
+      <div className="mb-5 rounded-2xl border border-line bg-surface px-4 py-4 shadow-[var(--shadow-sm)]">
+        <div className="flex items-stretch">
+          <StatCell label={t.dashboard.statBookings} value={String(stats.count)} />
+          <Divider />
+          <StatCell label={t.dashboard.statValue} value={euros(stats.valueCents)} />
+          <Divider />
+          <StatCell label={t.dashboard.statFreeTime} value={formatDuration(stats.freeMinutes)} />
+        </div>
+        <div className="mt-3.5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-semibold text-ink-2">{t.dashboard.statDayBooked}</span>
+            <span className="text-xs font-bold text-accent tabular">{stats.bookedPct}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-canvas-2">
             <div className="h-full rounded-full bg-accent" style={{ width: `${stats.bookedPct}%` }} />
           </div>
         </div>
       </div>
 
       {!timeline.working ? (
-        <p className="rounded-xl border border-line bg-surface px-4 py-6 text-center text-sm text-ink-3">
+        <p className="rounded-2xl border border-line bg-surface px-4 py-6 text-center text-sm text-ink-3">
           {t.dashboard.dayClosed}
         </p>
       ) : (
-        <ol className="relative space-y-2">
+        <ol className="space-y-2.5">
           {timeline.segments.map((seg) => (
             <TimelineRow key={`${seg.kind}-${seg.startMin}`} seg={seg} nowMin={nowMin} />
           ))}
@@ -249,52 +307,52 @@ async function DayView({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-xs uppercase tracking-wide text-ink-4">{label}</p>
-      <p className="mt-1 font-serif text-lg text-ink">{value}</p>
+    <div className="flex-1">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-ink-4">{label}</p>
+      <p className="mt-1 font-serif text-xl font-semibold text-ink tabular">{value}</p>
     </div>
   );
 }
 
-// Height scales gently with duration so the day reads as a timeline, but
-// clamps so short services stay tappable and long gaps don't dominate.
-function segHeight(minutes: number): number {
-  return Math.min(150, Math.max(56, Math.round(minutes * 0.6)));
+function Divider() {
+  return <div className="mx-3 w-px self-center bg-line-2" style={{ height: 34 }} />;
 }
 
+// Time gutter + card row. Past dimmed, in-progress gets the accent halo,
+// free gaps are dashed "Book this gap" rows, breaks are filled tiles.
 function TimelineRow({ seg, nowMin }: { seg: TimelineSegment; nowMin: number | null }) {
-  const height = segHeight(seg.endMin - seg.startMin);
+  const startLabel = hhmm(seg.startMin);
 
   if (seg.kind === "free") {
     return (
-      <li
-        style={{ minHeight: height }}
-        className="flex items-center gap-3 rounded-2xl border border-dashed border-line px-4"
-      >
-        <span className="w-24 shrink-0 font-mono text-xs text-ink-3">{seg.timeText}</span>
-        <span className="text-sm text-ink-3">
-          {t.dashboard.freeGap} · {formatDuration(seg.minutes)}
-        </span>
-        <a
+      <li className="flex gap-3">
+        <TimeGutter label={startLabel} tone="faint" />
+        <Link
           href="/dashboard/booking/new"
-          className="ml-auto shrink-0 text-sm font-medium text-accent"
+          className="flex flex-1 items-center justify-between rounded-2xl border-[1.5px] border-dashed border-line px-4 py-3.5"
         >
-          {t.dashboard.bookThisGap} →
-        </a>
+          <span className="text-[13px] text-ink-3">
+            {t.dashboard.freeGap} · <span className="tabular">{formatDuration(seg.minutes)}</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-accent">
+            {t.dashboard.bookThisGap}
+            <ArrowRight size={14} strokeWidth={2.3} />
+          </span>
+        </Link>
       </li>
     );
   }
 
   if (seg.kind === "break") {
     return (
-      <li
-        style={{ minHeight: height }}
-        className="flex items-center gap-3 rounded-2xl border border-line bg-canvas-2 px-4"
-      >
-        <span className="w-24 shrink-0 font-mono text-xs text-ink-4">{seg.timeText}</span>
-        <span className="text-sm text-ink-3">{seg.label}</span>
+      <li className="flex gap-3">
+        <TimeGutter label={startLabel} tone="faint" />
+        <div className="flex flex-1 items-center gap-2 rounded-2xl bg-canvas-2 px-4 py-3">
+          <Coffee size={14} strokeWidth={1.8} className="text-ink-4" />
+          <span className="text-[13px] font-semibold text-ink-3">{seg.label}</span>
+        </div>
       </li>
     );
   }
@@ -308,45 +366,61 @@ function TimelineRow({ seg, nowMin }: { seg: TimelineSegment; nowMin: number | n
   const endsInMin = inProgress ? seg.endMin - (nowMin as number) : 0;
 
   return (
-    <li>
+    <li className={`flex gap-3 ${dimmed ? "opacity-60" : ""}`}>
+      <TimeGutter label={startLabel} tone={inProgress ? "accent" : dimmed ? "muted" : "accent"} />
       <a
         href={`/dashboard/booking/${seg.id}`}
-        style={{ minHeight: height }}
-        className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border px-4 ${
+        className={`relative flex-1 overflow-hidden rounded-2xl px-4 py-3.5 ${
           seg.status === "no_show"
-            ? "border-red-300 bg-surface"
+            ? "border border-red-300 bg-surface"
             : inProgress
-              ? "border-accent bg-surface"
-              : "border-line bg-surface"
-        } ${dimmed ? "opacity-60" : ""}`}
+              ? "border-[1.5px] border-accent bg-surface pl-[18px] [box-shadow:0_0_0_3px_var(--accent-l)]"
+              : "border border-line bg-surface"
+        }`}
       >
-        {inProgress && <span className="absolute inset-y-0 left-0 w-1.5 bg-accent" />}
-        <span className="w-24 shrink-0 font-mono text-xs text-accent">{seg.timeText}</span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-serif text-ink">{seg.clientName}</span>
-          <span className="block truncate text-xs text-ink-3">{seg.serviceName}</span>
-          {inProgress && (
-            <span className="mt-1 block text-xs font-medium text-accent">
-              {t.dashboard.nowAt} {hhmm(nowMin as number)} · {t.dashboard.endsIn} {formatDuration(endsInMin)}
-            </span>
-          )}
-        </span>
-        <span className="shrink-0 text-right">
-          {inProgress && (
-            <span className="mb-1 block rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-              {t.dashboard.inProgress}
-            </span>
-          )}
-          {seg.status === "no_show" && (
-            <span className="block text-xs text-red-600">{t.dashboard.noShowBadge}</span>
-          )}
-          {seg.isPast && seg.status !== "no_show" && (
-            <span className="block text-xs text-ink-3">{t.dashboard.pastBadge}</span>
-          )}
-          <span className="font-mono text-sm text-ink-2">{euros(seg.priceCents)}</span>
-        </span>
+        {inProgress && <span className="absolute inset-y-0 left-0 w-1 bg-accent" />}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="truncate font-serif text-[15.5px] font-semibold text-ink">{seg.clientName}</p>
+              {inProgress && (
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] text-white">
+                  <span className="h-[5px] w-[5px] rounded-full bg-white" />
+                  {t.dashboard.inProgress}
+                </span>
+              )}
+              {seg.status === "no_show" && (
+                <span className="shrink-0 text-xs text-red-600">{t.dashboard.noShowBadge}</span>
+              )}
+              {seg.isPast && seg.status !== "no_show" && (
+                <span className="shrink-0 text-xs text-ink-4">{t.dashboard.pastBadge}</span>
+              )}
+            </div>
+            <p className="mt-0.5 truncate text-[12.5px] text-ink-3">
+              {seg.serviceName}
+              {inProgress && (
+                <span className="font-semibold text-accent-d tabular">
+                  {" · "}
+                  {t.dashboard.endsIn} {formatDuration(endsInMin)}
+                </span>
+              )}
+            </p>
+          </div>
+          <span className="shrink-0 font-serif text-[13.5px] font-bold text-ink-2 tabular">
+            {euros(seg.priceCents)}
+          </span>
+        </div>
       </a>
     </li>
+  );
+}
+
+function TimeGutter({ label, tone }: { label: string; tone: "accent" | "muted" | "faint" }) {
+  const color = tone === "accent" ? "text-accent" : tone === "muted" ? "text-ink-3" : "text-faint";
+  return (
+    <span className={`w-11 shrink-0 pt-3.5 text-right text-[12.5px] font-bold tabular ${color}`}>
+      {label}
+    </span>
   );
 }
 
@@ -366,7 +440,6 @@ async function WeekView({
   return (
     <section>
       <DateNav
-        provider={provider}
         view="week"
         date={weekStart}
         step={7}
@@ -379,19 +452,23 @@ async function WeekView({
           <li key={d.date}>
             <a
               href={`/dashboard?view=day&date=${d.date}`}
-              className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
-                d.date === today ? "border-accent/50 bg-surface" : "border-line bg-surface"
+              className={`flex items-center justify-between rounded-2xl bg-surface px-4 py-3.5 ${
+                d.date === today
+                  ? "border-[1.5px] border-accent [box-shadow:0_0_0_3px_var(--accent-l)]"
+                  : "border border-line"
               }`}
             >
-              <span className="font-serif">{dayLabel(d.date, provider.timezone)}</span>
-              <span className="text-sm">
+              <span className={`font-serif text-[15px] ${d.count > 0 ? "text-ink" : "text-ink-3"}`}>
+                {dayLabel(d.date, provider.timezone)}
+              </span>
+              <span className="text-[13px]">
                 {d.count > 0 ? (
                   <>
-                    <span className="font-mono text-accent">{d.count}</span>
-                    <span className="ml-2 font-mono text-ink-3">{euros(d.valueCents)}</span>
+                    <span className="font-bold text-accent tabular">{d.count}</span>
+                    <span className="ml-1.5 text-ink-3 tabular">· {euros(d.valueCents)}</span>
                   </>
                 ) : (
-                  <span className="text-ink-4">—</span>
+                  <span className="text-faint">—</span>
                 )}
               </span>
             </a>
@@ -433,14 +510,14 @@ async function MonthView({
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
-        <a href={`/dashboard?view=month&date=${prevMonth}`} className="rounded px-3 py-1 text-ink-3">←</a>
-        <span className="font-serif">{monthLabel}</span>
-        <a href={`/dashboard?view=month&date=${nextMonth}`} className="rounded px-3 py-1 text-ink-3">→</a>
+      <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-surface px-3 py-2.5">
+        <NavSquare href={`/dashboard?view=month&date=${prevMonth}`} dir="left" />
+        <span className="font-serif text-[15px] font-medium">{monthLabel}</span>
+        <NavSquare href={`/dashboard?view=month&date=${nextMonth}`} dir="right" />
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <div className="grid grid-cols-7 gap-1.5 text-center">
         {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-          <span key={i} className="text-xs text-ink-4">{d}</span>
+          <span key={i} className="text-[10px] font-semibold text-faint">{d}</span>
         ))}
         {cells.map((cell, i) =>
           cell === null ? (
@@ -449,16 +526,20 @@ async function MonthView({
             <a
               key={cell}
               href={`/dashboard?view=day&date=${cell}`}
-              className={`rounded-lg py-2 text-sm ${
-                cell === today ? "bg-accent font-semibold text-white" : "border border-line bg-surface text-ink-2"
+              className={`flex aspect-square flex-col items-center justify-center rounded-[10px] text-[12px] font-semibold ${
+                cell === today
+                  ? "bg-ctrl text-ctrl-ink"
+                  : "border border-line bg-surface text-ink-2"
               }`}
             >
-              {Number(cell.slice(-2))}
-              {counts.get(cell) ? (
-                <span className="block text-[10px] text-accent">{counts.get(cell)}</span>
-              ) : (
-                <span className="block text-[10px] text-transparent">0</span>
-              )}
+              <span className="tabular">{Number(cell.slice(-2))}</span>
+              <span
+                className={`text-[8px] font-bold tabular ${
+                  counts.get(cell) ? "text-accent" : "text-transparent"
+                }`}
+              >
+                {counts.get(cell) || 0}
+              </span>
             </a>
           ),
         )}
@@ -475,7 +556,6 @@ function DateNav({
   maxDate,
   label,
 }: {
-  provider: ProviderContext;
   view: string;
   date: string;
   step: number;
@@ -488,87 +568,70 @@ function DateNav({
   const nextAllowed = next <= maxDate;
   return (
     <div className="mb-4 flex items-center justify-between">
-      <a href={`/dashboard?view=${view}&date=${prev}`} className="rounded px-3 py-1 text-ink-3">←</a>
+      <NavSquare href={`/dashboard?view=${view}&date=${prev}`} dir="left" />
       <span className="text-center">
-        <span className="block font-serif">{label}</span>
-        {date !== today && (
-          <a href={`/dashboard?view=${view}&date=${today}`} className="text-xs text-accent underline">
+        <span className="block font-serif text-[16px] font-medium md:text-[18px]">{label}</span>
+        {date === today ? (
+          <span className="text-[11.5px] font-semibold text-accent">{t.dashboard.today}</span>
+        ) : (
+          <a href={`/dashboard?view=${view}&date=${today}`} className="text-[11.5px] font-semibold text-accent underline">
             {t.dashboard.today}
           </a>
         )}
       </span>
       {nextAllowed ? (
-        <a href={`/dashboard?view=${view}&date=${next}`} className="rounded px-3 py-1 text-ink-3">→</a>
+        <NavSquare href={`/dashboard?view=${view}&date=${next}`} dir="right" />
       ) : (
-        <span className="px-3 py-1 text-ink-4">→</span>
+        <span className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line-2 text-faint md:h-9 md:w-9">
+          <ChevronRight size={15} strokeWidth={2.2} />
+        </span>
       )}
     </div>
+  );
+}
+
+function NavSquare({ href, dir }: { href: string; dir: "left" | "right" }) {
+  return (
+    <a
+      href={href}
+      className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-line bg-surface text-ink-3 md:h-9 md:w-9"
+    >
+      {dir === "left" ? (
+        <ChevronLeft size={15} strokeWidth={2.2} />
+      ) : (
+        <ChevronRight size={15} strokeWidth={2.2} />
+      )}
+    </a>
   );
 }
 
 // Fixed bottom tab bar — phone only. Mirrors the native-app feel from the design.
 function BottomNav({ active, date }: { active: string; date: string }) {
   const tabs = [
-    { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, icon: IconCalendar },
-    { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, icon: IconUsers },
-    { key: "services", href: "/dashboard/services", label: t.dashboard.services, icon: IconTag },
-    { key: "availability", href: "/dashboard/schedule", label: t.dashboard.navAvailability, icon: IconClock },
-    { key: "settings", href: `/dashboard/settings`, label: t.dashboard.navSettings, icon: IconGear },
+    { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
+    { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
+    { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
+    { key: "availability", href: "/dashboard/schedule", label: t.dashboard.navAvailability, Icon: Clock },
+    { key: "settings", href: `/dashboard/settings`, label: t.dashboard.navSettings, Icon: SettingsIcon },
   ];
+  void date;
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-surface/95 backdrop-blur md:hidden">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const on = tab.key === active;
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-surface/92 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      {tabs.map(({ key, href, label, Icon }) => {
+        const on = key === active;
         return (
           <a
-            key={tab.key}
-            href={tab.href}
-            className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] ${
-              on ? "text-accent" : "text-ink-3"
+            key={key}
+            href={href}
+            className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold ${
+              on ? "text-accent" : "text-ink-4"
             }`}
           >
-            <Icon />
-            {tab.label}
+            <Icon size={21} strokeWidth={1.9} />
+            {label}
           </a>
         );
       })}
     </nav>
-  );
-}
-
-function IconCalendar() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v3M16 3v3" />
-    </svg>
-  );
-}
-function IconUsers() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 14c2.2.3 4 2.2 4 4.5" />
-    </svg>
-  );
-}
-function IconTag() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 12 12 3h7v7l-9 9z" /><circle cx="15.5" cy="7.5" r="1.3" />
-    </svg>
-  );
-}
-function IconClock() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
-    </svg>
-  );
-}
-function IconGear() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" />
-    </svg>
   );
 }

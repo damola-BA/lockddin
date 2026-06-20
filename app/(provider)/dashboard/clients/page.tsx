@@ -48,7 +48,7 @@ export default async function ClientsPage({
                 >
                   <span>
                     <span className="font-serif">{c.firstName}</span>
-                    <span className="block font-mono text-xs text-ink-3">{c.phone}</span>
+                    <span className="block text-xs text-ink-3 tabular">{c.email}</span>
                   </span>
                   <span className="text-right text-xs text-ink-3">
                     <span className="font-mono text-ink-2">{c.bookingCount}</span> {t.dashboard.statBookings}

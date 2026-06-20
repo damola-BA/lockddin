@@ -2,6 +2,7 @@ import { getProviderBySlug } from "@/lib/booking/slots";
 import { createAdminClient } from "@/lib/db/admin";
 import { getDictionary, fill } from "@/lib/i18n";
 import { ProviderBanner } from "@/components/provider/banner";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { BookingFlow } from "./booking-flow";
 
 const t = getDictionary();
@@ -52,12 +53,15 @@ export default async function BookingPage({
   return (
     <Shell>
       <div className="mb-8">
+        <div className="mb-3 flex justify-end">
+          <ThemeToggle />
+        </div>
         <ProviderBanner
           name={name}
           city={provider.city}
           bannerPath={provider.banner_path}
         />
-        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-sage px-3 py-1 text-xs font-medium text-ok">
+        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ok-l px-3 py-1 text-xs font-semibold text-ok">
           {fill(t.client.reassureTop, {
             hours: provider.cancellation_window_hours,
           })}
@@ -79,7 +83,7 @@ export default async function BookingPage({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[#faf6f0] text-ink">
+    <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-10">{children}</main>
     </div>
   );

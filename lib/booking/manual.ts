@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { createServerSupabase } from "@/lib/db/server";
 import { createAdminClient } from "@/lib/db/admin";
-import { normalizePhone } from "@/lib/booking/phone";
 import { makeManageToken } from "@/lib/booking/manage-token";
 import { resolveServiceSet } from "@/lib/booking/service-set";
 import { canOfferInterval } from "@/lib/scheduling/engine";
@@ -28,12 +27,11 @@ async function requireProvider() {
 export type ManualClient = {
   id: string;
   firstName: string;
-  phone: string;
-  email: string | null;
+  email: string;
   hasActiveBooking: boolean;
 };
 
-// Step 1: search clients by name or phone, flagging an existing active
+// Step 1: search clients by name or email, flagging an existing active
 // booking (the one-per-client rule is surfaced here).
 export async function searchClientsForBooking(
   query: string,
@@ -43,11 +41,11 @@ export async function searchClientsForBooking(
   const term = query.trim();
   let q = admin
     .from("clients")
-    .select("id, first_name, phone, email")
+    .select("id, first_name, email")
     .eq("provider_id", providerId)
     .order("first_name")
     .limit(20);
-  if (term) q = q.or(`first_name.ilike.%${term}%,phone.ilike.%${term}%`);
+  if (term) q = q.or(`first_name.ilike.%${term}%,email.ilike.%${term}%`);
   const { data: clients } = await q;
   if (!clients || clients.length === 0) return [];
 
@@ -66,7 +64,6 @@ export async function searchClientsForBooking(
   return clients.map((c) => ({
     id: c.id,
     firstName: c.first_name,
-    phone: c.phone,
     email: c.email,
     hasActiveBooking: activeSet.has(c.id),
   }));
@@ -78,23 +75,24 @@ export type CreateClientResult =
 
 export async function createClientForBooking(
   firstName: string,
-  rawPhone: string,
   email: string,
 ): Promise<CreateClientResult> {
   const providerId = await requireProvider();
   const name = firstName.trim();
-  const phone = normalizePhone(rawPhone);
-  const cleanEmail = email.trim().toLowerCase() || null;
-  if (!name || !phone) return { ok: false, error: "invalid" };
+  const cleanEmail = email.trim().toLowerCase();
+  // Email is the client identity for the MVP (DD39).
+  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return { ok: false, error: "invalid" };
+  }
 
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("clients")
     .upsert(
-      { provider_id: providerId, phone, first_name: name, email: cleanEmail },
-      { onConflict: "provider_id,phone" },
+      { provider_id: providerId, first_name: name, email: cleanEmail },
+      { onConflict: "provider_id,email" },
     )
-    .select("id, first_name, phone, email")
+    .select("id, first_name, email")
     .single();
   if (error || !data) return { ok: false, error: "server" };
 
@@ -113,7 +111,6 @@ export async function createClientForBooking(
     client: {
       id: data.id,
       firstName: data.first_name,
-      phone: data.phone,
       email: data.email,
       hasActiveBooking: Boolean(active),
     },

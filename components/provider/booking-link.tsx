@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Copy, Link2, Share2 } from "lucide-react";
 import { getDictionary } from "@/lib/i18n";
 
 const t = getDictionary();
@@ -52,31 +53,31 @@ export function BookingLinkCard({
   }
 
   return (
-    <section className="mb-5 rounded-xl border border-line bg-surface p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">
+    <section className="rounded-2xl border border-line bg-surface p-4">
+      <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-ink-4">
         {t.dashboard.yourLink}
       </p>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-1 block truncate font-medium text-accent"
-      >
-        {display}
-      </a>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-2.5 flex items-center gap-2 rounded-xl border border-line bg-canvas px-3 py-2.5">
+        <Link2 size={14} strokeWidth={1.8} className="shrink-0 text-accent" />
+        <span className="flex-1 truncate text-[13px] font-semibold text-ink-2 tabular">
+          {display}
+        </span>
+      </div>
+      <div className="mt-2.5 flex gap-2">
         <button
           type="button"
           onClick={copy}
-          className="flex-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink-2"
         >
+          <Copy size={14} strokeWidth={1.8} />
           {copied ? t.dashboard.copied : t.dashboard.copyLink}
         </button>
         <button
           type="button"
           onClick={share}
-          className="rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-ink-2"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-ctrl px-4 py-2.5 text-[13px] font-semibold text-ctrl-ink"
         >
+          <Share2 size={14} strokeWidth={1.8} />
           {t.dashboard.shareLink}
         </button>
       </div>

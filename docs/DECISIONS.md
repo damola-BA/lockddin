@@ -6,6 +6,16 @@ AD01–AD12: beta adaptation decisions — see docs/BETA_SCOPE.md.
 
 Append new decisions below as DD07+, one line of rationale each.
 
+DD39: MVP client identity = EMAIL, not phone. Phone does nothing in beta (no
+SMS — reminders/alerts are email-only), so the UI/UX refresh drops the phone
+field from the client booking flow and the provider walk-in entirely; email
+becomes the per-provider unique client identifier (migration
+20260620000000_email_identity: clients.email NOT NULL + unique(provider_id,email),
+phone made nullable). confirm_client_booking now upserts by email and the
+one-active-booking-per-client guard is removed so a returning client can simply
+book again (slot integrity is still enforced by the bookings EXCLUDE constraint).
+Supersedes the phone half of hard rule 7 for beta; phone returns with SMS later.
+
 DD38: provider banner + service photos. Service photos reuse the existing
 services.work_photos jsonb array (no new table) capped at 6 per service,
 Hinge-style; the only schema change is providers.banner_path text (migration

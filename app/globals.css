@@ -1,52 +1,100 @@
 @import "tailwindcss";
 
 /* ── LockdDin design system ───────────────────────────────────────────
-   One warm-light system across landing, client booking, and provider app.
-   Colours are CSS variables behind Tailwind tokens via `@theme inline`, so a
-   future `.theme-dark` scope (provider dark toggle — see DD33) can swap them
-   at runtime without touching any utility class. */
+   One warm design system across landing, client booking, and provider app.
+   Colours are CSS variables behind Tailwind tokens via `@theme inline`, so the
+   `.dark` scope (light/dark toggle — see DD33) swaps them at runtime without
+   touching any utility class. Token NAMES are stable; the hexes below are the
+   refreshed values from the UI/UX handoff. */
 
 :root {
-  --canvas: #faf6f1;
-  --canvas-2: #f3ece3;
-  --surface: #ffffff;
-  --surface-2: #f7f1ea;
-  --ink: #241f1b;
-  --ink-2: #574f47;
-  --ink-3: #726860;
-  --ink-4: #9b9087;
-  --accent: #bb431b;
-  --accent-d: #94340f;
-  --accent-l: #fbeae1;
+  /* Surfaces */
+  --canvas: #faf6f0; /* paper — app background */
+  --canvas-2: #f4ece1; /* paper-2 — inset wells, secondary fills */
+  --surface: #ffffff; /* cards, sheets, inputs */
+  --surface-2: #f7f1ea; /* subtle raised fill */
+
+  /* Ink / text ramp */
+  --ink: #221d19; /* primary text, dark buttons */
+  --ink-2: #574e45; /* body text (ink-soft) */
+  --ink-3: #8a7f74; /* secondary text (muted) */
+  --ink-4: #a89d91; /* tertiary text, placeholders (muted-2) */
+  --faint: #bcae9e; /* disabled, chevrons */
+
+  /* Accent — terracotta, ONE primary thing per screen */
+  --accent: #b8421c;
+  --accent-d: #94340f; /* accent-press — accent text on wash */
+  --accent-l: #fbeae1; /* wash — accent tint (selection halo, chips) */
+
+  /* Decorative tints (kept for landing / category accents) */
   --blush: #f8e7df;
-  --sage: #e7efe7;
+  --sage: #e9f1ea;
   --cream: #f7eede;
   --sky: #e7eef6;
   --lilac: #efe8f4;
-  --ok: #1f6e42;
-  --ok-l: #e7f2ec;
-  --line: #ece3d9;
+
+  /* Status */
+  --ok: #1f6e42; /* free / confirmed / available */
+  --ok-l: #e9f1ea; /* ok-wash — green tint */
+
+  /* Control fill — the "dark" dock / ink-fill buttons / selected time chip.
+     Stays a dark warm tile in BOTH themes (in dark, `--ink` flips to near-white
+     so it can't be used for these). */
+  --ctrl: #221d19;
+  --ctrl-ink: #ffffff;
+  --ctrl-soft: #b8ac9d; /* muted text on the control fill */
+
+  /* Lines */
+  --line: #ece3d9; /* hairline — borders */
+  --line-2: #f0e8de; /* hairline-2 — inner dividers */
   --desk: #d8d1c2;
-  --shadow: 0 14px 38px -18px rgba(74, 46, 28, 0.3);
-  --shadow-sm: 0 6px 18px -10px rgba(74, 46, 28, 0.22);
-  --shadow-panel: 0 24px 60px -28px rgba(74, 46, 28, 0.4);
+
+  /* Shadow recipe (light) */
+  --shadow: 0 1px 2px rgba(74, 46, 28, 0.04), 0 18px 40px -26px rgba(74, 46, 28, 0.3);
+  --shadow-sm: 0 1px 2px rgba(74, 46, 28, 0.04), 0 8px 22px -16px rgba(74, 46, 28, 0.28);
+  --shadow-panel: 0 1px 2px rgba(74, 46, 28, 0.05), 0 24px 60px -28px rgba(74, 46, 28, 0.4);
 }
 
-/* Future provider dark mode (DD33: "light now, dark toggle later").
-   Inert until a toggle adds `.theme-dark` to the provider shell. */
+/* Dark mode — restrained for the APP surfaces (deep warm ink, crisp hairlines,
+   accent reserved for live/active/primary). Set by the theme toggle on <html>.
+   `.theme-dark` kept as an alias for any older references. */
+.dark,
 .theme-dark {
-  --canvas: #14110f;
-  --canvas-2: #1c1815;
-  --surface: #211c19;
-  --surface-2: #2a2420;
+  --canvas: #14110f; /* app bg */
+  --canvas-2: #1c1815; /* surface-2 wells */
+  --surface: #211c19; /* cards, inputs */
+  --surface-2: #2a2420; /* raised fill / dark stat tiles */
+
   --ink: #f5efe9;
-  --ink-2: #d8cfc6;
-  --ink-3: #a89d92;
-  --ink-4: #837a70;
-  --accent: #e0673c;
-  --accent-d: #bb431b;
-  --accent-l: #3a241b;
-  --line: #352e28;
+  --ink-2: #cabfb4; /* text-soft */
+  --ink-3: #9b9087; /* muted */
+  --ink-4: #837a70; /* muted-2 */
+  --faint: #6f665c;
+
+  --accent: #e0673c; /* brightened terracotta for dark */
+  --accent-d: #f0a36a; /* accent-press */
+  --accent-l: #3a241b; /* wash */
+
+  --blush: #3a241b;
+  --sage: #16271d;
+  --cream: #2a2420;
+  --sky: #1b2430;
+  --lilac: #261f2c;
+
+  --ok: #4fae7d;
+  --ok-l: #16271d;
+
+  --ctrl: #39322c; /* neutral dark control fill */
+  --ctrl-ink: #f5efe9;
+  --ctrl-soft: #9b9087;
+
+  --line: #352e28; /* hairline */
+  --line-2: #2a2420; /* hairline-2 */
+  --desk: #2a2420;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -26px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 22px -16px rgba(0, 0, 0, 0.55);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.5), 0 24px 60px -28px rgba(0, 0, 0, 0.65);
 }
 
 @theme inline {
@@ -62,6 +110,7 @@
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
   --color-ink-4: var(--ink-4);
+  --color-faint: var(--faint);
   --color-accent: var(--accent);
   --color-accent-d: var(--accent-d);
   --color-accent-l: var(--accent-l);
@@ -73,11 +122,36 @@
   --color-ok: var(--ok);
   --color-ok-l: var(--ok-l);
   --color-line: var(--line);
+  --color-line-2: var(--line-2);
   --color-desk: var(--desk);
+  --color-ctrl: var(--ctrl);
+  --color-ctrl-ink: var(--ctrl-ink);
+  --color-ctrl-soft: var(--ctrl-soft);
 }
 
 body {
   background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans);
+}
+
+/* Tabular figures for all numbers (prices, times, durations, counts, dates).
+   Replaces the old monospace treatment — a key "low-quality" tell. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Selection halo — pair with a `border-accent` to get the handoff's
+   1.5px accent ring + soft wash glow. */
+.ring-halo {
+  box-shadow: 0 0 0 3px var(--accent-l);
+}
+
+/* Smooth the theme swap (but never animate layout). */
+:root,
+.dark {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
 }

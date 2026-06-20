@@ -30,7 +30,7 @@ export default async function BookingDetailPage({
         </a>
 
         <h1 className="mt-4 mb-1 font-serif text-2xl">{booking.clientName}</h1>
-        <p className="mb-6 font-mono text-sm text-ink-3">{booking.clientPhone}</p>
+        <p className="mb-6 text-sm text-ink-3 tabular">{booking.clientEmail}</p>
 
         <dl className="space-y-3 rounded-xl border border-line bg-surface p-4 text-sm">
           <Row label={t.dashboard.service} value={booking.serviceName} />

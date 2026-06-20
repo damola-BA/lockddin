@@ -59,9 +59,9 @@ server routes (service role) — no client-side table access for anonymous users
 
 ## clients              (scoped per provider — no global client identity)
 - id uuid PK, provider_id FK
-- phone text not null, unique(provider_id, phone)   -- THE stable identifier
+- email text not null, unique(provider_id, email)   -- THE stable identifier (MVP, DD39)
 - first_name text not null
-- email text null               -- latest known; updated on each booking
+- phone text null               -- removed from the booking flow; returns with SMS (DD39)
 - no_show_count int not null default 0
 - created_at timestamptz
 
@@ -122,4 +122,4 @@ server routes (service role) — no client-side table access for anonymous users
 ## Indexes that matter
 - bookings (provider_id, starts_at) — dashboard views & slot engine reads
 - slot_holds (provider_id, status, expires_at) — expiry sweeps & engine reads
-- clients (provider_id, phone) — recognition lookup on booking page
+- clients (provider_id, email) — client identity / dedupe on booking page (DD39)

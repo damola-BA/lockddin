@@ -465,7 +465,7 @@ export type BookingDetail = {
   durationMinutes: number;
   clientId: string;
   clientName: string;
-  clientPhone: string;
+  clientEmail: string;
   visitCount: number;
   isPast: boolean;
   cancellationWindowHours: number;
@@ -479,7 +479,7 @@ export async function getBookingDetail(
   const { data } = await supabase
     .from("bookings")
     .select(
-      "id, starts_at, ends_at, status, source, cancellation_window_hours, service_ids, clients (id, first_name, phone)",
+      "id, starts_at, ends_at, status, source, cancellation_window_hours, service_ids, clients (id, first_name, email)",
     )
     .eq("provider_id", provider.id)
     .eq("id", bookingId)
@@ -489,7 +489,7 @@ export async function getBookingDetail(
   const client = data.clients as unknown as {
     id: string;
     first_name: string;
-    phone: string;
+    email: string;
   };
   const serviceIds = (data.service_ids as string[]) ?? [];
   const services = combineServices(serviceIds, await getProviderServiceMap(provider.id));
@@ -517,7 +517,7 @@ export async function getBookingDetail(
     durationMinutes: services.durationMinutes,
     clientId: client.id,
     clientName: client.first_name,
-    clientPhone: client.phone,
+    clientEmail: client.email,
     visitCount: count ?? 0,
     isPast: data.ends_at <= new Date().toISOString(),
     cancellationWindowHours: data.cancellation_window_hours,
@@ -529,7 +529,7 @@ export async function getBookingDetail(
 export type ClientListRow = {
   id: string;
   firstName: string;
-  phone: string;
+  email: string;
   noShowCount: number;
   bookingCount: number;
 };
@@ -541,19 +541,19 @@ export async function searchClients(
   const supabase = await createServerSupabase();
   let q = supabase
     .from("clients")
-    .select("id, first_name, phone, no_show_count, bookings (id)")
+    .select("id, first_name, email, no_show_count, bookings (id)")
     .eq("provider_id", provider.id)
     .order("first_name")
     .limit(100);
   if (query.trim()) {
     const term = `%${query.trim()}%`;
-    q = q.or(`first_name.ilike.${term},phone.ilike.${term}`);
+    q = q.or(`first_name.ilike.${term},email.ilike.${term}`);
   }
   const { data } = await q;
   return (data ?? []).map((c) => ({
     id: c.id,
     firstName: c.first_name,
-    phone: c.phone,
+    email: c.email,
     noShowCount: c.no_show_count,
     bookingCount: (c.bookings as unknown as { id: string }[]).length,
   }));
@@ -562,8 +562,7 @@ export async function searchClients(
 export type ClientDetail = {
   id: string;
   firstName: string;
-  phone: string;
-  email: string | null;
+  email: string;
   noShowCount: number;
   bookingCount: number;
   totalValueCents: number;
@@ -582,7 +581,7 @@ export async function getClientDetail(
   const supabase = await createServerSupabase();
   const { data: client } = await supabase
     .from("clients")
-    .select("id, first_name, phone, email, no_show_count")
+    .select("id, first_name, email, no_show_count")
     .eq("provider_id", provider.id)
     .eq("id", clientId)
     .maybeSingle();
@@ -608,7 +607,6 @@ export async function getClientDetail(
   return {
     id: client.id,
     firstName: client.first_name,
-    phone: client.phone,
     email: client.email,
     noShowCount: client.no_show_count,
     bookingCount: rows.filter((b) => ["confirmed", "no_show"].includes(b.status)).length,

@@ -28,8 +28,7 @@ export default async function ClientDetailPage({
         </a>
 
         <h1 className="mt-4 mb-1 font-serif text-2xl">{client.firstName}</h1>
-        <p className="mb-1 font-mono text-sm text-ink-3">{client.phone}</p>
-        {client.email && <p className="mb-6 text-sm text-ink-3">{client.email}</p>}
+        <p className="mb-6 text-sm text-ink-3 tabular">{client.email}</p>
 
         <div className="mb-6 grid grid-cols-3 gap-2 text-center">
           <Stat label={t.dashboard.bookingsCount} value={String(client.bookingCount)} />

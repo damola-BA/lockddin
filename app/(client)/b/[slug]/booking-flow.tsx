@@ -8,18 +8,28 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  ArrowRight,
+  Calendar,
+  CalendarPlus,
+  Check,
+  ChevronLeft,
+  Mail,
+  MapPin,
+  User,
+  Zap,
+} from "lucide-react";
 import { storageUrl } from "@/lib/storage-url";
 import {
   placeHold,
   releaseHold,
   confirmBooking,
-  recognizePhone,
   joinWaitlist,
   type HoldState,
   type ConfirmState,
-  type RecognizeResult,
   type WaitlistState,
 } from "@/lib/booking/actions";
+import { StepSpine } from "@/components/provider/ui";
 import { getDictionary, fill, formatDuration } from "@/lib/i18n";
 
 const t = getDictionary();
@@ -36,6 +46,12 @@ type Service = {
 type PublicSlot = { startsAt: string; endsAt: string };
 
 const TZ = "Europe/Brussels";
+
+const SPINE = [
+  { key: "service", label: t.client.stepService },
+  { key: "time", label: t.client.stepTime },
+  { key: "details", label: t.client.stepDetails },
+];
 
 function euros(cents: number): string {
   return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
@@ -61,6 +77,24 @@ function slotTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(iso));
+}
+
+// Hour-of-day in Brussels, for the Morning / Afternoon split.
+function slotHour(iso: string): number {
+  return Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: TZ,
+      hour: "2-digit",
+      hour12: false,
+    }).format(new Date(iso)),
+  );
+}
+
+// Selected-time chip uses the dark control fill; everything else is a hairline.
+function timeChipClass(active: boolean): string {
+  return active
+    ? "border border-ctrl bg-ctrl text-ctrl-ink"
+    : "border border-line bg-surface text-ink hover:border-accent";
 }
 
 export function BookingFlow({
@@ -130,98 +164,50 @@ export function BookingFlow({
     [serviceCsv, dayDate, loadEarliest, loadDay],
   );
 
-  // ── step 1: service selection (one or more) ────────────────────────
+  // ── step 1: service selection (photo-forward cards + sticky dock) ────
   if (!selectionDone) {
     return (
       <section>
-        <ReturningClientLookup slug={slug} />
-        <h2 className="mb-1 font-serif text-xl text-ink">
+        <h2 className="mb-1 font-serif text-[22px] font-semibold text-ink">
           {t.client.pickService}
         </h2>
         <p className="mb-4 text-sm text-ink-3">{t.client.pickMultiple}</p>
         <div className="space-y-3">
-          {services.map((s) => {
-            const on = selected.some((x) => x.id === s.id);
-            return (
-              <div
-                key={s.id}
-                className={`rounded-2xl border bg-white shadow-sm transition-colors ${
-                  on ? "border-accent ring-1 ring-accent" : "border-line"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelected(
-                      on ? selected.filter((x) => x.id !== s.id) : [...selected, s],
-                    )
-                  }
-                  className="flex w-full items-start gap-3 p-4 text-left"
-                >
-                  <span
-                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] ${
-                      on ? "border-accent bg-accent text-white" : "border-line text-transparent"
-                    }`}
-                  >
-                    ✓
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="font-serif text-lg text-ink">{s.name}</span>
-                      <span className="font-mono text-sm text-ink-2">
-                        {euros(s.price_cents)}
-                      </span>
-                    </span>
-                    <span className="mt-1 block font-mono text-xs text-ink-3">
-                      {formatDuration(s.duration_minutes)}
-                    </span>
-                    {s.prep_instructions && (
-                      <span className="mt-2 block text-sm text-ink-3">
-                        {t.client.prep}: {s.prep_instructions}
-                      </span>
-                    )}
-                  </span>
-                </button>
-                {s.photos.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setGalleryService(s)}
-                    className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-left"
-                  >
-                    <div className="flex -space-x-1.5">
-                      {s.photos.slice(0, 3).map((p) => (
-                        <img
-                          key={p}
-                          src={storageUrl(p)}
-                          alt=""
-                          className="h-7 w-7 rounded-full border-2 border-white object-cover"
-                        />
-                      ))}
-                    </div>
-                    <span className="text-xs text-ink-3">
-                      See {s.photos.length} photo{s.photos.length !== 1 ? "s" : ""}
-                    </span>
-                  </button>
-                )}
-              </div>
-            );
-          })}
+          {services.map((s) => (
+            <ServiceCard
+              key={s.id}
+              service={s}
+              selected={selected.some((x) => x.id === s.id)}
+              onToggle={() =>
+                setSelected((cur) =>
+                  cur.some((x) => x.id === s.id)
+                    ? cur.filter((x) => x.id !== s.id)
+                    : [...cur, s],
+                )
+              }
+              onGallery={() => setGalleryService(s)}
+            />
+          ))}
         </div>
+
         {selected.length > 0 && (
-          <div className="sticky bottom-4 mt-4 flex items-center gap-3 rounded-2xl border border-line bg-white/95 p-2 pl-4 shadow-[var(--shadow)] backdrop-blur">
-            <div className="min-w-0 flex-1 text-sm">
-              <p className="truncate text-ink-3">
+          <div className="sticky bottom-4 mt-5 flex items-center gap-3 rounded-[18px] bg-ctrl p-3 pl-5 shadow-[var(--shadow)]">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs text-ctrl-soft">
                 {selected.length} service{selected.length !== 1 ? "s" : ""} ·{" "}
-                <span className="font-mono">{formatDuration(totalDuration)}</span>
+                <span className="tabular">{formatDuration(totalDuration)}</span>
               </p>
-              <p className="font-serif text-lg text-ink">{euros(totalPrice)}</p>
+              <p className="mt-0.5 font-serif text-xl font-semibold text-ctrl-ink tabular">
+                {euros(totalPrice)}
+              </p>
             </div>
             <button
               type="button"
               onClick={() => setSelectionDone(true)}
-              className="shrink-0 rounded-xl bg-accent px-5 py-3 font-semibold text-white"
+              className="inline-flex shrink-0 items-center gap-2 rounded-[13px] bg-accent px-5 py-3.5 text-[15px] font-bold text-white"
             >
-              {t.common.continue} →
+              {t.common.continue}
+              <ArrowRight size={16} strokeWidth={2.4} />
             </button>
           </div>
         )}
@@ -236,7 +222,7 @@ export function BookingFlow({
     );
   }
 
-  // ── step 4+: details with hold ─────────────────────────────────────
+  // ── step 3: details with hold ───────────────────────────────────────
   if (picked) {
     return (
       <DetailsStep
@@ -253,10 +239,9 @@ export function BookingFlow({
     );
   }
 
-  // ── step 3: slot picker ────────────────────────────────────────────
+  // ── step 2: time picker ─────────────────────────────────────────────
   const visibleSlots = calendarOpen ? daySlots : slots;
-  const showWaitlist =
-    !calendarOpen && slots !== null && slots.length === 0;
+  const showWaitlist = !calendarOpen && slots !== null && slots.length === 0;
 
   return (
     <section>
@@ -264,41 +249,46 @@ export function BookingFlow({
         <button
           type="button"
           onClick={() => setSelectionDone(false)}
-          className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-accent"
+          className="mb-3 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-accent"
         >
-          ← {t.client.editServices}
+          <ChevronLeft size={15} strokeWidth={2.2} />
+          {t.client.editServices}
         </button>
       )}
-      <div className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-l text-accent">
-          ✓
+
+      <StepSpine steps={SPINE} current="time" />
+
+      {/* combo summary */}
+      <div className="mt-3.5 mb-1 flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5">
+        <span className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-xl bg-accent-l text-accent">
+          <Check size={18} strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
-          <p className="truncate font-serif text-ink">{comboLabel}</p>
-          <p className="text-sm text-ink-3">
-            <span className="font-mono">{formatDuration(totalDuration)}</span>
-            {" · "}
-            <span className="font-mono">{euros(totalPrice)}</span>
+          <p className="truncate font-serif font-semibold text-ink">{comboLabel}</p>
+          <p className="mt-0.5 text-[13px] text-ink-3 tabular">
+            {formatDuration(totalDuration)} · {euros(totalPrice)}
           </p>
         </div>
       </div>
 
       {notice === "released" && (
-        <p className="mb-3 rounded-lg border border-accent/60 bg-accent-l p-3 text-sm text-ink-2">
+        <p className="mt-3 rounded-xl border border-accent/40 bg-accent-l p-3 text-sm text-ink-2">
           {t.client.holdReleased}
         </p>
       )}
       {notice === "taken" && (
-        <p className="mb-3 rounded-lg border border-accent/60 bg-accent-l p-3 text-sm text-ink-2">
+        <p className="mt-3 rounded-xl border border-accent/40 bg-accent-l p-3 text-sm text-ink-2">
           {t.client.justTaken}
         </p>
       )}
 
-      <h2 className="mb-3 font-serif text-xl text-ink">{t.client.pickTime}</h2>
+      <h2 className="mt-6 mb-3.5 font-serif text-[22px] font-semibold text-ink">
+        {t.client.pickTime}
+      </h2>
 
-      {/* Day strip — "Soonest" plus each bookable day, per the design */}
+      {/* Day strip — "Soonest" plus each bookable day */}
       {bookableDays.length > 0 && (
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <div className="mb-1 flex gap-2.5 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => {
@@ -306,12 +296,14 @@ export function BookingFlow({
               setDayDate(null);
               setDaySlots(null);
             }}
-            className={`flex shrink-0 flex-col items-center justify-center rounded-xl px-3 py-2 ${
-              !calendarOpen ? "bg-accent text-white" : "border border-line bg-white text-ink-2"
+            className={`flex w-[62px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl py-2.5 ${
+              !calendarOpen
+                ? "bg-accent text-white"
+                : "border border-line bg-surface text-ink-2"
             }`}
           >
-            <span className="text-[10px] uppercase tracking-wide opacity-80">{t.client.soonest}</span>
-            <span className="text-sm font-semibold">★</span>
+            <Zap size={16} strokeWidth={1.9} />
+            <span className="text-[11px] font-bold">{t.client.soonest}</span>
           </button>
           {bookableDays.map((date) => {
             const d = new Date(`${date}T12:00:00Z`);
@@ -325,14 +317,20 @@ export function BookingFlow({
                   setDayDate(date);
                   void loadDay(serviceCsv, date);
                 }}
-                className={`flex shrink-0 flex-col items-center justify-center rounded-xl px-3 py-2 ${
-                  active ? "bg-accent text-white" : "border border-line bg-white text-ink-2"
+                className={`flex w-[54px] shrink-0 flex-col items-center gap-0.5 rounded-2xl py-2.5 ${
+                  active
+                    ? "bg-accent text-white"
+                    : "border border-line bg-surface text-ink"
                 }`}
               >
-                <span className="text-[10px] uppercase tracking-wide opacity-80">
+                <span
+                  className={`text-[10.5px] font-semibold uppercase tracking-wide ${
+                    active ? "text-white/80" : "text-ink-4"
+                  }`}
+                >
                   {new Intl.DateTimeFormat("en-BE", { timeZone: TZ, weekday: "short" }).format(d)}
                 </span>
-                <span className="text-sm font-semibold">
+                <span className="text-lg font-bold tabular">
                   {new Intl.DateTimeFormat("en-BE", { timeZone: TZ, day: "numeric" }).format(d)}
                 </span>
               </button>
@@ -341,56 +339,29 @@ export function BookingFlow({
         </div>
       )}
 
-      {calendarOpen && dayDate && (
-        <p className="mb-2 font-serif text-ink">{slotDay(`${dayDate}T12:00:00Z`)}</p>
-      )}
-
       {visibleSlots === null ? (
-        <p className="text-sm text-ink-4">{t.common.loading}</p>
+        <p className="mt-4 text-sm text-ink-4">{t.common.loading}</p>
       ) : visibleSlots.length === 0 ? (
         calendarOpen ? (
-          <p className="text-sm text-ink-3">{t.client.noSlotsDay}</p>
+          <p className="mt-4 text-sm text-ink-3">{t.client.noSlotsDay}</p>
         ) : null
-      ) : calendarOpen ? (
-        // A single chosen day — a clean grid of times.
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {visibleSlots.map((slot) => (
-            <button
-              key={slot.startsAt}
-              type="button"
-              onClick={() => setPicked(slot)}
-              className="rounded-xl border border-line bg-white py-2.5 text-center font-mono text-ink shadow-sm hover:border-accent"
-            >
-              {slotTime(slot.startsAt)}
-            </button>
-          ))}
-        </div>
+      ) : calendarOpen && dayDate ? (
+        <DayTimes
+          dayLabel={slotDay(`${dayDate}T12:00:00Z`)}
+          slots={visibleSlots}
+          onPick={setPicked}
+        />
       ) : (
-        // "Soonest": all of a day's times together, earliest day first (DD24).
-        <div className="space-y-4">
-          {[...new Set(visibleSlots.map((s) => localDateOf(s.startsAt)))].map(
-            (day) => (
-              <div key={day}>
-                <p className="mb-2 font-serif text-ink">
-                  {slotDay(`${day}T12:00:00Z`)}
-                </p>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {visibleSlots
-                    .filter((s) => localDateOf(s.startsAt) === day)
-                    .map((slot) => (
-                      <button
-                        key={slot.startsAt}
-                        type="button"
-                        onClick={() => setPicked(slot)}
-                        className="rounded-xl border border-line bg-white py-2.5 text-center font-mono text-ink shadow-sm hover:border-accent"
-                      >
-                        {slotTime(slot.startsAt)}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ),
-          )}
+        // "Soonest": each day's times together, earliest day first (DD24).
+        <div className="mt-2 space-y-6">
+          {[...new Set(visibleSlots.map((s) => localDateOf(s.startsAt)))].map((day) => (
+            <DayTimes
+              key={day}
+              dayLabel={slotDay(`${day}T12:00:00Z`)}
+              slots={visibleSlots.filter((s) => localDateOf(s.startsAt) === day)}
+              onPick={setPicked}
+            />
+          ))}
         </div>
       )}
 
@@ -399,76 +370,148 @@ export function BookingFlow({
   );
 }
 
-// ── returning client lookup (DD20): phone first, schedule instantly ──
+// ── service card (photo-forward) ─────────────────────────────────────
 
-function ReturningClientLookup({ slug }: { slug: string }) {
-  const [open, setOpen] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [result, setResult] = useState<RecognizeResult | "none" | null>(null);
-  const [busy, setBusy] = useState(false);
-
+function ServiceCard({
+  service,
+  selected,
+  onToggle,
+  onGallery,
+}: {
+  service: Service;
+  selected: boolean;
+  onToggle: () => void;
+  onGallery: () => void;
+}) {
+  const cover = service.photos[0];
   return (
-    <div className="mb-6 rounded-xl border border-line bg-white p-4 shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between text-left"
-      >
-        <span className="font-serif text-ink">{t.client.returningTitle}</span>
-        <span className="font-mono text-ink-4">{open ? "−" : "+"}</span>
-      </button>
-
-      {open && result === null && (
-        <form
-          className="mt-3 flex gap-2"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setBusy(true);
-            const r = await recognizePhone(slug, phone);
-            setResult(r.existing ? r : "none");
-            setBusy(false);
-          }}
-        >
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder={t.client.phone}
-            required
-            autoFocus
-            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="shrink-0 rounded-lg bg-ink px-3 py-2.5 text-sm font-semibold text-canvas disabled:opacity-50"
+    <div
+      className={`overflow-hidden rounded-2xl bg-surface transition-shadow ${
+        selected
+          ? "border-[1.5px] border-accent [box-shadow:0_0_0_3px_var(--accent-l)]"
+          : "border border-line"
+      }`}
+    >
+      <button type="button" onClick={onToggle} className="block w-full text-left">
+        {/* image banner with price chip + selection check */}
+        <div className="relative h-[104px] bg-canvas-2">
+          {cover ? (
+            <img
+              src={storageUrl(cover)}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="h-full w-full bg-[repeating-linear-gradient(135deg,color-mix(in_srgb,var(--accent)_7%,transparent)_0_2px,transparent_2px_14px)]" />
+          )}
+          <span className="absolute bottom-2.5 left-3 rounded-lg bg-[rgba(34,29,25,.78)] px-2.5 py-1 text-[13px] font-bold text-white tabular">
+            {euros(service.price_cents)}
+          </span>
+          <span
+            className={`absolute right-2.5 top-2.5 flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 border-white shadow ${
+              selected ? "bg-accent text-white" : "bg-white/90 text-transparent"
+            }`}
           >
-            {busy ? "…" : t.client.returningCta}
-          </button>
-        </form>
-      )}
-
-      {result === "none" && (
-        <p className="mt-3 text-sm text-ink-3">{t.client.returningNone}</p>
-      )}
-
-      {result !== null && result !== "none" && result.existing && (
-        <div className="mt-3">
-          <p className="font-serif text-ink">{result.existing.serviceName}</p>
-          <p className="font-mono text-sm text-ink-2">{result.existing.whenText}</p>
-          <a
-            href={`/manage/${result.existing.manageToken}`}
-            className="mt-3 block w-full rounded-xl bg-ink px-4 py-3 text-center font-semibold text-canvas"
-          >
-            {t.client.manageBooking}
-          </a>
+            {selected && <Check size={13} strokeWidth={3} />}
+          </span>
         </div>
+        <div className="px-4 py-3.5">
+          <p className="font-serif text-[17px] font-semibold text-ink">{service.name}</p>
+          <p className="mt-1 text-[12.5px] text-ink-3 tabular">
+            {formatDuration(service.duration_minutes)}
+            {service.photos.length > 0 &&
+              ` · ${service.photos.length} photo${service.photos.length !== 1 ? "s" : ""}`}
+          </p>
+          {service.prep_instructions && (
+            <p className="mt-2 text-[13px] text-ink-3">
+              {t.client.prep}: {service.prep_instructions}
+            </p>
+          )}
+        </div>
+      </button>
+      {service.photos.length > 0 && (
+        <button
+          type="button"
+          onClick={onGallery}
+          className="flex w-full items-center gap-2 border-t border-line-2 px-4 py-2.5 text-left"
+        >
+          <div className="flex -space-x-1.5">
+            {service.photos.slice(0, 3).map((p) => (
+              <img
+                key={p}
+                src={storageUrl(p)}
+                alt=""
+                className="h-7 w-7 rounded-full border-2 border-surface object-cover"
+              />
+            ))}
+          </div>
+          <span className="text-xs text-ink-3">
+            See {service.photos.length} photo{service.photos.length !== 1 ? "s" : ""}
+          </span>
+        </button>
       )}
     </div>
   );
 }
 
-// ── details step: hold countdown + recognition + confirm ─────────────
+// ── a single day's times, split Morning / Afternoon ──────────────────
+
+function DayTimes({
+  dayLabel,
+  slots,
+  onPick,
+}: {
+  dayLabel: string;
+  slots: PublicSlot[];
+  onPick: (s: PublicSlot) => void;
+}) {
+  const morning = slots.filter((s) => slotHour(s.startsAt) < 12);
+  const afternoon = slots.filter((s) => slotHour(s.startsAt) >= 12);
+
+  return (
+    <div>
+      <p className="mb-3 font-serif text-[15px] font-medium text-ink-2">{dayLabel}</p>
+      {morning.length > 0 && (
+        <Period label={t.client.morning} slots={morning} onPick={onPick} />
+      )}
+      {afternoon.length > 0 && (
+        <Period label={t.client.afternoon} slots={afternoon} onPick={onPick} />
+      )}
+    </div>
+  );
+}
+
+function Period({
+  label,
+  slots,
+  onPick,
+}: {
+  label: string;
+  slots: PublicSlot[];
+  onPick: (s: PublicSlot) => void;
+}) {
+  return (
+    <div className="mb-4 last:mb-0">
+      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-ink-4">
+        {label}
+      </p>
+      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+        {slots.map((slot) => (
+          <button
+            key={slot.startsAt}
+            type="button"
+            onClick={() => onPick(slot)}
+            className={`rounded-xl py-3 text-center text-[15px] font-semibold tabular ${timeChipClass(false)}`}
+          >
+            {slotTime(slot.startsAt)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── details step: hold ring countdown + email + confirm ──────────────
 
 function DetailsStep({
   slug,
@@ -498,11 +541,9 @@ function DetailsStep({
     FormData
   >(confirmBooking, {});
   const [remaining, setRemaining] = useState<number | null>(null);
-  const [recognized, setRecognized] = useState<RecognizeResult>({});
   const holdRequested = useRef(false);
   const reholds = useRef(0);
   const reholding = useRef(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   // Hold starts when the details step opens (F5 step 4).
   useEffect(() => {
@@ -518,11 +559,10 @@ function DetailsStep({
 
   // Countdown — and rather than dumping everything the client has typed when
   // the 5-minute hold lapses, silently re-hold the same slot a couple of times
-  // so an active booker never loses their work (DD35). Only a genuinely gone
-  // slot (or a long-abandoned session) sends them back to the picker.
+  // so an active booker never loses their work (DD35).
   useEffect(() => {
     if (!hold.ok) return;
-    reholding.current = false; // a fresh hold just landed
+    reholding.current = false;
     const expires = new Date(hold.expiresAt).getTime();
     const holdId = hold.holdId;
     const tick = () => {
@@ -533,7 +573,7 @@ function DetailsStep({
         reholds.current += 1;
         reholding.current = true;
         void (async () => {
-          await releaseHold(holdId); // free the EXCLUDE so the re-claim can take it
+          await releaseHold(holdId);
           const fd = new FormData();
           fd.set("slug", slug);
           fd.set("service_ids", serviceCsv);
@@ -550,7 +590,6 @@ function DetailsStep({
     return () => clearInterval(id);
   }, [hold, onReleased, slug, serviceCsv, slot.startsAt, holdAction]);
 
-  // Confirm-stage failures route back to the picker.
   useEffect(() => {
     if (confirm.ok === false && confirm.reason === "released") onReleased();
     if (confirm.ok === false && confirm.reason === "taken") onTaken();
@@ -562,38 +601,20 @@ function DetailsStep({
 
   if (confirm.ok) {
     return (
-      <section className="rounded-xl border border-line bg-white p-5 shadow-sm">
-        <h2 className="mb-3 font-serif text-2xl text-ink">
-          {t.client.confirmed}
-        </h2>
-        <p className="font-serif text-lg text-ink">{confirm.serviceName}</p>
-        <p className="font-mono text-ink-2">{confirm.whenText}</p>
-        {confirm.locationText && (
-          <p className="mt-1 text-sm text-ink-3">{confirm.locationText}</p>
-        )}
-        {confirm.prepInstructions && (
-          <p className="mt-3 text-sm text-ink-3">
-            <strong>{t.client.prep}:</strong> {confirm.prepInstructions}
-          </p>
-        )}
-        <p className="mt-3 text-sm text-ink-3">{confirm.cancellationText}</p>
-        <p className="mt-3 text-sm text-ink-3">
-          {fill(t.client.confirmationSent, { email: confirm.email })}
-        </p>
-        <a
-          href={`/manage/${confirm.manageToken}`}
-          className="mt-5 block w-full rounded-xl border border-ink px-4 py-3 text-center font-semibold text-ink"
-        >
-          {t.client.manageBooking}
-        </a>
-      </section>
+      <ConfirmedTicket
+        confirm={confirm}
+        slot={slot}
+        comboLabel={comboLabel}
+      />
     );
   }
 
   const mm = remaining !== null ? String(Math.floor(remaining / 60)) : "5";
-  const ss =
-    remaining !== null ? String(remaining % 60).padStart(2, "0") : "00";
-  const ending = remaining !== null && remaining <= 60;
+  const ss = remaining !== null ? String(remaining % 60).padStart(2, "0") : "00";
+  // Ring depletes over the 5-minute (300s) window.
+  const frac = remaining !== null ? Math.max(0, Math.min(1, remaining / 300)) : 1;
+  const R = 19;
+  const CIRC = 2 * Math.PI * R;
 
   return (
     <section>
@@ -603,106 +624,102 @@ function DetailsStep({
           if (hold.ok) void releaseHold(hold.holdId);
           onBack();
         }}
-        className="mb-2 text-sm text-ink-3 underline"
+        className="mb-3.5 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-ink-3"
       >
-        ← {t.client.backToPicker}
+        <ChevronLeft size={15} strokeWidth={2.2} />
+        {t.client.backToPicker}
       </button>
-      <div className="rounded-xl border border-line bg-white p-5 shadow-sm">
-        <p className="font-serif text-lg text-ink">{comboLabel}</p>
-        <p className="font-mono text-sm text-ink-2">
-          {slotDay(slot.startsAt)} · {slotTime(slot.startsAt)}
-        </p>
-        {hold.ok && (
-          <p
-            className={`mt-2 rounded px-2 py-1 font-mono text-xs ${
-              ending ? "bg-red-50 font-semibold text-red-600" : "bg-accent-l text-ink-3"
-            }`}
-          >
-            {fill(ending ? t.client.holdEnding : t.client.holdNotice, { mm, ss })}
+
+      <StepSpine steps={SPINE} current="details" />
+
+      <div className="mt-3.5 overflow-hidden rounded-[18px] border border-line bg-surface">
+        <div className="px-4 pb-3.5 pt-4">
+          <p className="font-serif text-[18px] font-semibold text-ink">{comboLabel}</p>
+          <p className="mt-1 text-[13.5px] text-ink-3 tabular">
+            {slotDay(slot.startsAt)} · {slotTime(slot.startsAt)}
           </p>
+        </div>
+        {hold.ok && (
+          <div className="flex items-center gap-3.5 border-t border-line-2 bg-accent-l/60 px-4 py-3.5">
+            <div className="relative h-11 w-11 shrink-0">
+              <svg width="44" height="44" viewBox="0 0 44 44">
+                <circle cx="22" cy="22" r={R} fill="none" stroke="var(--accent-l)" strokeWidth="4" />
+                <circle
+                  cx="22"
+                  cy="22"
+                  r={R}
+                  fill="none"
+                  stroke="var(--accent)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray={CIRC}
+                  strokeDashoffset={CIRC * (1 - frac)}
+                  transform="rotate(-90 22 22)"
+                />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold text-accent-d">
+                {t.client.holdRingTitle}
+              </p>
+              <p className="mt-0.5 text-[16px] font-bold text-accent-d tabular">
+                {fill(t.client.holdLeft, { mm, ss })}
+              </p>
+            </div>
+          </div>
         )}
 
-        <form ref={formRef} action={confirmAction} className="mt-4 space-y-3">
+        <form action={confirmAction} className="space-y-3.5 px-4 pb-4 pt-4">
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="hold_id" value={hold.ok ? hold.holdId : ""} />
 
-          {/* Returning client who already has a booking: an inline heads-up,
-              not a full-screen takeover — they keep their place and can change
-              the number to book a new time (DD35). */}
-          {recognized.existing && (
-            <div className="rounded-lg border border-accent/60 bg-accent-l p-3 text-sm">
-              <p className="text-ink-2">{t.client.existingInline}</p>
-              <p className="mt-1 font-serif text-ink">
-                {recognized.existing.serviceName}
-              </p>
-              <p className="font-mono text-ink-2">{recognized.existing.whenText}</p>
-              <a
-                href={`/manage/${recognized.existing.manageToken}`}
-                className="mt-2 inline-block font-semibold text-accent underline"
-              >
-                {t.client.manageBooking}
-              </a>
-              <p className="mt-2 text-ink-3">{t.client.existingOther}</p>
-            </div>
-          )}
-
-          <Field label={t.client.firstName}>
+          <LabeledField label={t.client.firstName} icon={<User size={16} strokeWidth={1.8} />}>
             <input
               name="first_name"
               required
               autoComplete="given-name"
-              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
+              className="w-full bg-transparent text-[15px] font-medium text-ink placeholder:text-ink-4 focus:outline-none"
             />
-          </Field>
-          <Field label={t.client.phone}>
-            <input
-              name="phone"
-              type="tel"
-              required
-              autoComplete="tel"
-              onBlur={async (e) => {
-                const result = await recognizePhone(slug, e.target.value);
-                setRecognized(result);
-                if (result.firstName && formRef.current) {
-                  const el = formRef.current.elements.namedItem("first_name");
-                  if (el instanceof HTMLInputElement && !el.value) {
-                    el.value = result.firstName;
-                  }
-                  const em = formRef.current.elements.namedItem("email");
-                  if (em instanceof HTMLInputElement && !em.value && result.email) {
-                    em.value = result.email;
-                  }
-                }
-              }}
-              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
-            />
-          </Field>
-          <Field label={t.client.email}>
+          </LabeledField>
+
+          <LabeledField
+            label={t.client.email}
+            icon={<Mail size={16} strokeWidth={1.8} />}
+            accent
+          >
             <input
               name="email"
               type="email"
               required
               autoComplete="email"
-              className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
+              className="w-full bg-transparent text-[15px] text-ink placeholder:text-ink-4 focus:outline-none"
             />
-          </Field>
-          <p className="text-xs text-ink-3">{t.client.consent}</p>
+          </LabeledField>
+
+          <p className="text-[12px] leading-relaxed text-ink-4">
+            {t.client.emailReassure}
+          </p>
+
           {confirm.ok === false && confirm.reason === "invalid" && (
             <p className="text-sm text-red-600">{t.common.somethingWrong}</p>
           )}
-          {confirm.ok === false && confirm.reason === "existing" && (
-            <p className="text-sm text-red-600">{t.client.existingTitle}</p>
-          )}
+
           <button
             type="submit"
-            disabled={!hold.ok || confirmPending || !!recognized.existing}
-            className="w-full rounded-xl bg-ink px-4 py-3 font-semibold text-canvas disabled:opacity-50"
+            disabled={!hold.ok || confirmPending}
+            className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-ctrl px-4 py-4 text-[15.5px] font-bold text-ctrl-ink shadow-[var(--shadow)] disabled:opacity-50"
           >
-            {confirmPending
-              ? t.common.loading
-              : `${t.client.confirm} — ${euros(totalPrice)}`}
+            {confirmPending ? (
+              t.common.loading
+            ) : (
+              <>
+                {t.client.confirm}
+                <span className="opacity-50">·</span>
+                <span className="tabular">{euros(totalPrice)}</span>
+              </>
+            )}
           </button>
-          <p className="text-center text-xs text-ink-4">
+          <p className="text-center text-[12px] text-ink-4">
             {fill(t.client.freeCancellation, {
               when: `${cancellationWindowHours}h before`,
             })}
@@ -713,12 +730,136 @@ function DetailsStep({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function LabeledField({
+  label,
+  icon,
+  accent = false,
+  children,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  accent?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm text-ink-3">{label}</span>
-      {children}
+      <span className="mb-1.5 block text-[12.5px] font-semibold text-ink-2">{label}</span>
+      <span
+        className={`flex items-center gap-2.5 rounded-xl bg-surface px-3.5 py-3 ${
+          accent
+            ? "border-[1.5px] border-accent [box-shadow:0_0_0_3px_var(--accent-l)]"
+            : "border border-line"
+        }`}
+      >
+        <span className={`shrink-0 ${accent ? "text-accent" : "text-faint"}`}>{icon}</span>
+        {children}
+      </span>
     </label>
+  );
+}
+
+// ── confirmed: the ticket moment ─────────────────────────────────────
+
+function googleCalendarUrl(
+  title: string,
+  slot: PublicSlot,
+  location: string | null,
+  details: string | null,
+): string {
+  const fmt = (iso: string) =>
+    new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    dates: `${fmt(slot.startsAt)}/${fmt(slot.endsAt)}`,
+  });
+  if (location) params.set("location", location);
+  if (details) params.set("details", details);
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function ConfirmedTicket({
+  confirm,
+  slot,
+  comboLabel,
+}: {
+  confirm: Extract<ConfirmState, { ok: true }>;
+  slot: PublicSlot;
+  comboLabel: string;
+}) {
+  const calUrl = googleCalendarUrl(
+    confirm.serviceName,
+    slot,
+    confirm.locationText,
+    confirm.prepInstructions,
+  );
+
+  return (
+    <section className="flex flex-col">
+      <div className="pb-1 pt-2 text-center">
+        <div className="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-ok text-white shadow-[0_14px_30px_-12px_rgba(31,110,66,.55)]">
+          <Check size={36} strokeWidth={2.6} />
+        </div>
+        <h2 className="mt-5 font-serif text-[30px] font-semibold text-ink">
+          {t.client.confirmed}
+        </h2>
+      </div>
+
+      {/* ticket */}
+      <div className="mt-6 overflow-hidden rounded-[18px] border border-line bg-surface shadow-[var(--shadow)]">
+        <div className="px-[18px] pb-4 pt-[18px]">
+          <p className="font-serif text-[18px] font-semibold text-ink">{comboLabel}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <Calendar size={15} strokeWidth={1.8} className="text-accent" />
+            <span className="text-sm font-semibold text-ink-2 tabular">
+              {confirm.whenText}
+            </span>
+          </div>
+          {confirm.locationText && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <MapPin size={15} strokeWidth={1.8} className="text-accent" />
+              <span className="text-sm text-ink-2">{confirm.locationText}</span>
+            </div>
+          )}
+        </div>
+        {/* perforation */}
+        <div className="h-px bg-[repeating-linear-gradient(90deg,var(--line)_0_6px,transparent_6px_12px)]" />
+        <div className="bg-surface-2 px-[18px] py-3.5">
+          <p className="text-[12.5px] font-bold uppercase tracking-[0.04em] text-ink-3">
+            {t.client.prep}
+          </p>
+          <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-2">
+            {confirm.prepInstructions ? `${confirm.prepInstructions} ` : ""}
+            {confirm.cancellationText}
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full bg-ok-l px-3 py-1.5">
+        <Mail size={13} strokeWidth={2} className="text-ok" />
+        <span className="text-[12.5px] font-semibold text-ok">
+          {fill(t.client.confirmationSent, { email: confirm.email })}
+        </span>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-2.5">
+        <a
+          href={calUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2.5 rounded-[14px] bg-ctrl px-4 py-3.5 text-[14.5px] font-bold text-ctrl-ink"
+        >
+          <CalendarPlus size={17} strokeWidth={1.9} />
+          {t.client.addToCalendar}
+        </a>
+        <a
+          href={`/manage/${confirm.manageToken}`}
+          className="flex w-full items-center justify-center rounded-[14px] border border-line bg-surface px-4 py-3.5 text-[14.5px] font-semibold text-ink-2"
+        >
+          {t.client.manageBooking}
+        </a>
+      </div>
+    </section>
   );
 }
 
@@ -732,15 +873,15 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
 
   if (state.ok) {
     return (
-      <p className="mt-2 rounded-xl border border-line bg-white p-4 text-sm text-ink-2 shadow-sm">
+      <p className="mt-4 rounded-2xl border border-line bg-surface p-4 text-sm text-ink-2 shadow-sm">
         {t.client.waitlistJoined}
       </p>
     );
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-line bg-white p-4 shadow-sm">
-      <h3 className="mb-1 font-serif text-lg text-ink">
+    <div className="mt-4 rounded-2xl border border-line bg-surface p-4 shadow-sm">
+      <h3 className="mb-1 font-serif text-lg font-semibold text-ink">
         {t.client.noSlotsAtAll}
       </h3>
       <p className="mb-3 text-sm text-ink-3">{t.client.waitlistBody}</p>
@@ -751,22 +892,22 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
           <input
             name="first_name"
             required
-            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
+            className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-ink focus:border-accent focus:outline-none"
           />
         </Field>
-        <Field label={t.client.phone}>
+        <Field label={t.client.email}>
           <input
-            name="phone"
-            type="tel"
+            name="email"
+            type="email"
             required
-            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
+            className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-ink focus:border-accent focus:outline-none"
           />
         </Field>
         <Field label={`${t.schedule.pickDate} (${t.client.waitlistAnyDay})`}>
           <input
             name="date_preference"
             type="date"
-            className="w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink"
+            className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-ink focus:border-accent focus:outline-none"
           />
         </Field>
         {state.error && (
@@ -775,7 +916,7 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-xl border border-ink px-4 py-3 font-semibold text-ink disabled:opacity-50"
+          className="w-full rounded-[14px] border border-ctrl bg-ctrl px-4 py-3.5 font-semibold text-ctrl-ink disabled:opacity-50"
         >
           {pending ? t.common.loading : t.client.waitlistTitle}
         </button>
@@ -784,7 +925,16 @@ function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) 
   );
 }
 
-// ── Service photo gallery overlay ─────────────────────────────────────────────
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[12.5px] font-semibold text-ink-2">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+// ── Service photo gallery overlay ────────────────────────────────────
 
 function ServiceGallery({
   service,
@@ -796,19 +946,15 @@ function ServiceGallery({
   const [active, setActive] = useState(0);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col bg-black/90"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/90" onClick={onClose}>
       <div
-        className="flex flex-col flex-1 overflow-hidden"
+        className="flex flex-1 flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* header */}
         <div className="flex items-center justify-between px-4 py-4 text-white">
           <div>
             <p className="font-serif text-lg">{service.name}</p>
-            <p className="text-xs text-white/60">
+            <p className="text-xs text-white/60 tabular">
               {active + 1} / {service.photos.length}
             </p>
           </div>
@@ -816,12 +962,12 @@ function ServiceGallery({
             type="button"
             onClick={onClose}
             className="rounded-full p-2 text-white/80 hover:text-white"
+            aria-label="Close"
           >
-            ✕
+            <ChevronLeft size={20} className="rotate-45" />
           </button>
         </div>
 
-        {/* main photo */}
         <div className="relative flex-1 overflow-hidden">
           <img
             src={storageUrl(service.photos[active])}
@@ -832,23 +978,24 @@ function ServiceGallery({
             <button
               type="button"
               onClick={() => setActive(active - 1)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white"
+              aria-label="Previous"
             >
-              ‹
+              <ChevronLeft size={22} />
             </button>
           )}
           {active < service.photos.length - 1 && (
             <button
               type="button"
               onClick={() => setActive(active + 1)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white"
+              aria-label="Next"
             >
-              ›
+              <ChevronLeft size={22} className="rotate-180" />
             </button>
           )}
         </div>
 
-        {/* thumbnail strip */}
         {service.photos.length > 1 && (
           <div className="flex gap-2 overflow-x-auto px-4 py-3">
             {service.photos.map((p, i) => (
@@ -860,11 +1007,7 @@ function ServiceGallery({
                   i === active ? "border-white" : "border-transparent"
                 }`}
               >
-                <img
-                  src={storageUrl(p)}
-                  alt=""
-                  className="h-14 w-14 object-cover"
-                />
+                <img src={storageUrl(p)} alt="" className="h-14 w-14 object-cover" />
               </button>
             ))}
           </div>

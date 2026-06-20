@@ -44,8 +44,10 @@ full launch; the architecture should not preclude them, but no stubs, no dead co
    consequence preview) can cancel bookings.
 6. **Every email send goes through one module** (`lib/notifications/`) that writes a
    row to `notification_log` before sending. No ad-hoc resend calls in routes.
-7. **No client accounts.** Clients are identified by phone number (stable identifier);
-   email is collected for notifications only.
+7. **No client accounts.** For the beta MVP, clients are identified by **email**
+   (the per-provider unique identifier) — phone has been removed from the booking
+   flow because nothing uses it yet (no SMS). Phone returns as a stable identifier
+   when SMS reminders ship. See DD39.
 8. Mobile-first. The provider dashboard must be fully usable on a 380px viewport.
 9. Plain, kind microcopy. EN only for beta (i18n keys from day one via a simple
    dictionary module so FR/NL can be added later without refactor).

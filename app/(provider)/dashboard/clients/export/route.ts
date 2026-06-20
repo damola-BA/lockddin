@@ -15,13 +15,12 @@ export async function GET() {
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
 
-  const header = ["Name", "Phone", "Email", "Bookings", "Total booked (€)", "No-shows"];
+  const header = ["Name", "Email", "Bookings", "Total booked (€)", "No-shows"];
   const rows = details
     .filter((d): d is NonNullable<typeof d> => d !== null)
     .map((d) =>
       [
         esc(d.firstName),
-        esc(d.phone),
         esc(d.email),
         d.bookingCount,
         (d.totalValueCents / 100).toFixed(2),

@@ -7,7 +7,6 @@ import { claimHold } from "@/lib/scheduling/holds";
 import { canOfferInterval } from "@/lib/scheduling/engine";
 import { getAvailabilityInput } from "@/lib/scheduling/availability";
 import { getProviderBySlug } from "@/lib/booking/slots";
-import { normalizePhone } from "@/lib/booking/phone";
 import { resolveServiceSet } from "@/lib/booking/service-set";
 import { sendEmail } from "@/lib/notifications";
 import { appUrl } from "@/lib/app-url";
@@ -97,66 +96,6 @@ export async function releaseHold(holdId: string): Promise<void> {
     .eq("status", "active");
 }
 
-// ── Phone recognition + existing-booking detection ───────────────────
-
-export type RecognizeResult = {
-  firstName?: string;
-  email?: string;
-  existing?: {
-    serviceName: string;
-    startsAt: string;
-    whenText: string;
-    manageToken: string;
-  };
-};
-
-export async function recognizePhone(
-  slug: string,
-  rawPhone: string,
-): Promise<RecognizeResult> {
-  const phone = normalizePhone(rawPhone);
-  if (!phone) return {};
-  const provider = await getProviderBySlug(slug);
-  if (!provider) return {};
-
-  const admin = createAdminClient();
-  const { data: client } = await admin
-    .from("clients")
-    .select("id, first_name, email")
-    .eq("provider_id", provider.id)
-    .eq("phone", phone)
-    .maybeSingle();
-  if (!client) return {};
-
-  const { data: booking } = await admin
-    .from("bookings")
-    .select("starts_at, manage_token, service_ids")
-    .eq("provider_id", provider.id)
-    .eq("client_id", client.id)
-    .eq("status", "confirmed")
-    .gt("starts_at", new Date().toISOString())
-    .order("starts_at")
-    .limit(1)
-    .maybeSingle();
-
-  const services = booking
-    ? await resolveServiceSet(provider.id, (booking.service_ids as string[]) ?? [])
-    : null;
-
-  return {
-    firstName: client.first_name,
-    email: client.email ?? undefined,
-    existing: booking
-      ? {
-          serviceName: services!.label,
-          startsAt: booking.starts_at,
-          whenText: whenText(booking.starts_at, provider.timezone),
-          manageToken: booking.manage_token,
-        }
-      : undefined,
-  };
-}
-
 // ── Step 5: atomic hold→booking conversion ───────────────────────────
 
 export type ConfirmState =
@@ -170,7 +109,7 @@ export type ConfirmState =
       email: string;
       manageToken: string;
     }
-  | { ok: false; reason: "released" | "existing" | "taken" | "invalid" }
+  | { ok: false; reason: "released" | "taken" | "invalid" }
   | { ok?: undefined };
 
 export async function confirmBooking(
@@ -181,9 +120,9 @@ export async function confirmBooking(
   const holdId = String(formData.get("hold_id") ?? "");
   const firstName = String(formData.get("first_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const phone = normalizePhone(String(formData.get("phone") ?? ""));
 
-  if (!holdId || !firstName || !phone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  // Email is the client's identity for the MVP (DD39); phone is gone.
+  if (!holdId || !firstName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { ok: false, reason: "invalid" };
   }
   const provider = await getProviderBySlug(slug);
@@ -193,7 +132,6 @@ export async function confirmBooking(
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("confirm_client_booking", {
     p_hold_id: holdId,
-    p_phone: phone,
     p_first_name: firstName,
     p_email: email,
     p_manage_token: manageToken,
@@ -202,7 +140,7 @@ export async function confirmBooking(
 
   const row = (data as { booking_id: string | null; error: string | null }[])[0];
   if (!row?.booking_id) {
-    const reason = (row?.error ?? "invalid") as "released" | "existing" | "taken";
+    const reason = (row?.error ?? "invalid") as "released" | "taken";
     return { ok: false, reason };
   }
 
@@ -279,10 +217,12 @@ export async function joinWaitlist(
   const slug = String(formData.get("slug") ?? "");
   const serviceId = String(formData.get("service_id") ?? "");
   const firstName = String(formData.get("first_name") ?? "").trim();
-  const phone = normalizePhone(String(formData.get("phone") ?? ""));
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const datePreference = String(formData.get("date_preference") ?? "") || null;
 
-  if (!firstName || !phone) return { error: "invalid" };
+  if (!firstName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: "invalid" };
+  }
   const provider = await getProviderBySlug(slug);
   if (!provider) return { error: "invalid" };
 
@@ -290,8 +230,8 @@ export async function joinWaitlist(
   const { data: client, error: clientError } = await admin
     .from("clients")
     .upsert(
-      { provider_id: provider.id, phone, first_name: firstName },
-      { onConflict: "provider_id,phone" },
+      { provider_id: provider.id, email, first_name: firstName },
+      { onConflict: "provider_id,email" },
     )
     .select("id")
     .single();
