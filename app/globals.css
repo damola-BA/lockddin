@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: make Tailwind's `dark:` utilities follow the `.dark`
+   class on <html> (set by the theme toggle / pre-paint script) instead of the
+   default prefers-color-scheme media query. Keeps `dark:` utilities and the
+   CSS-variable token swaps below in lockstep. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── LockdDin design system ───────────────────────────────────────────
    One warm design system across landing, client booking, and provider app.
    Colours are CSS variables behind Tailwind tokens via `@theme inline`, so the

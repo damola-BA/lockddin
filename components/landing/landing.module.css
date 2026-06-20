@@ -76,8 +76,54 @@
   to { opacity: 1; transform: none; }
 }
 
+/* ── Cinematic dark mode (marketing exception — drama is wanted here, and ONLY
+   here; never carried into the app surfaces). These layers/effects render only
+   under the global .dark scope. ───────────────────────────────────────────── */
+
+/* drifting aurora blobs behind the hero / CTA / testimonial */
+.auroraA { animation: auroraA 18s ease-in-out infinite; }
+.auroraB { animation: auroraB 22s ease-in-out infinite; }
+.auroraC { animation: auroraC 26s ease-in-out infinite; }
+@keyframes auroraA { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(60px, -40px) scale(1.18); } }
+@keyframes auroraB { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-70px, 46px) scale(1.22); } }
+@keyframes auroraC { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(40px, 50px) scale(1.12); } }
+
+/* cursor spotlight — follows the pointer inside its section (set via --sx/--sy) */
+.spot {
+  transform: translate(var(--sx, 50%), var(--sy, 40%));
+  transition: transform 0.18s ease-out;
+}
+
+/* shimmering accent word — solid accent in light, kinetic gradient in dark */
+:global(.dark) .shimmer {
+  background: linear-gradient(90deg, #e0673c, #f6b487, #e0673c, #f6b487);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shim 6s linear infinite;
+}
+@keyframes shim { to { background-position: 200% center; } }
+
+/* sector marquee (dark hero strip) */
+.marqTrack { display: flex; width: max-content; animation: marq 32s linear infinite; }
+@keyframes marq { to { transform: translateX(-50%); } }
+
+/* how-it-works step node pulse + connector shimmer */
+.stepNode { animation: nodePulse 3.6s ease-in-out infinite; }
+@keyframes nodePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224, 103, 60, 0); }
+  50% { box-shadow: 0 0 0 9px rgba(224, 103, 60, 0.1); }
+}
+.connector {
+  background: linear-gradient(90deg, #e0673c, #f6b487, #e0673c);
+  background-size: 200% auto;
+  animation: shim 5s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .fadeUp, .float, .floatSlow, .blob, .blob2 {
+  .fadeUp, .float, .floatSlow, .blob, .blob2,
+  .auroraA, .auroraB, .auroraC, .spot, .shimmer, .marqTrack, .stepNode, .connector {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
