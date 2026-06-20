@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import {
   updateProfileSettings,
   type SettingsState,
@@ -28,42 +29,61 @@ type Initial = {
   schedule_type: "regular" | "flexible";
 };
 
-// How your hours work — the ONLY place to switch modes after onboarding.
-// Forward-only: it changes how future days are offered, never booked appointments.
+// How your hours work — the ONLY place to switch modes after onboarding. Both
+// options are shown so the choice is legible; only one is active. Changing it is
+// forward-only (confirmed): it affects how future days are offered, never booked
+// appointments.
 function HoursMode({ current }: { current: "regular" | "flexible" }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(setScheduleType, {});
-  const isRegular = current === "regular";
-  const other = isRegular ? "flexible" : "regular";
 
-  function switchMode() {
+  function choose(next: "regular" | "flexible") {
+    if (next === current || pending) return;
     if (!window.confirm(t.settings.hoursModeConfirm)) return;
     const fd = new FormData();
-    fd.set("schedule_type", other);
+    fd.set("schedule_type", next);
     startTransition(() => action(fd));
   }
+
+  const options = [
+    { value: "regular" as const, title: t.settings.hoursModeRegular, sub: t.settings.hoursModeRegularSub },
+    { value: "flexible" as const, title: t.settings.hoursModeFlexible, sub: t.settings.hoursModeFlexibleSub },
+  ];
 
   return (
     <section className="space-y-3">
       <p className="border-b border-line pb-1 text-xs font-semibold uppercase tracking-wide text-ink-4">
         {t.settings.hoursModeTitle}
       </p>
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5">
-        <div>
-          <p className="text-sm font-semibold text-ink">
-            {isRegular ? t.settings.hoursModeRegular : t.settings.hoursModeFlexible}
-          </p>
-          <p className="mt-0.5 text-[12.5px] text-ink-3">
-            {isRegular ? t.settings.hoursModeRegularSub : t.settings.hoursModeFlexibleSub}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={switchMode}
-          disabled={pending}
-          className="shrink-0 rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink-2 disabled:opacity-50"
-        >
-          {pending ? t.common.loading : t.settings.hoursModeSwitch}
-        </button>
+      <div className="space-y-2">
+        {options.map((o) => {
+          const active = current === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => choose(o.value)}
+              disabled={pending}
+              aria-pressed={active}
+              className={`flex w-full items-start gap-3 rounded-xl bg-surface p-3.5 text-left disabled:opacity-60 ${
+                active
+                  ? "border-[1.5px] border-accent [box-shadow:0_0_0_3px_var(--accent-l)]"
+                  : "border border-line"
+              }`}
+            >
+              <span
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  active ? "bg-accent text-white" : "border-[1.5px] border-desk"
+                }`}
+              >
+                {active && <Check size={12} strokeWidth={3} />}
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-ink">{o.title}</span>
+                <span className="mt-0.5 block text-[12.5px] text-ink-3">{o.sub}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
       {state.ok && <p className="text-sm text-ok">{t.settings.hoursModeSaved}</p>}
     </section>
