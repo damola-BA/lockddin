@@ -32,13 +32,53 @@ export async function updateProfileSettings(
   const city = String(formData.get("city") ?? "").trim();
   const slug = normalizeSlug(String(formData.get("slug") ?? ""));
   const locationText = String(formData.get("location_text") ?? "").trim();
+
+  if (!businessName || !providerName || !city) return { error: "missing_fields" };
+  if (!isValidSlug(slug)) return { error: "slug_invalid" };
+
+  // Booking rules live on the Availability screen now (updateBookingRules) — this
+  // action handles business details only.
+  const { error } = await supabase
+    .from("providers")
+    .update({
+      business_name: businessName,
+      provider_name: providerName,
+      city,
+      slug,
+      location_text: locationText || null,
+    })
+    .eq("id", user.id);
+
+  if (error) {
+    if (error.code === "23505" && error.message.includes("slug")) {
+      return { error: "slug_taken" };
+    }
+    return { error: "server" };
+  }
+
+  // Business name shows in the dashboard header; slug feeds the booking link.
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+// Booking rules — the four "when can people book me" knobs, edited from the
+// unified Availability screen in plain language. Validation mirrors onboarding.
+export async function updateBookingRules(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/onboarding/email");
+
   const bookingWindow = String(formData.get("booking_window") ?? "");
   const cancellationHours = Number(formData.get("cancellation_window_hours"));
   const minLeadMinutes = Number(formData.get("min_lead_time_minutes"));
   const bufferMinutes = Number(formData.get("global_buffer_minutes"));
 
-  if (!businessName || !providerName || !city) return { error: "missing_fields" };
-  if (!isValidSlug(slug)) return { error: "slug_invalid" };
   if (!BOOKING_WINDOWS.includes(bookingWindow)) return { error: "missing_fields" };
   if (!CANCELLATION_HOURS.includes(cancellationHours)) return { error: "missing_fields" };
   if (
@@ -55,28 +95,16 @@ export async function updateProfileSettings(
   const { error } = await supabase
     .from("providers")
     .update({
-      business_name: businessName,
-      provider_name: providerName,
-      city,
-      slug,
-      location_text: locationText || null,
       booking_window: bookingWindow,
       cancellation_window_hours: cancellationHours,
       min_lead_time_minutes: minLeadMinutes,
       global_buffer_minutes: bufferMinutes,
     })
     .eq("id", user.id);
+  if (error) return { error: "server" };
 
-  if (error) {
-    if (error.code === "23505" && error.message.includes("slug")) {
-      return { error: "slug_taken" };
-    }
-    return { error: "server" };
-  }
-
-  // Business name shows in the dashboard header; slug + windows feed the
-  // booking link and nav range. Refresh the surfaces that read them.
-  revalidatePath("/dashboard/settings");
+  // Booking window feeds the dashboard nav range + the booking page.
+  revalidatePath("/dashboard/availability");
   revalidatePath("/dashboard");
   return { ok: true };
 }

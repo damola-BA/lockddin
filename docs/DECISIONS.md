@@ -6,6 +6,16 @@ AD01–AD12: beta adaptation decisions — see docs/BETA_SCOPE.md.
 
 Append new decisions below as DD07+, one line of rationale each.
 
+DD40: unified Availability IA. "Your week" (/dashboard/schedule), "Days off &
+exceptions" (/dashboard/days) and the four booking rules from Settings are merged
+into one /dashboard/availability surface; the old routes now redirect there and the
+rules move out of Settings. The word "override" is never shown — tapping a day asks
+"Every <weekday>" (writes the weekly template via saveTemplateDay) or "Just one date"
+(writes a dated exception via saveDay). All existing server writes + the destructive-
+change consequence preview (saveDay returns affected[] then applies on confirm) are
+reused unchanged; new actions are only setScheduleType, saveUsualWeek (fan-out of the
+template upsert), and updateBookingRules (the 4 columns split out of updateProfileSettings).
+
 DD39: MVP client identity = EMAIL, not phone. Phone does nothing in beta (no
 SMS — reminders/alerts are email-only), so the UI/UX refresh drops the phone
 field from the client booking flow and the provider walk-in entirely; email

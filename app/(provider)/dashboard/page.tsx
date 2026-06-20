@@ -191,11 +191,8 @@ export default async function DashboardPage({
               {/* Management nav — desktop only; phone uses the bottom tab bar */}
               <div className="hidden md:block">
                 <RailGroup label={t.dashboard.groupAvailability}>
-                  <RailLink href="/dashboard/schedule" icon={<CalIcon size={17} strokeWidth={1.8} />}>
-                    {t.schedule.title}
-                  </RailLink>
-                  <RailLink href={`/dashboard/days?date=${date}`} icon={<Clock size={17} strokeWidth={1.8} />}>
-                    {t.dashboard.manageDay}
+                  <RailLink href="/dashboard/availability" icon={<Clock size={17} strokeWidth={1.8} />}>
+                    {t.dashboard.navAvailability}
                   </RailLink>
                 </RailGroup>
                 <RailGroup label={t.dashboard.groupBusiness}>
@@ -611,7 +608,7 @@ function BottomNav({ active, date }: { active: string; date: string }) {
     { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
     { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
     { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
-    { key: "availability", href: "/dashboard/schedule", label: t.dashboard.navAvailability, Icon: Clock },
+    { key: "availability", href: "/dashboard/availability", label: t.dashboard.navAvailability, Icon: Clock },
     { key: "settings", href: `/dashboard/settings`, label: t.dashboard.navSettings, Icon: SettingsIcon },
   ];
   void date;

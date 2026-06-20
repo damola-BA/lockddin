@@ -6,7 +6,7 @@ import {
   type SettingsState,
 } from "@/lib/dashboard/settings-actions";
 import { normalizeSlug } from "@/lib/onboarding/slug";
-import { getDictionary, fill } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
 import {
   PageTitle,
   Hint,
@@ -24,23 +24,9 @@ type Initial = {
   city: string | null;
   slug: string;
   location_text: string | null;
-  booking_window: string;
-  cancellation_window_hours: number;
-  min_lead_time_minutes: number;
-  global_buffer_minutes: number;
 };
 
 type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
-
-const LEAD_OPTIONS = [0, 60, 120, 240, 720, 1440, 2880, 10080, 20160];
-const BUFFER_OPTIONS = [0, 5, 10, 15, 20, 30, 45, 60];
-
-function leadLabel(minutes: number): string {
-  if (minutes === 0) return t.onboarding.minLeadNone;
-  if (minutes < 1440) return `${minutes / 60}h`;
-  if (minutes < 10080) return `${minutes / 1440} days`;
-  return `${minutes / 10080} week${minutes > 10080 ? "s" : ""}`;
-}
 
 export function SettingsForm({ initial }: { initial: Initial }) {
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(
@@ -155,86 +141,12 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             <p className="mt-1.5 text-sm text-ink-3">{t.onboarding.locationHint}</p>
           </div>
 
-          <p className="border-b border-line pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-ink-4">
-            {t.settings.sectionRules}
+          <p className="rounded-lg border border-line bg-surface-2 px-3.5 py-3 text-sm text-ink-3">
+            {t.settings.rulesMovedNote}{" "}
+            <a href="/dashboard/availability" className="font-semibold text-accent underline">
+              {t.dashboard.navAvailability}
+            </a>
           </p>
-
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium text-ink-2">
-              {t.onboarding.bookingWindowTitle}
-            </legend>
-            <div className="grid grid-cols-2 gap-2">
-              {(["3_days", "current_week", "current_month", "3_months"] as const).map(
-                (value) => (
-                  <label
-                    key={value}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2.5 text-sm has-checked:border-accent has-checked:text-accent"
-                  >
-                    <input
-                      type="radio"
-                      name="booking_window"
-                      value={value}
-                      defaultChecked={initial.booking_window === value}
-                      className="accent-accent"
-                    />
-                    {t.onboarding[`bookingWindow_${value}`]}
-                  </label>
-                ),
-              )}
-            </div>
-          </fieldset>
-
-          <div>
-            <Label htmlFor="cancellation_window_hours">
-              {t.onboarding.cancellationWindowTitle}
-            </Label>
-            <select
-              id="cancellation_window_hours"
-              name="cancellation_window_hours"
-              defaultValue={initial.cancellation_window_hours}
-              className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
-            >
-              {[12, 24, 48, 72].map((h) => (
-                <option key={h} value={h}>
-                  {fill(t.onboarding.hoursBefore, { hours: h })}
-                </option>
-              ))}
-              <option value={168}>{t.onboarding.oneWeekBefore}</option>
-            </select>
-            <p className="mt-1.5 text-sm text-ink-3">{t.onboarding.cancellationHint}</p>
-          </div>
-
-          <div>
-            <Label htmlFor="min_lead_time_minutes">{t.onboarding.minLeadTitle}</Label>
-            <select
-              id="min_lead_time_minutes"
-              name="min_lead_time_minutes"
-              defaultValue={initial.min_lead_time_minutes}
-              className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
-            >
-              {LEAD_OPTIONS.map((m) => (
-                <option key={m} value={m}>
-                  {leadLabel(m)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <Label htmlFor="global_buffer_minutes">{t.onboarding.bufferTitle}</Label>
-            <select
-              id="global_buffer_minutes"
-              name="global_buffer_minutes"
-              defaultValue={initial.global_buffer_minutes}
-              className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-base text-ink focus:border-accent focus:outline-none"
-            >
-              {BUFFER_OPTIONS.map((m) => (
-                <option key={m} value={m}>
-                  {m === 0 ? t.onboarding.bufferNone : fill(t.onboarding.minutes, { n: m })}
-                </option>
-              ))}
-            </select>
-          </div>
 
           {state.error === "slug_invalid" && <ErrorText>{t.onboarding.slugInvalid}</ErrorText>}
           {state.error === "slug_taken" && <ErrorText>{t.onboarding.slugTaken}</ErrorText>}

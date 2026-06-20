@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   const { data: provider } = await supabase
     .from("providers")
     .select(
-      "business_name, provider_name, city, slug, location_text, booking_window, cancellation_window_hours, min_lead_time_minutes, global_buffer_minutes, banner_path",
+      "business_name, provider_name, city, slug, location_text, banner_path",
     )
     .eq("id", user!.id)
     .single();

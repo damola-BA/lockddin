@@ -60,6 +60,27 @@ function parseBlocks(raw: string): { start: string; end: string; label?: string 
   }
 }
 
+// ── Mode switch (regular ⇄ flexible) ─────────────────────────────────
+// "Same week, every week" vs "I set days as I go". Pure preference write —
+// changes nothing about existing bookings or availability already published.
+export async function setScheduleType(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const mode = String(formData.get("schedule_type") ?? "");
+  if (mode !== "regular" && mode !== "flexible") return { error: "invalid" };
+
+  const { error } = await supabase
+    .from("providers")
+    .update({ schedule_type: mode })
+    .eq("id", user.id);
+  if (error) return { error: "server" };
+
+  revalidatePath("/dashboard/availability");
+  return { ok: true };
+}
+
 // ── Template editing (regular mode) ──────────────────────────────────
 // Hard rule 5: template changes never cancel existing bookings — they only
 // shape future availability, so no preview machinery here.
@@ -83,7 +104,7 @@ export async function saveTemplateDay(
       .eq("provider_id", user.id)
       .eq("weekday", weekday);
     if (error) return { error: "server" };
-    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/availability");
     return { ok: true };
   }
 
@@ -143,8 +164,70 @@ export async function saveTemplateDay(
     if (insError) return { error: "server" };
   }
 
-  revalidatePath("/dashboard/schedule");
+  revalidatePath("/dashboard/availability");
   revalidatePath("/onboarding/schedule"); // editor is embedded there too
+  return { ok: true };
+}
+
+// Save the "usual week" in one shot: one hours range + breaks applied to every
+// ticked day, un-ticked days removed. The Availability card's single save —
+// per-day tweaks then diverge via the change-a-day sheet ("Every <weekday>").
+// Template writes never cancel bookings (hard rule 5).
+export async function saveUsualWeek(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+
+  const working = new Set(
+    formData.getAll("weekdays").map((w) => Number(w)).filter((w) => w >= 0 && w <= 6),
+  );
+  const start = String(formData.get("start_time") ?? "");
+  const end = String(formData.get("end_time") ?? "");
+  if (!TIME_RE.test(start) || !TIME_RE.test(end) || end <= start) {
+    return { error: "invalid_hours" };
+  }
+  const blocks = parseBlocks(String(formData.get("blocks") ?? "[]"));
+  if (!blocks) return { error: "invalid_blocks" };
+
+  // Remove days that are no longer worked.
+  const offDays = [0, 1, 2, 3, 4, 5, 6].filter((w) => !working.has(w));
+  if (offDays.length > 0) {
+    const { error } = await supabase
+      .from("week_template_days")
+      .delete()
+      .eq("provider_id", user.id)
+      .in("weekday", offDays);
+    if (error) return { error: "server" };
+  }
+
+  for (const weekday of working) {
+    const { data: dayRow, error: dayError } = await supabase
+      .from("week_template_days")
+      .upsert(
+        { provider_id: user.id, weekday, start_time: start, end_time: end },
+        { onConflict: "provider_id,weekday" },
+      )
+      .select("id")
+      .single();
+    if (dayError) return { error: "server" };
+
+    await supabase.from("reserved_blocks").delete().eq("template_day_id", dayRow.id);
+    if (blocks.length > 0) {
+      const { error: insError } = await supabase.from("reserved_blocks").insert(
+        blocks.map((b) => ({
+          template_day_id: dayRow.id,
+          start_time: b.start,
+          end_time: b.end,
+          label: b.label || null,
+        })),
+      );
+      if (insError) return { error: "server" };
+    }
+  }
+
+  revalidatePath("/dashboard/availability");
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 
@@ -297,7 +380,7 @@ export async function applyOverride(
     }
   }
 
-  revalidatePath("/dashboard/days");
+  revalidatePath("/dashboard/availability");
   revalidatePath("/onboarding/schedule"); // flexible batch add lives there too
   return { applied: cancelledIds.size };
 }
@@ -389,7 +472,7 @@ export async function saveDay(
     }
   }
 
-  revalidatePath("/dashboard/days");
+  revalidatePath("/dashboard/availability");
   revalidatePath("/dashboard");
   return { applied: cancelledIds.size };
 }
@@ -413,6 +496,6 @@ export async function removeOverride(
     .in("kind", ["closed", "modified"]);
   if (error) return { error: "server" };
 
-  revalidatePath("/dashboard/days");
+  revalidatePath("/dashboard/availability");
   return { ok: true };
 }
