@@ -30,7 +30,7 @@ export function ScheduleStep({
     <main className="mx-auto w-full max-w-md px-5 py-8">
       <OnboardingProgress step={3} />
       <h1 className="mt-1.5 font-serif text-[25px] font-semibold leading-tight text-ink">
-        {t.onboarding.scheduleTitle}
+        {t.onboarding.hoursQuestion}
       </h1>
       <p className="mb-6 mt-2 text-sm text-ink-3">{t.onboarding.scheduleReassurance}</p>
 
@@ -45,10 +45,10 @@ export function ScheduleStep({
               onChange={() => setType("regular")}
               className="accent-accent"
             />
-            <span className="font-medium text-ink">{t.onboarding.scheduleRegular}</span>
+            <span className="font-medium text-ink">{t.onboarding.hoursRegular}</span>
           </span>
           <span className="mt-1 block pl-7 text-sm text-ink-3">
-            {t.onboarding.scheduleRegularHint}
+            {t.onboarding.hoursRegularHint}
           </span>
         </label>
 
@@ -62,10 +62,10 @@ export function ScheduleStep({
               onChange={() => setType("flexible")}
               className="accent-accent"
             />
-            <span className="font-medium text-ink">{t.onboarding.scheduleFlexible}</span>
+            <span className="font-medium text-ink">{t.onboarding.hoursFlexible}</span>
           </span>
           <span className="mt-1 block pl-7 text-sm text-ink-3">
-            {t.onboarding.scheduleFlexibleHint}
+            {t.onboarding.hoursFlexibleHint}
           </span>
         </label>
       </div>

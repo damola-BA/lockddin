@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import {
   updateProfileSettings,
   type SettingsState,
 } from "@/lib/dashboard/settings-actions";
+import { setScheduleType, type ActionState } from "@/lib/schedule/actions";
 import { normalizeSlug } from "@/lib/onboarding/slug";
 import { getDictionary } from "@/lib/i18n";
 import {
@@ -24,7 +25,50 @@ type Initial = {
   city: string | null;
   slug: string;
   location_text: string | null;
+  schedule_type: "regular" | "flexible";
 };
+
+// How your hours work — the ONLY place to switch modes after onboarding.
+// Forward-only: it changes how future days are offered, never booked appointments.
+function HoursMode({ current }: { current: "regular" | "flexible" }) {
+  const [state, action, pending] = useActionState<ActionState, FormData>(setScheduleType, {});
+  const isRegular = current === "regular";
+  const other = isRegular ? "flexible" : "regular";
+
+  function switchMode() {
+    if (!window.confirm(t.settings.hoursModeConfirm)) return;
+    const fd = new FormData();
+    fd.set("schedule_type", other);
+    startTransition(() => action(fd));
+  }
+
+  return (
+    <section className="space-y-3">
+      <p className="border-b border-line pb-1 text-xs font-semibold uppercase tracking-wide text-ink-4">
+        {t.settings.hoursModeTitle}
+      </p>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3.5">
+        <div>
+          <p className="text-sm font-semibold text-ink">
+            {isRegular ? t.settings.hoursModeRegular : t.settings.hoursModeFlexible}
+          </p>
+          <p className="mt-0.5 text-[12.5px] text-ink-3">
+            {isRegular ? t.settings.hoursModeRegularSub : t.settings.hoursModeFlexibleSub}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={switchMode}
+          disabled={pending}
+          className="shrink-0 rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink-2 disabled:opacity-50"
+        >
+          {pending ? t.common.loading : t.settings.hoursModeSwitch}
+        </button>
+      </div>
+      {state.ok && <p className="text-sm text-ok">{t.settings.hoursModeSaved}</p>}
+    </section>
+  );
+}
 
 type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 
@@ -165,6 +209,10 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             {pending ? t.common.loading : t.common.save}
           </PrimaryButton>
         </form>
+
+        <div className="mt-8">
+          <HoursMode current={initial.schedule_type} />
+        </div>
       </div>
     </div>
   );

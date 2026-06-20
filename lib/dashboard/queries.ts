@@ -376,6 +376,118 @@ export function maxNavDate(provider: ProviderContext): string {
   return lastBookableDate(provider.bookingWindow, new Date(), provider.timezone);
 }
 
+// ── Glanceable availability (Plan 3) ─────────────────────────────────
+// Per-day status for the Month view. MUST mirror the booking engine's mode
+// gate (lib/scheduling/engine.ts): in flexible mode a day is open ONLY if it
+// has a kind='open' override (the weekly template is ignored).
+
+export type DayStatus = { open: boolean; count: number; full: boolean };
+
+export async function getMonthDayStatus(
+  provider: ProviderContext,
+  year: number,
+  month: number, // 0-based
+): Promise<Map<string, DayStatus>> {
+  const supabase = await createServerSupabase();
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const mm = String(month + 1).padStart(2, "0");
+  const first = `${year}-${mm}-01`;
+  const last = `${year}-${mm}-${String(lastDay).padStart(2, "0")}`;
+
+  const [{ data: template }, { data: overrides }, counts] = await Promise.all([
+    supabase
+      .from("week_template_days")
+      .select("weekday, daily_cap")
+      .eq("provider_id", provider.id),
+    supabase
+      .from("day_overrides")
+      .select("date, kind, daily_cap")
+      .eq("provider_id", provider.id)
+      .gte("date", first)
+      .lte("date", last),
+    getMonthCounts(provider, year, month),
+  ]);
+
+  const tplByWeekday = new Map<number, number | null>();
+  for (const r of template ?? []) tplByWeekday.set(r.weekday, r.daily_cap);
+  const ovByDate = new Map<string, { kind: string; dailyCap: number | null }>();
+  for (const o of overrides ?? []) ovByDate.set(o.date, { kind: o.kind, dailyCap: o.daily_cap });
+
+  const status = new Map<string, DayStatus>();
+  for (let d = 1; d <= lastDay; d++) {
+    const date = `${year}-${mm}-${String(d).padStart(2, "0")}`;
+    const weekday = (new Date(Date.UTC(year, month, d)).getUTCDay() + 6) % 7;
+    const ov = ovByDate.get(date);
+    const hasTemplate = tplByWeekday.has(weekday);
+
+    let open: boolean;
+    if (provider.scheduleType === "flexible") {
+      open = ov?.kind === "open"; // template ignored (engine.ts:21)
+    } else if (ov?.kind === "closed") {
+      open = false;
+    } else if (ov?.kind === "open" || ov?.kind === "modified") {
+      open = true;
+    } else {
+      open = hasTemplate;
+    }
+
+    const count = counts.get(date) ?? 0;
+    const cap = ov?.dailyCap ?? tplByWeekday.get(weekday) ?? null;
+    const full = open && cap !== null && count >= cap;
+    status.set(date, { open, count, full });
+  }
+  return status;
+}
+
+export type OpenDayRow = {
+  date: string;
+  start: string | null;
+  end: string | null;
+  count: number;
+};
+
+// The flexible provider's upcoming opened dates (chronological), with how many
+// are booked — the "your next open days" lead on the dashboard.
+export async function getUpcomingOpenDays(
+  provider: ProviderContext,
+  limit = 6,
+): Promise<OpenDayRow[]> {
+  const supabase = await createServerSupabase();
+  const today = todayLocal(provider.timezone);
+  const { data: rows } = await supabase
+    .from("day_overrides")
+    .select("date, start_time, end_time")
+    .eq("provider_id", provider.id)
+    .eq("kind", "open")
+    .gte("date", today)
+    .order("date")
+    .limit(limit);
+  if (!rows || rows.length === 0) return [];
+
+  const start = localInstant(rows[0].date, 0, provider.timezone);
+  const end = localInstant(rows[rows.length - 1].date, 1440, provider.timezone);
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("starts_at")
+    .eq("provider_id", provider.id)
+    .in("status", ["confirmed", "no_show"])
+    .gte("starts_at", start.toISOString())
+    .lt("starts_at", end.toISOString());
+
+  const counts = new Map<string, number>();
+  for (const b of bookings ?? []) {
+    const local = formatInTimeZone(new Date(b.starts_at), provider.timezone, "yyyy-MM-dd");
+    counts.set(local, (counts.get(local) ?? 0) + 1);
+  }
+
+  return rows.map((r) => ({
+    date: r.date,
+    start: r.start_time ? r.start_time.slice(0, 5) : null,
+    end: r.end_time ? r.end_time.slice(0, 5) : null,
+    count: counts.get(r.date) ?? 0,
+  }));
+}
+
 // ── Day manager (F7 redesign) ────────────────────────────────────────
 
 export type DayManager = {

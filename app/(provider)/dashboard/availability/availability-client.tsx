@@ -12,7 +12,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  setScheduleType,
   saveUsualWeek,
   saveTemplateDay,
   saveDay,
@@ -46,6 +45,13 @@ function prettyDate(date: string, tz: string): string {
   }).format(new Date(`${date}T12:00:00Z`));
 }
 
+// The day the change-a-day sheet targets: either a weekday (tapped in the weekly
+// list, offers "every <weekday>" or "just one date") or a fixed date (tapped in
+// the calendar provider's open-days list — always "just this date").
+type SheetTarget =
+  | { weekday: number; day: WeekDay | null }
+  | { presetDate: string; start: string | null; end: string | null };
+
 export function AvailabilityClient({
   timezone,
   today,
@@ -61,18 +67,14 @@ export function AvailabilityClient({
   rules: AvailabilityRules;
   services: Service[];
 }) {
-  const [mode, setMode] = useState(rules.scheduleType);
-  const [sheet, setSheet] = useState<{ weekday: number; day: WeekDay | null } | null>(null);
+  // The mode is decided at onboarding (and changed only in Settings) — there's
+  // no toggle here. Each mode gets its own focused dashboard.
+  const mode = rules.scheduleType;
+  const [sheet, setSheet] = useState<SheetTarget | null>(null);
 
   const byWeekday = new Map(week.map((d) => [d.weekday, d]));
-
-  function switchMode(next: "regular" | "flexible") {
-    if (next === mode) return;
-    setMode(next);
-    const fd = new FormData();
-    fd.set("schedule_type", next);
-    startTransition(() => void setScheduleType({}, fd));
-  }
+  const closures = upcoming.filter((c) => c.kind !== "open");
+  const openDays = upcoming.filter((c) => c.kind === "open");
 
   return (
     <div className="min-h-dvh bg-canvas pb-24 text-ink">
@@ -85,24 +87,6 @@ export function AvailabilityClient({
         </div>
         <h1 className="font-serif text-[26px] font-semibold">{A.title}</h1>
 
-        {/* mode switch */}
-        <div className="mt-4 rounded-2xl border border-line bg-surface p-1.5">
-          <div className="flex gap-1.5">
-            <ModeCard
-              active={mode === "regular"}
-              title={A.modeRegular}
-              hint={A.modeRegularHint}
-              onClick={() => switchMode("regular")}
-            />
-            <ModeCard
-              active={mode === "flexible"}
-              title={A.modeFlexible}
-              hint={A.modeFlexibleHint}
-              onClick={() => switchMode("flexible")}
-            />
-          </div>
-        </div>
-
         {mode === "regular" ? (
           <>
             <UsualWeek week={week} />
@@ -111,52 +95,32 @@ export function AvailabilityClient({
               timezone={timezone}
               onTap={(weekday) => setSheet({ weekday, day: byWeekday.get(weekday) ?? null })}
             />
+            <TimeOff closures={closures} timezone={timezone} today={today} />
           </>
         ) : (
-          <FlexibleMode today={today} timezone={timezone} />
+          <>
+            <FlexibleMode today={today} timezone={timezone} />
+            <YourOpenDays
+              openDays={openDays}
+              timezone={timezone}
+              onEdit={(c) => setSheet({ presetDate: c.date, start: c.start, end: c.end })}
+            />
+          </>
         )}
 
-        <UpcomingChanges upcoming={upcoming} timezone={timezone} today={today} />
         <BookingRules rules={rules} />
       </div>
 
       {sheet && (
         <ChangeDaySheet
-          weekday={sheet.weekday}
-          day={sheet.day}
+          target={sheet}
           services={services}
           today={today}
+          timezone={timezone}
           onClose={() => setSheet(null)}
         />
       )}
     </div>
-  );
-}
-
-function ModeCard({
-  active,
-  title,
-  hint,
-  onClick,
-}: {
-  active: boolean;
-  title: string;
-  hint: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex-1 rounded-xl px-3 py-2.5 text-left ${
-        active ? "bg-ctrl text-ctrl-ink" : "text-ink-2"
-      }`}
-    >
-      <p className="text-[13.5px] font-bold">{title}</p>
-      <p className={`mt-0.5 text-[11px] leading-snug ${active ? "text-ctrl-soft" : "text-ink-4"}`}>
-        {hint}
-      </p>
-    </button>
   );
 }
 
@@ -284,14 +248,15 @@ function WeekList({
   );
 }
 
-// ── Upcoming changes ─────────────────────────────────────────────────
+// ── Time off & one-off changes (weekly dashboard) ────────────────────
+// Only dates that differ from the usual week: closures + modified-hours days.
 
-function UpcomingChanges({
-  upcoming,
+function TimeOff({
+  closures,
   timezone,
   today,
 }: {
-  upcoming: UpcomingChange[];
+  closures: UpcomingChange[];
   timezone: string;
   today: string;
 }) {
@@ -300,12 +265,13 @@ function UpcomingChanges({
 
   return (
     <section className="mt-7">
-      <h2 className="mb-3 font-serif text-[18px] font-semibold">{A.upcomingChanges}</h2>
+      <h2 className="font-serif text-[18px] font-semibold">{A.timeOffChanges}</h2>
+      <p className="mb-3 text-[13px] text-ink-3">{A.timeOffHint}</p>
       <div className="flex flex-col gap-2.5">
-        {upcoming.length === 0 && !closing && (
+        {closures.length === 0 && !closing && (
           <p className="text-[13px] text-ink-3">{A.noUpcoming}</p>
         )}
-        {upcoming.map((c) => (
+        {closures.map((c) => (
           <div
             key={`${c.date}-${c.kind}`}
             className="flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3"
@@ -543,22 +509,32 @@ function Rule({ label, children }: { label: string; children: React.ReactNode })
 // ── Change-a-day bottom sheet ────────────────────────────────────────
 
 function ChangeDaySheet({
-  weekday,
-  day,
+  target,
   services,
   today,
+  timezone,
   onClose,
 }: {
-  weekday: number;
-  day: WeekDay | null;
+  target: SheetTarget;
   services: Service[];
   today: string;
+  timezone: string;
   onClose: () => void;
 }) {
-  const weekdayName = WEEKDAYS[weekday];
-  const [scope, setScope] = useState<"every" | "once">("every");
-  const [open, setOpen] = useState(day !== null);
-  const [date, setDate] = useState(today);
+  // Two entry points: a weekday tapped in the weekly list (offers every/once),
+  // or a fixed date from the calendar provider's open-days list (always once).
+  const isPreset = "presetDate" in target;
+  const weekday = isPreset ? null : target.weekday;
+  const day = isPreset ? null : target.day;
+  const headingDay = isPreset ? prettyDate(target.presetDate, timezone) : WEEKDAYS[target.weekday];
+  const defaultStart = isPreset ? target.start ?? "09:00" : day?.start ?? "09:00";
+  const defaultEnd = isPreset ? target.end ?? "18:00" : day?.end ?? "18:00";
+
+  const [scopeState, setScope] = useState<"every" | "once">("every");
+  const scope = isPreset ? "once" : scopeState;
+  const [open, setOpen] = useState(isPreset ? true : day !== null);
+  const [dateState, setDate] = useState(today);
+  const date = isPreset ? target.presetDate : dateState;
   const [cap, setCap] = useState<number | null>(day?.dailyCap ?? null);
   const [restrict, setRestrict] = useState<boolean>(Boolean(day?.serviceIds));
   const [picked, setPicked] = useState<Set<string>>(new Set(day?.serviceIds ?? []));
@@ -594,26 +570,28 @@ function ChangeDaySheet({
         ) : (
           <>
             <h2 className="font-serif text-[21px] font-semibold">
-              {fill(A.changeDay, { day: weekdayName })}
+              {fill(A.changeDay, { day: headingDay })}
             </h2>
-            <p className="mt-1.5 text-[13.5px] text-ink-3">{A.applyTo}</p>
+            {!isPreset && <p className="mt-1.5 text-[13.5px] text-ink-3">{A.applyTo}</p>}
 
-            <div className="mt-4 flex flex-col gap-2.5">
-              <ScopeOption
-                active={scope === "every"}
-                title={fill(A.everyWeekday, { day: weekdayName })}
-                hint={A.everyWeekdayHint}
-                onClick={() => setScope("every")}
-              />
-              <ScopeOption
-                active={scope === "once"}
-                title={A.justOneDate}
-                hint={fill(A.justOneDateHint, { day: weekdayName })}
-                onClick={() => setScope("once")}
-              />
-            </div>
+            {!isPreset && (
+              <div className="mt-4 flex flex-col gap-2.5">
+                <ScopeOption
+                  active={scope === "every"}
+                  title={fill(A.everyWeekday, { day: headingDay })}
+                  hint={A.everyWeekdayHint}
+                  onClick={() => setScope("every")}
+                />
+                <ScopeOption
+                  active={scope === "once"}
+                  title={A.justOneDate}
+                  hint={fill(A.justOneDateHint, { day: headingDay })}
+                  onClick={() => setScope("once")}
+                />
+              </div>
+            )}
 
-            {scope === "once" && (
+            {!isPreset && scope === "once" && (
               <label className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3">
                 <span className="text-[13.5px] font-semibold">{A.pickDate}</span>
                 <input
@@ -651,7 +629,9 @@ function ChangeDaySheet({
 
               {open && (
                 <SheetOpenFields
-                  day={day}
+                  defaultStart={defaultStart}
+                  defaultEnd={defaultEnd}
+                  defaultBlocks={day?.blocks ?? []}
                   services={services}
                   cap={cap}
                   setCap={setCap}
@@ -671,6 +651,7 @@ function ChangeDaySheet({
               scope={scope}
               pending={tplPending || dayPending}
               onEvery={() => {
+                if (weekday === null) return; // never reached: preset is always "once"
                 const fd = buildEveryFields({ weekday, open, cap, restrict, picked });
                 startTransition(() => tplAction(fd));
               }}
@@ -721,7 +702,9 @@ function ScopeOption({
 }
 
 function SheetOpenFields({
-  day,
+  defaultStart,
+  defaultEnd,
+  defaultBlocks,
   services,
   cap,
   setCap,
@@ -730,7 +713,9 @@ function SheetOpenFields({
   picked,
   setPicked,
 }: {
-  day: WeekDay | null;
+  defaultStart: string;
+  defaultEnd: string;
+  defaultBlocks: Block[];
   services: Service[];
   cap: number | null;
   setCap: (n: number | null) => void;
@@ -746,14 +731,14 @@ function SheetOpenFields({
         <input
           type="time"
           name="sheet_start"
-          defaultValue={day?.start ?? "09:00"}
+          defaultValue={defaultStart}
           className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm font-bold tabular text-ink"
         />
         <span className="text-[12.5px] text-ink-3">{t.schedule.to}</span>
         <input
           type="time"
           name="sheet_end"
-          defaultValue={day?.end ?? "18:00"}
+          defaultValue={defaultEnd}
           className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm font-bold tabular text-ink"
         />
       </div>
@@ -761,7 +746,7 @@ function SheetOpenFields({
       {/* breaks */}
       <div className="mt-3.5 border-t border-line-2 pt-3.5">
         <p className="mb-2 text-[12.5px] font-semibold text-ink-2">{A.breaks}</p>
-        <BlocksEditor name="sheet_blocks" initial={day?.blocks ?? []} showLabel />
+        <BlocksEditor name="sheet_blocks" initial={defaultBlocks} showLabel />
       </div>
 
       {/* daily cap stepper */}
@@ -954,8 +939,8 @@ function FlexibleMode({ today, timezone }: { today: string; timezone: string }) 
 
   return (
     <section className="mt-6">
-      <h2 className="font-serif text-[18px] font-semibold">{A.openDates}</h2>
-      <p className="mb-3 text-[13px] text-ink-3">{A.openDatesHint}</p>
+      <h2 className="font-serif text-[18px] font-semibold">{A.openYourDays}</h2>
+      <p className="mb-3 text-[13px] text-ink-3">{A.openYourDaysHint}</p>
 
       <MiniCalendar
         anchor={monthAnchor}
@@ -994,6 +979,50 @@ function FlexibleMode({ today, timezone }: { today: string; timezone: string }) 
         )}
       </form>
       <p className="mt-3 text-center text-[12.5px] text-ink-4">{A.sameRules}</p>
+    </section>
+  );
+}
+
+// The calendar provider's list of upcoming opened dates. Tapping one opens the
+// change-a-day sheet pinned to that date (edit hours, or set it Closed to drop it).
+function YourOpenDays({
+  openDays,
+  timezone,
+  onEdit,
+}: {
+  openDays: UpcomingChange[];
+  timezone: string;
+  onEdit: (c: UpcomingChange) => void;
+}) {
+  return (
+    <section className="mt-7">
+      <h2 className="font-serif text-[18px] font-semibold">{A.yourOpenDays}</h2>
+      <p className="mb-3 text-[13px] text-ink-3">{A.yourOpenDaysHint}</p>
+      {openDays.length === 0 ? (
+        <p className="text-[13px] text-ink-3">{A.noOpenDays}</p>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+          {openDays.map((c) => (
+            <button
+              key={c.date}
+              type="button"
+              onClick={() => onEdit(c)}
+              className="flex w-full items-center justify-between border-b border-line-2 px-4 py-3.5 text-left last:border-b-0"
+            >
+              <span>
+                <span className="block text-[14px] font-semibold">{prettyDate(c.date, timezone)}</span>
+                {c.start && c.end && (
+                  <span className="text-[12.5px] tabular text-ink-3">{c.start}–{c.end}</span>
+                )}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-accent">
+                {A.editDay}
+                <ChevronRight size={14} strokeWidth={2} className="text-faint" />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

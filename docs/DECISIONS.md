@@ -6,6 +6,17 @@ AD01–AD12: beta adaptation decisions — see docs/BETA_SCOPE.md.
 
 Append new decisions below as DD07+, one line of rationale each.
 
+DD41: schedule mode is a choice, not a toggle. The persistent "regular/flexible"
+segmented control is removed from Availability; the mode is chosen once at
+onboarding ("How do your hours work?") and changed only in Settings (forward-only —
+never touches booked appointments). Availability renders one focused dashboard per
+mode: weekly (usual week + tap-a-day + "Time off & one-off changes") or calendar
+("Open your working days" + "Your open days"). The dashboard default view follows the
+mode (flexible→Month, regular→Day) and the Month view now marks each day open/full/
+closed (getMonthDayStatus, which mirrors the engine's flexible gate in engine.ts:21 —
+template ignored unless a date has a kind='open' override), with a "Your next open
+days" lead for sparse providers and a Preview-booking-page link. No engine change.
+
 DD40: unified Availability IA. "Your week" (/dashboard/schedule), "Days off &
 exceptions" (/dashboard/days) and the four booking rules from Settings are merged
 into one /dashboard/availability surface; the old routes now redirect there and the

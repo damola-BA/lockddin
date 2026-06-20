@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Clock,
   Coffee,
+  ExternalLink,
   Plus,
   Settings as SettingsIcon,
   Tag,
@@ -16,19 +17,21 @@ import { VerifyBanner } from "@/components/provider/verify-banner";
 import { BookingLinkCard } from "@/components/provider/booking-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { appUrl } from "@/lib/app-url";
-import { getDictionary, formatDuration } from "@/lib/i18n";
+import { getDictionary, formatDuration, fill } from "@/lib/i18n";
 import {
   getProviderContext,
   getDayBookings,
   getDayStats,
   getDayTimeline,
   getWeekSummary,
-  getMonthCounts,
+  getMonthDayStatus,
+  getUpcomingOpenDays,
   todayLocal,
   weekStartOf,
   maxNavDate,
   type ProviderContext,
   type TimelineSegment,
+  type OpenDayRow,
 } from "@/lib/dashboard/queries";
 
 const t = getDictionary();
@@ -83,7 +86,10 @@ export default async function DashboardPage({
 }) {
   const provider = await getProviderContext();
   if (!provider) return null;
-  const { view = "day", date: dateParam } = await searchParams;
+  // Default view follows the schedule mode: a sparse (flexible) provider lands on
+  // Month to see their scattered open days; a weekly provider lands on Day.
+  const { view: viewParam, date: dateParam } = await searchParams;
+  const view = viewParam ?? (provider.scheduleType === "flexible" ? "month" : "day");
   const today = todayLocal(provider.timezone);
   const date = dateParam ?? today;
   const maxDate = maxNavDate(provider);
@@ -187,6 +193,15 @@ export default async function DashboardPage({
               </Link>
 
               <BookingLinkCard url={bookingUrl} businessName={provider.businessName} />
+
+              <a
+                href={bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink-2"
+              >
+                <ExternalLink size={15} strokeWidth={1.9} /> {t.dashboard.previewBookingPage}
+              </a>
 
               {/* Management nav — desktop only; phone uses the bottom tab bar */}
               <div className="hidden md:block">
@@ -434,6 +449,19 @@ async function WeekView({
   const days = await getWeekSummary(provider, weekStart);
   const today = todayLocal(provider.timezone);
 
+  // Open/closed marking per day. The week can straddle two months, so merge the
+  // status maps for each month it touches (mirrors the engine's mode rule).
+  const lastDate = addDays(weekStart, 6);
+  const months = [...new Set([weekStart.slice(0, 7), lastDate.slice(0, 7)])];
+  const statusMaps = await Promise.all(
+    months.map((ym) => {
+      const [yy, mm] = ym.split("-").map(Number);
+      return getMonthDayStatus(provider, yy, mm - 1);
+    }),
+  );
+  const status = new Map<string, { open: boolean; count: number; full: boolean }>();
+  statusMaps.forEach((mp) => mp.forEach((v, k) => status.set(k, v)));
+
   return (
     <section>
       <DateNav
@@ -445,7 +473,9 @@ async function WeekView({
         label={`${dayLabel(weekStart, provider.timezone).split(" ").slice(1).join(" ")} →`}
       />
       <ul className="space-y-2">
-        {days.map((d) => (
+        {days.map((d) => {
+          const open = status.get(d.date)?.open ?? false;
+          return (
           <li key={d.date}>
             <a
               href={`/dashboard?view=day&date=${d.date}`}
@@ -455,7 +485,7 @@ async function WeekView({
                   : "border border-line"
               }`}
             >
-              <span className={`font-serif text-[15px] ${d.count > 0 ? "text-ink" : "text-ink-3"}`}>
+              <span className={`font-serif text-[15px] ${open ? "text-ink" : "text-ink-3"}`}>
                 {dayLabel(d.date, provider.timezone)}
               </span>
               <span className="text-[13px]">
@@ -464,13 +494,16 @@ async function WeekView({
                     <span className="font-bold text-accent tabular">{d.count}</span>
                     <span className="ml-1.5 text-ink-3 tabular">· {euros(d.valueCents)}</span>
                   </>
+                ) : open ? (
+                  <span className="text-ink-3">{t.dashboard.dayStatusOpen}</span>
                 ) : (
-                  <span className="text-faint">—</span>
+                  <span className="text-faint">{t.dashboard.dayStatusClosed}</span>
                 )}
               </span>
             </a>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </section>
   );
@@ -486,8 +519,10 @@ async function MonthView({
   const [y, m] = date.split("-").map(Number);
   const year = y;
   const month = m - 1;
-  const counts = await getMonthCounts(provider, year, month);
+  const status = await getMonthDayStatus(provider, year, month);
   const today = todayLocal(provider.timezone);
+  const openDays =
+    provider.scheduleType === "flexible" ? await getUpcomingOpenDays(provider) : [];
 
   const firstWeekday = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 6) % 7;
   const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
@@ -507,6 +542,10 @@ async function MonthView({
 
   return (
     <section>
+      {provider.scheduleType === "flexible" && (
+        <OpenDaysLead provider={provider} openDays={openDays} />
+      )}
+
       <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-surface px-3 py-2.5">
         <NavSquare href={`/dashboard?view=month&date=${prevMonth}`} dir="left" />
         <span className="font-serif text-[15px] font-medium">{monthLabel}</span>
@@ -516,32 +555,96 @@ async function MonthView({
         {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
           <span key={i} className="text-[10px] font-semibold text-faint">{d}</span>
         ))}
-        {cells.map((cell, i) =>
-          cell === null ? (
-            <span key={`e${i}`} />
-          ) : (
+        {cells.map((cell, i) => {
+          if (cell === null) return <span key={`e${i}`} />;
+          const s = status.get(cell);
+          const isToday = cell === today;
+          const full = s?.open && s.full;
+          const openFree = s?.open && !s.full;
+          return (
             <a
               key={cell}
               href={`/dashboard?view=day&date=${cell}`}
               className={`flex aspect-square flex-col items-center justify-center rounded-[10px] text-[12px] font-semibold ${
-                cell === today
-                  ? "bg-ctrl text-ctrl-ink"
-                  : "border border-line bg-surface text-ink-2"
+                isToday
+                  ? "border-[1.5px] border-accent [box-shadow:0_0_0_3px_var(--accent-l)] bg-surface text-ink"
+                  : full
+                    ? "bg-ctrl text-ctrl-ink"
+                    : openFree
+                      ? "border border-line bg-surface text-ink"
+                      : "text-faint"
               }`}
             >
               <span className="tabular">{Number(cell.slice(-2))}</span>
-              <span
-                className={`text-[8px] font-bold tabular ${
-                  counts.get(cell) ? "text-accent" : "text-transparent"
-                }`}
-              >
-                {counts.get(cell) || 0}
-              </span>
+              {s?.open ? (
+                s.count > 0 ? (
+                  <span className={`text-[8px] font-bold tabular ${full ? "text-ctrl-soft" : "text-accent"}`}>
+                    {s.count}
+                  </span>
+                ) : (
+                  <span className="mt-0.5 h-[5px] w-[5px] rounded-full bg-ok" />
+                )
+              ) : (
+                <span className="text-[8px] text-transparent">0</span>
+              )}
             </a>
-          ),
-        )}
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-ink-3">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-ok" /> {t.dashboard.legendOpen}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-[4px] bg-ctrl" /> {t.dashboard.legendFull}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-faint">14</span> {t.dashboard.legendClosed}
+        </span>
       </div>
     </section>
+  );
+}
+
+function OpenDaysLead({
+  provider,
+  openDays,
+}: {
+  provider: ProviderContext;
+  openDays: OpenDayRow[];
+}) {
+  return (
+    <div className="mb-5">
+      <h2 className="mb-3 font-serif text-[18px] font-semibold">{t.dashboard.nextOpenDays}</h2>
+      {openDays.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-sm text-ink-3">
+          {t.dashboard.noOpenDaysAhead}
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+          {openDays.map((d) => (
+            <a
+              key={d.date}
+              href={`/dashboard?view=day&date=${d.date}`}
+              className="flex items-center justify-between border-b border-line-2 px-4 py-3.5 last:border-b-0"
+            >
+              <span>
+                <span className="block text-[14px] font-semibold">
+                  {dayLabel(d.date, provider.timezone)}
+                </span>
+                {d.start && d.end && (
+                  <span className="text-[12.5px] tabular text-ink-3">{d.start}–{d.end}</span>
+                )}
+              </span>
+              <span className="text-[12.5px] tabular text-ink-3">
+                {d.count > 0 ? fill(t.dashboard.bookedCount, { n: d.count }) : t.dashboard.freeGap}
+              </span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

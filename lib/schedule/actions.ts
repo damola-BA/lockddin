@@ -78,6 +78,8 @@ export async function setScheduleType(
   if (error) return { error: "server" };
 
   revalidatePath("/dashboard/availability");
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 
