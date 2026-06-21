@@ -1,7 +1,6 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import Link from "next/link";
 import {
   AlertTriangle,
   Check,
@@ -22,7 +21,6 @@ import {
 } from "@/lib/schedule/actions";
 import { updateBookingRules, type SettingsState } from "@/lib/dashboard/settings-actions";
 import { BlocksEditor, type Block } from "@/app/(provider)/dashboard/schedule/blocks-editor";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { getDictionary, fill } from "@/lib/i18n";
 import type {
   AvailabilityRules,
@@ -77,39 +75,37 @@ export function AvailabilityClient({
   const openDays = upcoming.filter((c) => c.kind === "open");
 
   return (
-    <div className="min-h-dvh bg-canvas pb-24 text-ink">
-      <div className="mx-auto w-full max-w-md px-5 py-7">
-        <div className="mb-4 flex items-center justify-between">
-          <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-3">
-            <ChevronLeft size={16} strokeWidth={2.2} /> {A.back}
-          </Link>
-          <ThemeToggle />
-        </div>
-        <h1 className="font-serif text-[26px] font-semibold">{A.title}</h1>
+    <>
+      <a
+        href="/dashboard"
+        className="mb-5 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-ink-3 md:hidden"
+      >
+        <ChevronLeft size={15} strokeWidth={2.2} /> {A.back}
+      </a>
+      <h1 className="font-serif text-[26px] font-semibold md:text-[28px]">{A.title}</h1>
 
-        {mode === "regular" ? (
-          <>
-            <UsualWeek week={week} />
-            <WeekList
-              week={byWeekday}
-              timezone={timezone}
-              onTap={(weekday) => setSheet({ weekday, day: byWeekday.get(weekday) ?? null })}
-            />
-            <TimeOff closures={closures} timezone={timezone} today={today} />
-          </>
-        ) : (
-          <>
-            <FlexibleMode today={today} timezone={timezone} />
-            <YourOpenDays
-              openDays={openDays}
-              timezone={timezone}
-              onEdit={(c) => setSheet({ presetDate: c.date, start: c.start, end: c.end })}
-            />
-          </>
-        )}
+      {mode === "regular" ? (
+        <>
+          <UsualWeek week={week} />
+          <WeekList
+            week={byWeekday}
+            timezone={timezone}
+            onTap={(weekday) => setSheet({ weekday, day: byWeekday.get(weekday) ?? null })}
+          />
+          <TimeOff closures={closures} timezone={timezone} today={today} />
+        </>
+      ) : (
+        <>
+          <FlexibleMode today={today} timezone={timezone} />
+          <YourOpenDays
+            openDays={openDays}
+            timezone={timezone}
+            onEdit={(c) => setSheet({ presetDate: c.date, start: c.start, end: c.end })}
+          />
+        </>
+      )}
 
-        <BookingRules rules={rules} />
-      </div>
+      <BookingRules rules={rules} />
 
       {sheet && (
         <ChangeDaySheet
@@ -120,7 +116,7 @@ export function AvailabilityClient({
           onClose={() => setSheet(null)}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -560,12 +556,15 @@ function ChangeDaySheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-[rgba(34,29,25,.34)]" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end bg-[rgba(34,29,25,.34)] md:flex-row md:justify-end"
+      onClick={onClose}
+    >
       <div
-        className="max-h-[92dvh] overflow-y-auto rounded-t-3xl bg-canvas px-5 pb-9 pt-2.5 shadow-[0_-18px_40px_-20px_rgba(34,29,25,.4)]"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-3xl bg-canvas px-5 pb-9 pt-2.5 shadow-[0_-18px_40px_-20px_rgba(34,29,25,.4)] md:h-dvh md:max-h-none md:w-[380px] md:rounded-none md:rounded-l-3xl md:px-6 md:pb-8 md:pt-6 md:shadow-[-18px_0_40px_-20px_rgba(34,29,25,.4)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-desk" />
+        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-desk md:hidden" />
 
         {affected.length > 0 ? (
           <DestructiveConfirm

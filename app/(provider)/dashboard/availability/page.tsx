@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/db/server";
 import { todayLocal } from "@/lib/dashboard/queries";
+import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { AvailabilityClient } from "./availability-client";
 
 export type WeekDay = {
@@ -39,7 +40,7 @@ export default async function AvailabilityPage() {
   const { data: provider } = await supabase
     .from("providers")
     .select(
-      "timezone, schedule_type, booking_window, cancellation_window_hours, min_lead_time_minutes, global_buffer_minutes",
+      "timezone, schedule_type, booking_window, cancellation_window_hours, min_lead_time_minutes, global_buffer_minutes, business_name, provider_name",
     )
     .eq("id", user.id)
     .single();
@@ -97,14 +98,18 @@ export default async function AvailabilityPage() {
     globalBufferMinutes: provider.global_buffer_minutes,
   };
 
+  const businessName = provider.business_name ?? provider.provider_name ?? "";
+
   return (
-    <AvailabilityClient
-      timezone={provider.timezone}
-      today={today}
-      week={week}
-      upcoming={upcoming}
-      rules={rules}
-      services={services ?? []}
-    />
+    <WorkstationShell active="availability" businessName={businessName} maxWidth="600px">
+      <AvailabilityClient
+        timezone={provider.timezone}
+        today={today}
+        week={week}
+        upcoming={upcoming}
+        rules={rules}
+        services={services ?? []}
+      />
+    </WorkstationShell>
   );
 }
