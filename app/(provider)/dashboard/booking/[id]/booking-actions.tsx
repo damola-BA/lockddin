@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { CalendarCheck } from "lucide-react";
 import {
   providerCancelBooking,
   providerReschedule,
@@ -76,17 +77,21 @@ export function BookingActions({
       <button
         type="button"
         onClick={() => setMode("reschedule")}
-        className="w-full rounded-xl border border-line bg-surface px-4 py-3 font-semibold text-ink"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 font-semibold text-ink"
       >
+        <CalendarCheck size={17} strokeWidth={1.9} className="text-ink-3" />
         {t.dashboard.rescheduleBooking}
       </button>
       <button
         type="button"
         onClick={() => setMode("cancel")}
-        className="w-full rounded-xl border border-red-300 bg-surface px-4 py-3 font-semibold text-red-600"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-accent/40 bg-surface px-4 py-3 font-semibold text-accent"
       >
         {t.dashboard.cancelBooking}
       </button>
+      <p className="rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-[12.5px] leading-relaxed text-ink-3">
+        {t.dashboard.cancelNote}
+      </p>
     </div>
   );
 }

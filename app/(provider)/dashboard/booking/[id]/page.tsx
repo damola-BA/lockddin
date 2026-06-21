@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { getDictionary } from "@/lib/i18n";
 import { getProviderContext, getBookingDetail } from "@/lib/dashboard/queries";
-import { PanelPage } from "@/components/provider/panel-page";
+import { WorkstationShell } from "@/components/provider/workstation-shell";
+import { Avatar } from "@/components/provider/clients-master-detail";
 import { BookingActions } from "./booking-actions";
 
 const t = getDictionary();
@@ -22,62 +24,80 @@ export default async function BookingDetailPage({
   if (!booking) notFound();
 
   const cancelled = booking.status.startsWith("cancelled");
+  const noShow = booking.status === "no_show";
+
+  // The one element that always stays in view (handoff AD: status pill).
+  const status = cancelled
+    ? { label: t.dashboard.cancelledBadge, cls: "bg-surface-2 text-ink-3" }
+    : noShow
+      ? { label: t.dashboard.noShowBadge, cls: "bg-red-50 text-red-600", dot: "bg-red-500" }
+      : booking.isPast
+        ? { label: t.dashboard.pastBadge, cls: "bg-surface-2 text-ink-3" }
+        : { label: t.dashboard.statusUpcoming, cls: "bg-accent-l text-accent", dot: "bg-accent" };
 
   return (
-    <PanelPage>
-        <a href="/dashboard" className="text-sm text-ink-3 underline">
-          ← {t.dashboard.viewDay}
-        </a>
+    <WorkstationShell active="schedule" businessName={provider.businessName} maxWidth="560px">
+      <a
+        href="/dashboard"
+        className="mb-5 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-ink-3"
+      >
+        <ChevronLeft size={15} strokeWidth={2.2} /> {t.settings.back}
+      </a>
 
-        <h1 className="mt-4 mb-1 font-serif text-2xl">{booking.clientName}</h1>
-        <p className="mb-6 text-sm text-ink-3 tabular">{booking.clientEmail}</p>
+      <div className="flex items-center gap-3.5">
+        <Avatar id={booking.clientEmail} name={booking.clientName} size={54} />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-serif text-[22px] font-semibold leading-tight">{booking.clientName}</h1>
+          <p className="truncate text-[13px] text-ink-3">{booking.clientEmail}</p>
+        </div>
+      </div>
 
-        <dl className="space-y-3 rounded-xl border border-line bg-surface p-4 text-sm">
-          <Row label={t.dashboard.service} value={booking.serviceName} />
-          <Row label={t.dashboard.when} value={booking.whenText} />
-          <Row label={t.dashboard.price} value={euros(booking.priceCents)} />
-          <Row
-            label={t.dashboard.source}
-            value={booking.source === "manual" ? t.dashboard.sourceManual : t.dashboard.sourceClient}
-          />
-          <Row label={t.dashboard.visits} value={String(booking.visitCount)} />
-        </dl>
+      <span
+        className={`mt-3.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11.5px] font-bold ${status.cls}`}
+      >
+        {status.dot && <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />}
+        {status.label}
+      </span>
 
-        {booking.status === "no_show" && (
-          <p className="mt-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-600">
-            {t.dashboard.markedNoShow}
-          </p>
-        )}
-        {cancelled && (
-          <p className="mt-4 rounded-lg border border-line p-3 text-sm text-ink-3">
-            {t.client.cancelled}
-          </p>
-        )}
+      <dl className="mt-4 rounded-2xl border border-line bg-surface px-4">
+        <Row label={t.dashboard.service} value={booking.serviceName} />
+        <Row label={t.dashboard.when} value={booking.whenText} />
+        <Row label={t.dashboard.price} value={euros(booking.priceCents)} />
+        <Row
+          label={t.dashboard.source}
+          value={booking.source === "manual" ? t.dashboard.sourceManual : t.dashboard.sourceClient}
+        />
+        <Row label={t.dashboard.visits} value={String(booking.visitCount)} />
+      </dl>
 
-        {!cancelled && (
-          <BookingActions
-            bookingId={booking.id}
-            providerId={provider.id}
-            serviceIds={booking.serviceIds}
-            slug={provider.slug}
-            clientName={booking.clientName}
-            businessName={provider.businessName}
-            serviceName={booking.serviceName}
-            whenText={booking.whenText}
-            isPast={booking.isPast}
-            isNoShow={booking.status === "no_show"}
-            timezone={provider.timezone}
-          />
-        )}
-    </PanelPage>
+      {cancelled ? (
+        <p className="mt-4 rounded-xl border border-line bg-surface-2 p-3.5 text-sm text-ink-3">
+          {t.client.cancelled}
+        </p>
+      ) : (
+        <BookingActions
+          bookingId={booking.id}
+          providerId={provider.id}
+          serviceIds={booking.serviceIds}
+          slug={provider.slug}
+          clientName={booking.clientName}
+          businessName={provider.businessName}
+          serviceName={booking.serviceName}
+          whenText={booking.whenText}
+          isPast={booking.isPast}
+          isNoShow={booking.status === "no_show"}
+          timezone={provider.timezone}
+        />
+      )}
+    </WorkstationShell>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-ink-3">{label}</dt>
-      <dd className="text-right text-ink">{value}</dd>
+    <div className="flex items-center justify-between gap-4 border-b border-line py-3 last:border-b-0">
+      <dt className="text-[13.5px] text-ink-3">{label}</dt>
+      <dd className="text-right text-sm font-semibold tabular text-ink">{value}</dd>
     </div>
   );
 }
