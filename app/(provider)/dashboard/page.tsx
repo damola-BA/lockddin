@@ -104,7 +104,7 @@ export default async function DashboardPage({
   return (
     <div className="min-h-dvh bg-canvas text-ink md:py-8">
       <div className="w-full pb-24 md:pb-8">
-        <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-none md:px-9 md:py-8">
+        <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-[920px] md:px-9 md:py-8">
           {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
           {/* Header */}
@@ -479,27 +479,28 @@ async function WeekView({
           <li key={d.date}>
             <a
               href={`/dashboard?view=day&date=${d.date}`}
-              className={`flex items-center justify-between rounded-2xl bg-surface px-4 py-3.5 ${
+              className={`flex items-center gap-3 rounded-2xl bg-surface px-4 py-3.5 ${
                 d.date === today
                   ? "border-[1.5px] border-accent [box-shadow:0_0_0_3px_var(--accent-l)]"
                   : "border border-line"
               }`}
             >
-              <span className={`font-serif text-[15px] ${open ? "text-ink" : "text-ink-3"}`}>
+              <span className={`min-w-0 flex-1 truncate font-serif text-[15px] ${open ? "text-ink" : "text-ink-3"}`}>
                 {dayLabel(d.date, provider.timezone)}
               </span>
-              <span className="text-[13px]">
-                {d.count > 0 ? (
-                  <>
-                    <span className="font-bold text-accent tabular">{d.count}</span>
-                    <span className="ml-1.5 text-ink-3 tabular">· {euros(d.valueCents)}</span>
-                  </>
-                ) : open ? (
-                  <span className="text-ink-3">{t.dashboard.dayStatusOpen}</span>
-                ) : (
-                  <span className="text-faint">{t.dashboard.dayStatusClosed}</span>
-                )}
-              </span>
+              {d.count > 0 ? (
+                <span className="inline-flex items-baseline gap-1.5 rounded-full bg-accent-l px-2.5 py-1 text-[12.5px]">
+                  <span className="font-bold text-accent tabular">{d.count}</span>
+                  <span className="text-accent-d tabular">· {euros(d.valueCents)}</span>
+                </span>
+              ) : open ? (
+                <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[12px] font-medium text-ink-3">
+                  {t.dashboard.dayStatusOpen}
+                </span>
+              ) : (
+                <span className="text-[12px] text-faint">{t.dashboard.dayStatusClosed}</span>
+              )}
+              <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-faint" />
             </a>
           </li>
           );
