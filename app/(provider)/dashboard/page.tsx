@@ -1,21 +1,16 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Calendar as CalIcon,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Coffee,
   ExternalLink,
   Plus,
-  Settings as SettingsIcon,
-  Tag,
-  Users,
 } from "lucide-react";
-import { signOut } from "@/lib/auth/actions";
 import { VerifyBanner } from "@/components/provider/verify-banner";
 import { BookingLinkCard } from "@/components/provider/booking-link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { appUrl } from "@/lib/app-url";
 import { getDictionary, formatDuration, fill } from "@/lib/i18n";
 import {
@@ -70,15 +65,6 @@ function nowMinutesIn(tz: string): number {
   return h * 60 + m;
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -102,166 +88,93 @@ export default async function DashboardPage({
   const bookingUrl = appUrl(`/b/${provider.slug}`);
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink md:py-8">
-      <div className="w-full pb-24 md:pb-8">
-        <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-[1200px] md:px-9 md:py-8">
-          {!provider.emailVerified && <VerifyBanner email={provider.email} />}
+    <WorkstationShell active="schedule" businessName={provider.businessName} bleed>
+      {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
-          {/* Header */}
-          <header className="mb-5 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="font-serif text-[22px] font-semibold leading-tight md:text-[28px]">
-                {provider.businessName}
-              </h1>
-              <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] text-ink-3">
-                <span
-                  className={`h-[7px] w-[7px] rounded-full ${
-                    todayShape.working ? "bg-ok" : "bg-faint"
-                  }`}
-                />
-                <span className="tabular">{openText}</span>
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-3">
-              <Link
-                href="/dashboard/clients"
-                className="hidden rounded-full border border-line px-4 py-1.5 text-sm text-ink-2 md:inline-block"
-              >
-                {t.dashboard.clients}
-              </Link>
-              <form action={signOut} className="hidden md:block">
-                <button type="submit" className="text-sm text-ink-3 underline">
-                  {t.auth.signOut}
-                </button>
-              </form>
-              <ThemeToggle />
-              <span className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-accent-l font-serif text-sm font-semibold text-accent">
-                {initials(provider.businessName)}
-              </span>
-            </div>
-          </header>
-
-          {/* View toggle (segmented) + mobile clients link */}
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <nav className="inline-flex rounded-xl bg-surface-2 p-1">
-              {(["day", "week", "month"] as const).map((v) => (
-                <a
-                  key={v}
-                  href={`/dashboard?view=${v}&date=${date}`}
-                  className={`rounded-lg px-4 py-1.5 text-[13px] font-semibold ${
-                    view === v
-                      ? "bg-ctrl text-ctrl-ink shadow-sm"
-                      : "text-ink-3"
-                  }`}
-                >
-                  {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
-                </a>
-              ))}
-            </nav>
-            <Link
-              href="/dashboard/clients"
-              className="rounded-full border border-line px-4 py-1.5 text-sm text-ink-2 md:hidden"
-            >
-              {t.dashboard.clients}
-            </Link>
-          </div>
-
-          <div className="md:grid md:grid-cols-[minmax(0,1fr)_19.5rem] md:gap-14 md:items-start">
-            <div className="min-w-0">
-              {view === "day" && (
-                <DayView
-                  provider={provider}
-                  date={date}
-                  today={today}
-                  maxDate={maxDate}
-                  nowMin={date === today ? nowMinutesIn(provider.timezone) : null}
-                />
-              )}
-              {view === "week" && (
-                <WeekView provider={provider} date={date} maxDate={maxDate} />
-              )}
-              {view === "month" && <MonthView provider={provider} date={date} />}
-            </div>
-
-            {/* Side rail (desktop) */}
-            <aside className="mt-8 space-y-3.5 md:mt-0">
-              <Link
-                href="/dashboard/booking/new"
-                className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold text-white shadow-[0_12px_26px_-14px_rgba(184,66,28,.6)]"
-              >
-                <Plus size={17} strokeWidth={2.2} /> {t.dashboard.walkIn}
-              </Link>
-
-              <BookingLinkCard url={bookingUrl} businessName={provider.businessName} />
-
-              <a
-                href={bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink-2"
-              >
-                <ExternalLink size={15} strokeWidth={1.9} /> {t.dashboard.previewBookingPage}
-              </a>
-
-              {/* Management nav — desktop only; phone uses the bottom tab bar */}
-              <div className="hidden md:block">
-                <RailGroup label={t.dashboard.groupAvailability}>
-                  <RailLink href="/dashboard/availability" icon={<Clock size={17} strokeWidth={1.8} />}>
-                    {t.dashboard.navAvailability}
-                  </RailLink>
-                </RailGroup>
-                <RailGroup label={t.dashboard.groupBusiness}>
-                  <RailLink href="/dashboard/services" icon={<Tag size={17} strokeWidth={1.8} />}>
-                    {t.dashboard.services}
-                  </RailLink>
-                  <RailLink href="/dashboard/settings" icon={<SettingsIcon size={17} strokeWidth={1.8} />}>
-                    {t.dashboard.settings}
-                  </RailLink>
-                </RailGroup>
-              </div>
-            </aside>
-          </div>
+      {/* Page header — business name + today's status. Section nav now lives in
+          the shared top bar (desktop) / bottom tab bar (phone). */}
+      <header className="mb-5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-[22px] font-semibold leading-tight md:text-[28px]">
+            {provider.businessName}
+          </h1>
+          <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] text-ink-3">
+            <span
+              className={`h-[7px] w-[7px] rounded-full ${
+                todayShape.working ? "bg-ok" : "bg-faint"
+              }`}
+            />
+            <span className="tabular">{openText}</span>
+          </p>
         </div>
+        {/* Phone-only theme toggle — desktop has it in the top bar. */}
+        <div className="shrink-0 md:hidden">
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* View toggle (Day / Week / Month) */}
+      <div className="mb-5">
+        <nav className="inline-flex rounded-xl bg-surface-2 p-1">
+          {(["day", "week", "month"] as const).map((v) => (
+            <a
+              key={v}
+              href={`/dashboard?view=${v}&date=${date}`}
+              className={`rounded-lg px-4 py-1.5 text-[13px] font-semibold ${
+                view === v
+                  ? "bg-ctrl text-ctrl-ink shadow-sm"
+                  : "text-ink-3"
+              }`}
+            >
+              {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
+            </a>
+          ))}
+        </nav>
       </div>
 
-      <BottomNav active="schedule" date={date} />
-    </div>
+      <div className="md:grid md:grid-cols-[minmax(0,1fr)_19.5rem] md:gap-14 md:items-start">
+        <div className="min-w-0">
+          {view === "day" && (
+            <DayView
+              provider={provider}
+              date={date}
+              today={today}
+              maxDate={maxDate}
+              nowMin={date === today ? nowMinutesIn(provider.timezone) : null}
+            />
+          )}
+          {view === "week" && (
+            <WeekView provider={provider} date={date} maxDate={maxDate} />
+          )}
+          {view === "month" && <MonthView provider={provider} date={date} />}
+        </div>
+
+        {/* Side rail — dashboard-specific actions (the section nav moved to the
+            top bar). */}
+        <aside className="mt-8 space-y-3.5 md:mt-0">
+          <Link
+            href="/dashboard/booking/new"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold text-white shadow-[0_12px_26px_-14px_rgba(184,66,28,.6)]"
+          >
+            <Plus size={17} strokeWidth={2.2} /> {t.dashboard.walkIn}
+          </Link>
+
+          <BookingLinkCard url={bookingUrl} businessName={provider.businessName} />
+
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink-2"
+          >
+            <ExternalLink size={15} strokeWidth={1.9} /> {t.dashboard.previewBookingPage}
+          </a>
+        </aside>
+      </div>
+    </WorkstationShell>
   );
 }
 
-function RailGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="mt-5 first:mt-0">
-      <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.08em] text-ink-4">
-        {label}
-      </p>
-      <div className="space-y-2">{children}</div>
-    </div>
-  );
-}
-
-function RailLink({
-  href,
-  icon,
-  children,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      className="flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm font-semibold text-ink-2 hover:border-accent/40"
-    >
-      <span className="inline-flex items-center gap-2.5">
-        <span className="text-accent">{icon}</span>
-        {children}
-      </span>
-      <ChevronRight size={15} strokeWidth={2} className="text-faint" />
-    </a>
-  );
-}
 
 async function DayView({
   provider,
@@ -703,36 +616,5 @@ function NavSquare({ href, dir }: { href: string; dir: "left" | "right" }) {
         <ChevronRight size={15} strokeWidth={2.2} />
       )}
     </a>
-  );
-}
-
-// Fixed bottom tab bar — phone only. Mirrors the native-app feel from the design.
-function BottomNav({ active, date }: { active: string; date: string }) {
-  const tabs = [
-    { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
-    { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
-    { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
-    { key: "availability", href: "/dashboard/availability", label: t.dashboard.navAvailability, Icon: Clock },
-    { key: "settings", href: `/dashboard/settings`, label: t.dashboard.navSettings, Icon: SettingsIcon },
-  ];
-  void date;
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-surface/92 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-      {tabs.map(({ key, href, label, Icon }) => {
-        const on = key === active;
-        return (
-          <a
-            key={key}
-            href={href}
-            className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold ${
-              on ? "text-accent" : "text-ink-4"
-            }`}
-          >
-            <Icon size={21} strokeWidth={1.9} />
-            {label}
-          </a>
-        );
-      })}
-    </nav>
   );
 }
