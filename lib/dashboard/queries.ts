@@ -690,6 +690,7 @@ export type ClientDetail = {
     whenText: string;
     serviceName: string;
     status: string;
+    valueCents: number;
   }[];
 };
 
@@ -739,6 +740,7 @@ export async function getClientDetail(
       ),
       serviceName: combined(b.service_ids).label,
       status: b.status,
+      valueCents: combined(b.service_ids).priceCents,
     })),
   };
 }

@@ -14,7 +14,6 @@ import {
   Hint,
   Label,
   TextInput,
-  PrimaryButton,
   ErrorText,
 } from "@/components/provider/ui";
 
@@ -138,23 +137,25 @@ export function SettingsForm({ initial }: { initial: Initial }) {
           <p className="border-b border-line pb-1 text-xs font-semibold uppercase tracking-wide text-ink-4">
             {t.settings.sectionDetails}
           </p>
-          <div>
-            <Label htmlFor="business_name">{t.onboarding.businessName}</Label>
-            <TextInput
-              id="business_name"
-              name="business_name"
-              defaultValue={initial.business_name ?? ""}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="provider_name">{t.onboarding.providerName}</Label>
-            <TextInput
-              id="provider_name"
-              name="provider_name"
-              defaultValue={initial.provider_name ?? ""}
-              required
-            />
+          <div className="grid gap-5 md:grid-cols-2">
+            <div>
+              <Label htmlFor="business_name">{t.onboarding.businessName}</Label>
+              <TextInput
+                id="business_name"
+                name="business_name"
+                defaultValue={initial.business_name ?? ""}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="provider_name">{t.onboarding.providerName}</Label>
+              <TextInput
+                id="provider_name"
+                name="provider_name"
+                defaultValue={initial.provider_name ?? ""}
+                required
+              />
+            </div>
           </div>
           <div>
             <Label htmlFor="city">{t.onboarding.city}</Label>
@@ -223,11 +224,16 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             </p>
           )}
 
-          <PrimaryButton
-            disabled={pending || slugStatus === "taken" || slugStatus === "invalid"}
-          >
-            {pending ? t.common.loading : t.common.save}
-          </PrimaryButton>
+          <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+            <button
+              type="submit"
+              disabled={pending || slugStatus === "taken" || slugStatus === "invalid"}
+              className="w-full rounded-lg bg-accent px-6 py-3 text-base font-semibold text-white transition-opacity disabled:opacity-50 md:w-auto"
+            >
+              {pending ? t.common.loading : t.settings.saveChanges}
+            </button>
+            <span className="text-[12.5px] text-faint">{t.settings.rulesBesideSave}</span>
+          </div>
         </form>
 
         <div className="mt-8">

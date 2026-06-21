@@ -7,9 +7,15 @@ import {
   deleteService,
   type ActionState,
 } from "@/lib/onboarding/actions";
+import { Plus } from "lucide-react";
 import { getDictionary, formatDuration } from "@/lib/i18n";
 import { Label, TextInput, ErrorText } from "@/components/provider/ui";
 import { ServicePhotoGrid } from "@/components/provider/service-photos";
+import { storageUrl } from "@/lib/storage-url";
+
+// Diagonal-hatch placeholder for a service with no photo yet (matches handoff).
+const HATCH =
+  "repeating-linear-gradient(135deg,rgba(184,66,28,.06) 0 2px,transparent 2px 14px)";
 
 const t = getDictionary();
 
@@ -170,13 +176,109 @@ function DeleteButton({ service }: { service: Service }) {
   );
 }
 
+// Photo-forward display card for the dashboard manage grid: a photo (or hatch
+// placeholder) banner with an Active badge, then name · duration · price + Edit.
+function ServiceCard({
+  service,
+  onEdit,
+}: {
+  service: Service;
+  onEdit: () => void;
+}) {
+  const cover = service.photos[0];
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+      <div
+        className="relative h-[110px] bg-surface-2"
+        style={cover ? undefined : { backgroundImage: HATCH }}
+      >
+        {cover && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={storageUrl(cover)} alt="" className="h-full w-full object-cover" />
+        )}
+        {service.is_active && (
+          <span className="absolute right-2.5 top-2.5 rounded-full bg-ok/90 px-2 py-[3px] text-[10px] font-bold text-white">
+            {t.common.active}
+          </span>
+        )}
+      </div>
+      <div className="flex items-start justify-between gap-3 px-4 py-3.5">
+        <div className="min-w-0">
+          <p className="font-serif text-[15.5px] font-semibold text-ink">{service.name}</p>
+          <p className="mt-0.5 text-[12.5px] tabular text-ink-3">
+            {formatDuration(service.duration_minutes)} · {euros(service.price_cents)}
+            {service.buffer_minutes !== null && ` · +${service.buffer_minutes} min gap`}
+          </p>
+          {service.prep_instructions && (
+            <p className="mt-1.5 text-[12px] text-faint">{service.prep_instructions}</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onEdit}
+          className="shrink-0 text-[12.5px] font-semibold text-accent underline"
+        >
+          {t.common.edit}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // The add/edit/delete list, with no surrounding chrome. Onboarding wraps it in
-// the step layout (with a Continue button); the dashboard Settings flow wraps
-// it in the management layout. Both share one implementation.
-export function ServicesEditor({ services }: { services: Service[] }) {
+// the step layout (with a Continue button); the dashboard Services page wraps it
+// in the management shell. `layout="grid"` renders photo-forward cards 1-col →
+// 2-col; `layout="list"` (default) keeps the compact onboarding stack.
+export function ServicesEditor({
+  services,
+  layout = "list",
+}: {
+  services: Service[];
+  layout?: "list" | "grid";
+}) {
   const [editing, setEditing] = useState<string | "new" | null>(
     services.length === 0 ? "new" : null,
   );
+
+  if (layout === "grid") {
+    return (
+      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+        {services.map((service) =>
+          editing === service.id ? (
+            <div key={service.id} className="md:col-span-2">
+              <ServiceForm service={service} onDone={() => setEditing(null)} />
+              <div className="mt-3 rounded-lg border border-line bg-surface-2 px-4 pb-3">
+                <ServicePhotoGrid serviceId={service.id} photos={service.photos} />
+              </div>
+              <div className="mt-3">
+                <DeleteButton service={service} />
+              </div>
+            </div>
+          ) : (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              onEdit={() => setEditing(service.id)}
+            />
+          ),
+        )}
+
+        {editing === "new" ? (
+          <div className="md:col-span-2">
+            <ServiceForm onDone={() => setEditing(null)} />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing("new")}
+            className="flex min-h-[110px] items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-desk text-sm font-bold text-accent"
+          >
+            <Plus size={16} strokeWidth={2.2} /> {t.onboarding.addService}
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
