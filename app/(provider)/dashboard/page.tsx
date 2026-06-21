@@ -104,7 +104,7 @@ export default async function DashboardPage({
   return (
     <div className="min-h-dvh bg-canvas text-ink md:py-8">
       <div className="w-full pb-24 md:pb-8">
-        <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-[1080px] md:px-9 md:py-8">
+        <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-[1200px] md:px-9 md:py-8">
           {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
           {/* Header */}
