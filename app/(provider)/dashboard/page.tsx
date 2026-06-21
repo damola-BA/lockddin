@@ -104,7 +104,7 @@ export default async function DashboardPage({
   return (
     <div className="min-h-dvh bg-canvas text-ink md:py-8">
       <div className="w-full pb-24 md:pb-8">
-        <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-[920px] md:px-9 md:py-8">
+        <div className="mx-auto w-full max-w-md px-5 py-7 md:max-w-[1080px] md:px-9 md:py-8">
           {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
           {/* Header */}
@@ -166,7 +166,7 @@ export default async function DashboardPage({
             </Link>
           </div>
 
-          <div className="md:grid md:grid-cols-[minmax(0,1fr)_19.5rem] md:gap-8 md:items-start">
+          <div className="md:grid md:grid-cols-[minmax(0,1fr)_19.5rem] md:gap-14 md:items-start">
             <div className="min-w-0">
               {view === "day" && (
                 <DayView
