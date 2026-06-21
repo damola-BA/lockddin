@@ -78,7 +78,7 @@ export function ClientsMasterDetail({
 }) {
   return (
     <WorkstationShell active="clients" businessName={businessName} bleed>
-      <div className="md:mx-auto md:max-w-[900px] md:overflow-hidden md:rounded-2xl md:border md:border-line md:bg-surface md:grid md:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="md:mx-auto md:min-h-[560px] md:max-w-[980px] md:overflow-hidden md:rounded-2xl md:border md:border-line md:bg-surface md:grid md:grid-cols-[300px_minmax(0,1fr)]">
         {/* List pane */}
         <div
           className={`flex-col gap-2.5 md:flex md:border-r md:border-line md:p-[18px] ${
