@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   Calendar as CalIcon,
-  Clock,
+  Settings as SettingsIcon,
   Tag,
   User,
   Users,
@@ -16,23 +16,26 @@ export type NavKey =
   | "schedule"
   | "clients"
   | "services"
-  | "availability"
+  | "settings"
   | "profile";
 
 type NavItem = { key: NavKey; href: string; label: string; Icon: typeof CalIcon };
 
-// Top bar (desktop) — the working sections. Profile/Settings/sign out live in the
-// account menu, not as a nav pill.
+// Top bar (desktop) — the daily working sections only. Settings (which now holds
+// the availability/hours editor), Profile and sign out live in the account menu.
 const TOP_NAV: NavItem[] = [
   { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
   { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
   { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
-  { key: "availability", href: "/dashboard/availability", label: t.dashboard.navAvailability, Icon: Clock },
 ];
 
-// Bottom tab bar (phone) — same sections plus Profile (phone has no account menu).
+// Settings = the availability/hours surface (still served at /dashboard/availability).
+export const SETTINGS_HREF = "/dashboard/availability";
+
+// Bottom tab bar (phone, no account menu) — working sections + Settings + Profile.
 const BOTTOM_NAV: NavItem[] = [
   ...TOP_NAV,
+  { key: "settings", href: SETTINGS_HREF, label: t.settings.settingsTitle, Icon: SettingsIcon },
   { key: "profile", href: "/dashboard/profile", label: t.settings.navProfile, Icon: User },
 ];
 

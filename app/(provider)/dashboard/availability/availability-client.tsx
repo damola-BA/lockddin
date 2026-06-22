@@ -83,7 +83,7 @@ export function AvailabilityClient({
       >
         <ChevronLeft size={15} strokeWidth={2.2} /> {A.back}
       </a>
-      <h1 className="font-serif text-[26px] font-semibold md:text-[28px]">{A.title}</h1>
+      <h1 className="font-serif text-[26px] font-semibold md:text-[28px]">{t.settings.settingsTitle}</h1>
 
       {mode === "regular" ? (
         <>

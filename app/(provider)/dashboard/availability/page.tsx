@@ -101,7 +101,7 @@ export default async function AvailabilityPage() {
   const businessName = provider.business_name ?? provider.provider_name ?? "";
 
   return (
-    <WorkstationShell active="availability" businessName={businessName} maxWidth="600px">
+    <WorkstationShell active="settings" businessName={businessName} maxWidth="600px">
       <AvailabilityClient
         timezone={provider.timezone}
         today={today}
