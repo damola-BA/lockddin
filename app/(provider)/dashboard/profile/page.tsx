@@ -45,15 +45,8 @@ export default async function ProfilePage() {
 
         <ProfileDetails initial={provider} />
 
-        {/* Phone-only quick links to Settings + sign out (desktop uses the
-            account menu in the top bar). */}
-        <div className="space-y-3 border-t border-line pt-6 md:hidden">
-          <a
-            href="/dashboard/settings"
-            className="block text-[14px] font-semibold text-accent"
-          >
-            {t.settings.hoursModeTitle} →
-          </a>
+        {/* Phone-only sign out (desktop uses the account menu in the top bar). */}
+        <div className="border-t border-line pt-6 md:hidden">
           <form action={signOut}>
             <button
               type="submit"

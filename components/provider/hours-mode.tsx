@@ -28,10 +28,7 @@ export function HoursMode({ current }: { current: "regular" | "flexible" }) {
   ];
 
   return (
-    <section className="mt-4 space-y-3">
-      <p className="border-b border-line pb-1 text-xs font-semibold uppercase tracking-wide text-ink-4">
-        {t.settings.hoursModeTitle}
-      </p>
+    <div className="mt-3 space-y-3">
       <div className="space-y-2">
         {options.map((o) => {
           const active = current === o.value;
@@ -64,6 +61,6 @@ export function HoursMode({ current }: { current: "regular" | "flexible" }) {
         })}
       </div>
       {state.ok && <p className="text-sm text-ok">{t.settings.hoursModeSaved}</p>}
-    </section>
+    </div>
   );
 }

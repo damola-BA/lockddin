@@ -21,6 +21,7 @@ import {
 } from "@/lib/schedule/actions";
 import { updateBookingRules, type SettingsState } from "@/lib/dashboard/settings-actions";
 import { BlocksEditor, type Block } from "@/app/(provider)/dashboard/schedule/blocks-editor";
+import { HoursMode } from "@/components/provider/hours-mode";
 import { getDictionary, fill } from "@/lib/i18n";
 import type {
   AvailabilityRules,
@@ -106,6 +107,12 @@ export function AvailabilityClient({
       )}
 
       <BookingRules rules={rules} />
+
+      <section className="mt-7">
+        <h2 className="font-serif text-[18px] font-semibold">{t.settings.hoursModeTitle}</h2>
+        <p className="mb-1 text-[13px] text-ink-3">{t.settings.settingsIntro}</p>
+        <HoursMode current={mode} />
+      </section>
 
       {sheet && (
         <ChangeDaySheet
