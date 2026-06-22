@@ -49,6 +49,13 @@ export const en = {
     verificationResent: "A fresh link is on its way.",
   },
   onboarding: {
+    panelTitle: "Set up once. Take bookings the same afternoon.",
+    panelBody: "No card, no app to install for your clients. Just a link that always shows your real availability.",
+    panelFooter: "Free to start · cancel anytime",
+    panelStepProfile: "Profile",
+    panelStepProfileSub: "Name, city & your link",
+    panelStepServices: "Services",
+    panelStepSchedule: "Schedule",
     stepOf: "Step {current} of {total}",
     profileTitle: "Tell clients who you are",
     businessName: "Business name",
