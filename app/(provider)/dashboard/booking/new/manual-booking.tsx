@@ -10,9 +10,16 @@ import {
   type ManualClient,
 } from "@/lib/booking/manual";
 import { getDictionary, formatDuration } from "@/lib/i18n";
+import { StepSpine } from "@/components/provider/ui";
 
 const t = getDictionary();
 const TZ = "Europe/Brussels";
+
+const SPINE = [
+  { key: "client", label: t.dashboard.walkInRailClient },
+  { key: "service", label: t.dashboard.walkInRailService },
+  { key: "confirm", label: t.dashboard.walkInRailConfirm },
+];
 
 type Service = {
   id: string;
@@ -48,13 +55,19 @@ export function ManualBooking({ services }: { services: Service[] }) {
 
   // ── Step 1: client ──────────────────────────────────────────────────
   if (!client) {
-    return <ClientStep onPick={setClient} />;
+    return (
+      <div className="space-y-5">
+        <StepSpine steps={SPINE} current="client" />
+        <ClientStep onPick={setClient} />
+      </div>
+    );
   }
 
   // ── Step 2: services + slot ─────────────────────────────────────────
   if (!slot) {
     return (
       <div className="space-y-5">
+        <StepSpine steps={SPINE} current="service" />
         <PickedClient client={client} onChange={() => setClient(null)} />
         {client.hasActiveBooking && (
           <p className="rounded-lg border border-accent/40 bg-accent-l p-3 text-sm text-accent">
@@ -142,6 +155,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
 
   return (
     <div className="space-y-5">
+      <StepSpine steps={SPINE} current="confirm" />
       <PickedClient client={client} onChange={() => setClient(null)} />
       <div className="rounded-xl border border-line bg-surface p-4">
         <p className="font-serif text-lg">{picked.map((s) => s.name).join(" + ")}</p>
