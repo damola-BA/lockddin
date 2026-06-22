@@ -3,8 +3,8 @@
 import { useActionState } from "react";
 import { requestPasswordReset, type ActionState } from "@/lib/auth/actions";
 import { getDictionary } from "@/lib/i18n";
+import { AuthShell } from "@/components/provider/auth-shell";
 import {
-  FormCard,
   PageTitle,
   Hint,
   Label,
@@ -22,34 +22,32 @@ export default function ResetRequestPage() {
   );
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <FormCard>
-        <PageTitle>{t.auth.resetTitle}</PageTitle>
-        <Hint>{t.auth.resetHint}</Hint>
-        {state.ok ? (
-          <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-2">
-            {t.auth.resetSent}
-          </p>
-        ) : (
-          <form action={formAction}>
-            <Label htmlFor="email">{t.auth.emailLabel}</Label>
-            <TextInput
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              autoFocus
-            />
-            {state.error === "invalid_email" && (
-              <ErrorText>{t.auth.emailInvalid}</ErrorText>
-            )}
-            <PrimaryButton disabled={pending}>
-              {pending ? t.common.loading : t.auth.sendResetLink}
-            </PrimaryButton>
-          </form>
-        )}
-      </FormCard>
-    </div>
+    <AuthShell panelTitle={t.auth.panelTitle} panelBody={t.auth.panelBody}>
+      <PageTitle>{t.auth.resetTitle}</PageTitle>
+      <Hint>{t.auth.resetHint}</Hint>
+      {state.ok ? (
+        <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-2">
+          {t.auth.resetSent}
+        </p>
+      ) : (
+        <form action={formAction}>
+          <Label htmlFor="email">{t.auth.emailLabel}</Label>
+          <TextInput
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            autoFocus
+          />
+          {state.error === "invalid_email" && (
+            <ErrorText>{t.auth.emailInvalid}</ErrorText>
+          )}
+          <PrimaryButton disabled={pending}>
+            {pending ? t.common.loading : t.auth.sendResetLink}
+          </PrimaryButton>
+        </form>
+      )}
+    </AuthShell>
   );
 }

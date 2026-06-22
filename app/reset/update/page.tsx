@@ -3,8 +3,8 @@
 import { useActionState } from "react";
 import { updatePassword, type ActionState } from "@/lib/auth/actions";
 import { getDictionary } from "@/lib/i18n";
+import { AuthShell } from "@/components/provider/auth-shell";
 import {
-  FormCard,
   PageTitle,
   Label,
   TextInput,
@@ -21,10 +21,9 @@ export default function ResetUpdatePage() {
   );
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <FormCard>
-        <PageTitle>{t.auth.newPasswordTitle}</PageTitle>
-        <form action={formAction} className="mt-4">
+    <AuthShell panelTitle={t.auth.panelTitle} panelBody={t.auth.panelBody}>
+      <PageTitle>{t.auth.newPasswordTitle}</PageTitle>
+      <form action={formAction} className="mt-4">
           <Label htmlFor="password">{t.auth.passwordLabel}</Label>
           <TextInput
             id="password"
@@ -45,7 +44,6 @@ export default function ResetUpdatePage() {
             {pending ? t.common.loading : t.common.save}
           </PrimaryButton>
         </form>
-      </FormCard>
-    </div>
+    </AuthShell>
   );
 }

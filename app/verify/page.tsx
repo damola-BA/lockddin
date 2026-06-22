@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { createAdminClient } from "@/lib/db/admin";
+import { AuthShell } from "@/components/provider/auth-shell";
 import { getDictionary } from "@/lib/i18n";
 
 const t = getDictionary();
@@ -36,15 +38,15 @@ export default async function VerifyPage({
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center bg-canvas px-5 py-10 text-ink">
+    <AuthShell panelTitle={t.auth.panelTitle} panelBody={t.auth.panelBody}>
       {verified ? (
         <>
           <h1 className="mb-2 font-serif text-2xl">{t.auth.verifyDone}</h1>
           <p className="text-sm text-ink-3">
             You can close this tab, or{" "}
-            <a href="/" className="text-accent underline">
+            <Link href="/" className="text-accent underline">
               continue your setup
-            </a>
+            </Link>
             .
           </p>
         </>
@@ -52,13 +54,13 @@ export default async function VerifyPage({
         <>
           <h1 className="mb-2 font-serif text-2xl">Hmm, that link is stale</h1>
           <p className="text-sm text-ink-3">
-            <a href="/" className="text-accent underline">
+            <Link href="/" className="text-accent underline">
               Continue your setup
-            </a>{" "}
+            </Link>{" "}
             — you can request a fresh link from the final step.
           </p>
         </>
       )}
-    </main>
+    </AuthShell>
   );
 }

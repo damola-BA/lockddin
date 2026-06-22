@@ -14,6 +14,8 @@ export const en = {
     somethingWrong: "Something went wrong. Please try again.",
   },
   auth: {
+    panelTitle: "Your chair's filling up.",
+    panelBody: "Sign in to see today's bookings, manage your week and share your link.",
     emailTitle: "What's your email?",
     emailHint: "We'll use this to sign you in and send you booking updates.",
     emailLabel: "Email address",
