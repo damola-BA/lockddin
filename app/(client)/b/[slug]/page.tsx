@@ -51,33 +51,46 @@ export default async function BookingPage({
   }));
 
   return (
-    <Shell>
-      <div className="mb-8">
-        <div className="mb-3 flex justify-end">
-          <ThemeToggle />
+    <div className="min-h-dvh bg-canvas text-ink">
+      <main className="mx-auto w-full max-w-md px-5 py-10 lg:grid lg:max-w-[1080px] lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-14 lg:px-10 lg:py-14">
+        {/* Context rail — provider banner + reassurance. Sticky beside the flow
+            on desktop; stacked on top on phone/tablet. */}
+        <aside className="lg:sticky lg:top-14">
+          <div className="mb-3 flex justify-end">
+            <ThemeToggle />
+          </div>
+          <ProviderBanner
+            name={name}
+            city={provider.city}
+            bannerPath={provider.banner_path}
+          />
+          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ok-l px-3 py-1 text-xs font-semibold text-ok">
+            {fill(t.client.reassureTop, {
+              hours: provider.cancellation_window_hours,
+            })}
+          </p>
+          <footer className="mt-8 hidden border-t border-line pt-4 lg:block">
+            <a href="/privacy" className="text-xs text-ink-4 underline">
+              {t.client.privacy}
+            </a>
+          </footer>
+        </aside>
+
+        {/* Booking flow — the working pane. */}
+        <div className="mt-8 lg:mt-0">
+          <BookingFlow
+            slug={slug}
+            cancellationWindowHours={provider.cancellation_window_hours}
+            services={normalizedServices}
+          />
+          <footer className="mt-12 border-t border-line pt-4 text-center lg:hidden">
+            <a href="/privacy" className="text-xs text-ink-4 underline">
+              {t.client.privacy}
+            </a>
+          </footer>
         </div>
-        <ProviderBanner
-          name={name}
-          city={provider.city}
-          bannerPath={provider.banner_path}
-        />
-        <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ok-l px-3 py-1 text-xs font-semibold text-ok">
-          {fill(t.client.reassureTop, {
-            hours: provider.cancellation_window_hours,
-          })}
-        </p>
-      </div>
-      <BookingFlow
-        slug={slug}
-        cancellationWindowHours={provider.cancellation_window_hours}
-        services={normalizedServices}
-      />
-      <footer className="mt-12 border-t border-line pt-4 text-center">
-        <a href="/privacy" className="text-xs text-ink-4 underline">
-          {t.client.privacy}
-        </a>
-      </footer>
-    </Shell>
+      </main>
+    </div>
   );
 }
 
