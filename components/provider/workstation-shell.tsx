@@ -2,8 +2,8 @@ import Link from "next/link";
 import {
   Calendar as CalIcon,
   Clock,
-  Settings as SettingsIcon,
   Tag,
+  User,
   Users,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -17,16 +17,24 @@ export type NavKey =
   | "clients"
   | "services"
   | "availability"
-  | "settings";
+  | "profile";
 
-const NAV: { key: NavKey; href: string; label: string; Icon: typeof CalIcon }[] =
-  [
-    { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
-    { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
-    { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
-    { key: "availability", href: "/dashboard/availability", label: t.dashboard.navAvailability, Icon: Clock },
-    { key: "settings", href: "/dashboard/settings", label: t.dashboard.navSettings, Icon: SettingsIcon },
-  ];
+type NavItem = { key: NavKey; href: string; label: string; Icon: typeof CalIcon };
+
+// Top bar (desktop) — the working sections. Profile/Settings/sign out live in the
+// account menu, not as a nav pill.
+const TOP_NAV: NavItem[] = [
+  { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
+  { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
+  { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
+  { key: "availability", href: "/dashboard/availability", label: t.dashboard.navAvailability, Icon: Clock },
+];
+
+// Bottom tab bar (phone) — same sections plus Profile (phone has no account menu).
+const BOTTOM_NAV: NavItem[] = [
+  ...TOP_NAV,
+  { key: "profile", href: "/dashboard/profile", label: t.settings.navProfile, Icon: User },
+];
 
 // Shared shell for the provider back-office pages (Clients, Services, Settings…).
 // Phone: full-bleed column + a fixed bottom tab bar (native-app feel). Tablet/
@@ -56,7 +64,7 @@ export function WorkstationShell({
               Lock<span className="font-serif font-medium italic text-accent">d</span>Din
             </Link>
             <nav className="flex items-center gap-1">
-              {NAV.map(({ key, href, label, Icon }) => {
+              {TOP_NAV.map(({ key, href, label, Icon }) => {
                 const on = key === active;
                 return (
                   <Link
@@ -96,7 +104,7 @@ export function WorkstationShell({
 
       {/* Bottom tab bar — phone only. */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-surface/92 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {NAV.map(({ key, href, label, Icon }) => {
+        {BOTTOM_NAV.map(({ key, href, label, Icon }) => {
           const on = key === active;
           return (
             <a

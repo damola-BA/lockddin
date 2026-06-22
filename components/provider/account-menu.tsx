@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { LogOut, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, Settings as SettingsIcon, User } from "lucide-react";
 import { signOut } from "@/lib/auth/actions";
 import { getDictionary } from "@/lib/i18n";
 
@@ -74,13 +74,22 @@ export function AccountMenu({ businessName }: { businessName: string }) {
 
           <div className="border-t border-line p-1.5">
             <Link
+              href="/dashboard/profile"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-surface-2"
+            >
+              <User size={16} strokeWidth={1.8} className="text-ink-3" />
+              {t.settings.navProfile}
+            </Link>
+            <Link
               href="/dashboard/settings"
               role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-surface-2"
             >
               <SettingsIcon size={16} strokeWidth={1.8} className="text-ink-3" />
-              {t.dashboard.accountProfile}
+              {t.dashboard.navSettings}
             </Link>
           </div>
 

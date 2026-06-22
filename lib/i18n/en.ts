@@ -336,7 +336,6 @@ export const en = {
     clientsEmpty: "No clients yet.",
     clientsSelectHint: "Select a client to see their history.",
     accountRole: "Provider",
-    accountProfile: "Profile & settings",
     exportCsv: "Export CSV",
     clientDetail: "Client",
     bookingsCount: "Bookings",
@@ -464,5 +463,15 @@ export const en = {
     hoursModeSwitch: "Switch",
     hoursModeConfirm: "Switch how your hours work? Your booked appointments stay exactly as they are — only how future days are offered changes.",
     hoursModeSaved: "Updated. Your Availability screen now matches.",
+    settingsTitle: "Settings",
+    settingsIntro: "How your booking schedule behaves.",
+    navProfile: "Profile",
+  },
+  profile: {
+    title: "Profile",
+    intro: "What clients see on your booking page.",
+    edit: "Edit",
+    bookingLink: "Your booking link",
+    lockedHint: "Locked to protect your shared links. Tap Edit to change.",
   },
 } as const;

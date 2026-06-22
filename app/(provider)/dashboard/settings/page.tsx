@@ -2,9 +2,9 @@ import { createServerSupabase } from "@/lib/db/server";
 import { ChevronLeft, LogOut } from "lucide-react";
 import { signOut } from "@/lib/auth/actions";
 import { getDictionary } from "@/lib/i18n";
-import { BannerUpload } from "@/components/provider/banner-upload";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
-import { SettingsForm } from "./settings-form";
+import { PageTitle, Hint } from "@/components/provider/ui";
+import { HoursMode } from "./settings-form";
 
 const t = getDictionary();
 
@@ -16,9 +16,7 @@ export default async function SettingsPage() {
 
   const { data: provider } = await supabase
     .from("providers")
-    .select(
-      "business_name, provider_name, city, slug, location_text, banner_path, schedule_type",
-    )
+    .select("business_name, provider_name, schedule_type")
     .eq("id", user!.id)
     .single();
 
@@ -27,27 +25,29 @@ export default async function SettingsPage() {
   const businessName = provider.business_name ?? provider.provider_name ?? "";
 
   return (
-    <WorkstationShell active="settings" businessName={businessName} maxWidth="560px">
-      <div className="space-y-10">
+    <WorkstationShell active="profile" businessName={businessName} maxWidth="560px">
+      <div className="space-y-8">
         <a
-          href="/dashboard"
+          href="/dashboard/profile"
           className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-ink-3 md:hidden"
         >
-          <ChevronLeft size={15} strokeWidth={2.2} /> Dashboard
+          <ChevronLeft size={15} strokeWidth={2.2} /> {t.settings.navProfile}
         </a>
 
-        <section className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-ink-4">Booking page banner</p>
-          <BannerUpload
-            currentPath={provider.banner_path}
-            providerName={businessName}
-            city={provider.city}
-          />
-        </section>
+        <div>
+          <PageTitle>{t.settings.settingsTitle}</PageTitle>
+          <Hint>{t.settings.settingsIntro}</Hint>
+          <HoursMode current={provider.schedule_type} />
+        </div>
 
-        <SettingsForm initial={provider} />
+        <p className="rounded-lg border border-line bg-surface-2 px-3.5 py-3 text-sm text-ink-3">
+          {t.settings.rulesMovedNote}{" "}
+          <a href="/dashboard/availability" className="font-semibold text-accent underline">
+            {t.dashboard.navAvailability}
+          </a>
+        </p>
 
-        {/* Sign out lives in the account menu on desktop; on phone it lives here. */}
+        {/* Phone-only sign out (desktop uses the account menu in the top bar). */}
         <form action={signOut} className="border-t border-line pt-6 md:hidden">
           <button
             type="submit"
