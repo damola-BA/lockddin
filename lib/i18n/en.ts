@@ -335,6 +335,8 @@ export const en = {
     clientsSearch: "Search by name or email",
     clientsEmpty: "No clients yet.",
     clientsSelectHint: "Select a client to see their history.",
+    accountRole: "Provider",
+    accountProfile: "Profile & settings",
     exportCsv: "Export CSV",
     clientDetail: "Client",
     bookingsCount: "Bookings",

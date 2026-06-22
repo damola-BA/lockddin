@@ -1,8 +1,12 @@
 import { createServerSupabase } from "@/lib/db/server";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, LogOut } from "lucide-react";
+import { signOut } from "@/lib/auth/actions";
+import { getDictionary } from "@/lib/i18n";
 import { BannerUpload } from "@/components/provider/banner-upload";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { SettingsForm } from "./settings-form";
+
+const t = getDictionary();
 
 export default async function SettingsPage() {
   const supabase = await createServerSupabase();
@@ -42,6 +46,16 @@ export default async function SettingsPage() {
         </section>
 
         <SettingsForm initial={provider} />
+
+        {/* Sign out lives in the account menu on desktop; on phone it lives here. */}
+        <form action={signOut} className="border-t border-line pt-6 md:hidden">
+          <button
+            type="submit"
+            className="flex items-center gap-2.5 text-[14px] font-semibold text-ink-3"
+          >
+            <LogOut size={16} strokeWidth={1.9} /> {t.auth.signOut}
+          </button>
+        </form>
       </div>
     </WorkstationShell>
   );

@@ -6,8 +6,8 @@ import {
   Tag,
   Users,
 } from "lucide-react";
-import { signOut } from "@/lib/auth/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AccountMenu } from "@/components/provider/account-menu";
 import { getDictionary } from "@/lib/i18n";
 
 const t = getDictionary();
@@ -27,15 +27,6 @@ const NAV: { key: NavKey; href: string; label: string; Icon: typeof CalIcon }[] 
     { key: "availability", href: "/dashboard/availability", label: t.dashboard.navAvailability, Icon: Clock },
     { key: "settings", href: "/dashboard/settings", label: t.dashboard.navSettings, Icon: SettingsIcon },
   ];
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 // Shared shell for the provider back-office pages (Clients, Services, Settings…).
 // Phone: full-bleed column + a fixed bottom tab bar (native-app feel). Tablet/
@@ -86,15 +77,8 @@ export function WorkstationShell({
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <form action={signOut} className="hidden lg:block">
-              <button type="submit" className="text-[13px] text-ink-3 underline">
-                {t.auth.signOut}
-              </button>
-            </form>
             <ThemeToggle />
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-l font-serif text-[12px] font-semibold text-accent">
-              {initials(businessName)}
-            </span>
+            <AccountMenu businessName={businessName} />
           </div>
         </div>
       </header>
