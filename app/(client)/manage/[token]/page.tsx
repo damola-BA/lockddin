@@ -96,10 +96,22 @@ function BookAgain({ slug }: { slug: string }) {
   );
 }
 
+// A booking moment: full-bleed on phone; on desktop a fixed-measure card
+// centered on a branded paper wash, wordmark above — intentional, not stranded.
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[#faf6f0] text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-10">{children}</main>
+    <div className="min-h-dvh bg-[#faf6f0] text-ink lg:flex lg:items-start lg:justify-center lg:bg-[#f1e9df] lg:px-6 lg:py-16 lg:[background-image:radial-gradient(120%_70%_at_50%_-20%,#faf6f0_0%,#efe6da_75%)]">
+      <main className="mx-auto w-full max-w-md px-5 py-10 lg:mx-0 lg:w-[440px] lg:px-0 lg:py-0">
+        <div className="mb-5 hidden text-center text-[18px] font-extrabold tracking-[-0.02em] lg:block">
+          Lock<span className="font-serif font-medium italic text-accent">d</span>Din
+        </div>
+        <div className="lg:rounded-[22px] lg:border lg:border-line lg:bg-surface lg:p-7 lg:shadow-[0_30px_60px_-34px_rgba(74,46,28,.4)]">
+          {children}
+        </div>
+        <p className="mt-4 hidden text-center text-[12.5px] text-ink-3 lg:block">
+          {t.client.manageNoAccount}
+        </p>
+      </main>
     </div>
   );
 }
