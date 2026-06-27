@@ -296,7 +296,13 @@ export async function getDayTimeline(
   return { working: true, startMin: hours.start, endMin: hours.end, segments };
 }
 
-export type WeekDay = { date: string; count: number; valueCents: number };
+export type WeekAppt = { id: string; start: string; clientName: string };
+export type WeekDay = {
+  date: string;
+  count: number;
+  valueCents: number;
+  appts: WeekAppt[];
+};
 
 // Monday-anchored week containing `date`.
 export function weekStartOf(date: string): string {
@@ -322,6 +328,58 @@ export async function getWeekSummary(
   const [{ data }, serviceMap] = await Promise.all([
     supabase
       .from("bookings")
+      .select("id, starts_at, service_ids, status, clients (first_name)")
+      .eq("provider_id", provider.id)
+      .in("status", ["confirmed", "no_show"])
+      .gte("starts_at", start.toISOString())
+      .lt("starts_at", end.toISOString())
+      .order("starts_at"),
+    getProviderServiceMap(provider.id),
+  ]);
+
+  const byDay = new Map<string, { count: number; valueCents: number; appts: WeekAppt[] }>();
+  for (const d of days) byDay.set(d, { count: 0, valueCents: 0, appts: [] });
+  for (const b of data ?? []) {
+    const local = formatInTimeZone(new Date(b.starts_at), provider.timezone, "yyyy-MM-dd");
+    const cell = byDay.get(local);
+    if (cell) {
+      cell.count += 1;
+      cell.valueCents += combineServices((b.service_ids as string[]) ?? [], serviceMap).priceCents;
+      const client = b.clients as unknown as { first_name: string } | null;
+      cell.appts.push({
+        id: b.id,
+        start: formatInTimeZone(new Date(b.starts_at), provider.timezone, "HH:mm"),
+        clientName: client?.first_name ?? "—",
+      });
+    }
+  }
+  return days.map((date) => ({ date, ...byDay.get(date)! }));
+}
+
+export type MonthSummary = {
+  byDay: Map<string, { count: number; valueCents: number }>;
+  totalCount: number;
+  totalValueCents: number;
+  busiestDate: string | null;
+};
+
+// Per-day count + value for a whole month — feeds the desktop month grid's
+// value labels and the "This month" totals rail.
+export async function getMonthSummary(
+  provider: ProviderContext,
+  year: number,
+  month: number, // 0-based
+): Promise<MonthSummary> {
+  const supabase = await createServerSupabase();
+  const first = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+  const start = localInstant(first, 0, provider.timezone);
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const last = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const end = localInstant(last, 1440, provider.timezone);
+
+  const [{ data }, serviceMap] = await Promise.all([
+    supabase
+      .from("bookings")
       .select("starts_at, service_ids")
       .eq("provider_id", provider.id)
       .in("status", ["confirmed", "no_show"])
@@ -331,16 +389,27 @@ export async function getWeekSummary(
   ]);
 
   const byDay = new Map<string, { count: number; valueCents: number }>();
-  for (const d of days) byDay.set(d, { count: 0, valueCents: 0 });
+  let totalCount = 0;
+  let totalValueCents = 0;
   for (const b of data ?? []) {
     const local = formatInTimeZone(new Date(b.starts_at), provider.timezone, "yyyy-MM-dd");
-    const cell = byDay.get(local);
-    if (cell) {
-      cell.count += 1;
-      cell.valueCents += combineServices((b.service_ids as string[]) ?? [], serviceMap).priceCents;
+    const value = combineServices((b.service_ids as string[]) ?? [], serviceMap).priceCents;
+    const cell = byDay.get(local) ?? { count: 0, valueCents: 0 };
+    cell.count += 1;
+    cell.valueCents += value;
+    byDay.set(local, cell);
+    totalCount += 1;
+    totalValueCents += value;
+  }
+  let busiestDate: string | null = null;
+  let busiestCount = 0;
+  for (const [date, cell] of byDay) {
+    if (cell.count > busiestCount) {
+      busiestCount = cell.count;
+      busiestDate = date;
     }
   }
-  return days.map((date) => ({ date, ...byDay.get(date)! }));
+  return { byDay, totalCount, totalValueCents, busiestDate };
 }
 
 export async function getMonthCounts(
