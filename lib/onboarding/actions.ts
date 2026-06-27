@@ -92,6 +92,7 @@ type ServiceInput = {
   price_cents: number;
   buffer_minutes: number | null;
   prep_instructions: string | null;
+  is_active?: boolean;
 };
 
 function parseService(formData: FormData): ServiceInput | null {
@@ -105,13 +106,19 @@ function parseService(formData: FormData): ServiceInput | null {
   if (!name || !Number.isInteger(duration) || duration <= 0) return null;
   if (!Number.isFinite(priceCents) || priceCents < 0) return null;
 
-  return {
+  const input: ServiceInput = {
     name,
     duration_minutes: duration,
     price_cents: priceCents,
     buffer_minutes: bufferRaw === "" ? null : Number(bufferRaw),
     prep_instructions: prep || null,
   };
+  // Optional active flag — only present from the Services manage drawer's toggle.
+  // Onboarding's form omits it, leaving the DB default (active) untouched.
+  if (formData.has("is_active")) {
+    input.is_active = formData.get("is_active") === "true";
+  }
+  return input;
 }
 
 export async function addService(
