@@ -4,12 +4,15 @@ import {
   CalendarRange,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Coffee,
+  Eye,
   Plus,
+  SquarePen,
 } from "lucide-react";
 import { VerifyBanner } from "@/components/provider/verify-banner";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { WorkstationShell } from "@/components/provider/workstation-shell";
+import { WorkstationShell, SETTINGS_HREF } from "@/components/provider/workstation-shell";
 import { getDictionary, formatDuration, fill } from "@/lib/i18n";
 import {
   getProviderContext,
@@ -26,7 +29,6 @@ import {
   type ProviderContext,
   type TimelineSegment,
   type DayTimeline,
-  type OpenDayRow,
 } from "@/lib/dashboard/queries";
 
 const t = getDictionary();
@@ -124,38 +126,50 @@ export default async function DashboardPage({
         </div>
       </header>
 
-      {/* View toggle (Day / Week / Month) */}
+      {/* Mode control — Day/Week/Month tabs (regular) or a "Flexible hours"
+          pill (flexible). The schedule mode is set in Settings. */}
       <div className="mb-5">
-        <nav className="inline-flex rounded-xl bg-surface-2 p-1">
-          {(["day", "week", "month"] as const).map((v) => (
-            <a
-              key={v}
-              href={`/dashboard?view=${v}&date=${date}`}
-              className={`rounded-lg px-4 py-1.5 text-[13px] font-semibold ${
-                view === v
-                  ? "bg-ctrl text-ctrl-ink shadow-sm"
-                  : "text-ink-3"
-              }`}
-            >
-              {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
-            </a>
-          ))}
-        </nav>
+        {provider.scheduleType === "flexible" ? (
+          <span className="inline-flex items-center gap-2 rounded-xl bg-surface-2 px-3.5 py-2.5 text-xs font-bold text-ink-2">
+            <Clock size={14} strokeWidth={2} className="text-accent" />
+            {t.dashboard.flexibleHours}
+          </span>
+        ) : (
+          <nav className="inline-flex rounded-xl bg-surface-2 p-1">
+            {(["day", "week", "month"] as const).map((v) => (
+              <a
+                key={v}
+                href={`/dashboard?view=${v}&date=${date}`}
+                className={`rounded-lg px-4 py-1.5 text-[13px] font-semibold ${
+                  view === v ? "bg-ctrl text-ctrl-ink shadow-sm" : "text-ink-3"
+                }`}
+              >
+                {v === "day" ? t.dashboard.viewDay : v === "week" ? t.dashboard.viewWeek : t.dashboard.viewMonth}
+              </a>
+            ))}
+          </nav>
+        )}
       </div>
 
-      {view === "day" && (
-        <DayView
-          provider={provider}
-          date={date}
-          today={today}
-          maxDate={maxDate}
-          nowMin={date === today ? nowMinutesIn(provider.timezone) : null}
-        />
+      {provider.scheduleType === "flexible" ? (
+        <FlexibleSchedule provider={provider} date={date} />
+      ) : (
+        <>
+          {view === "day" && (
+            <DayView
+              provider={provider}
+              date={date}
+              today={today}
+              maxDate={maxDate}
+              nowMin={date === today ? nowMinutesIn(provider.timezone) : null}
+            />
+          )}
+          {view === "week" && (
+            <WeekView provider={provider} date={date} maxDate={maxDate} />
+          )}
+          {view === "month" && <MonthView provider={provider} date={date} />}
+        </>
       )}
-      {view === "week" && (
-        <WeekView provider={provider} date={date} maxDate={maxDate} />
-      )}
-      {view === "month" && <MonthView provider={provider} date={date} />}
     </WorkstationShell>
   );
 }
@@ -669,6 +683,154 @@ async function WeekView({
   );
 }
 
+// Flexible regime: there's no Day/Week/Month — instead a calendar of the days
+// the provider has opened, paired with a "Your open days" list. Opening and
+// editing days happens in Settings (Availability); here a day's cell links to
+// its bookings. Desktop puts the list beside the calendar; phone stacks it.
+async function FlexibleSchedule({
+  provider,
+  date,
+}: {
+  provider: ProviderContext;
+  date: string;
+}) {
+  const today = todayLocal(provider.timezone);
+  const [y, m] = date.split("-").map(Number);
+  const year = y;
+  const month = m - 1;
+  const [status, openDays] = await Promise.all([
+    getMonthDayStatus(provider, year, month),
+    getUpcomingOpenDays(provider),
+  ]);
+
+  const firstWeekday = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 6) % 7;
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cells: (string | null)[] = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(`${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  }
+
+  const prevMonth = month === 0 ? `${year - 1}-12-01` : `${year}-${String(month).padStart(2, "0")}-01`;
+  const nextMonth = month === 11 ? `${year + 1}-01-01` : `${year}-${String(month + 2).padStart(2, "0")}-01`;
+  const monthLabel = new Intl.DateTimeFormat("en-BE", {
+    timeZone: provider.timezone,
+    month: "long",
+    year: "numeric",
+  }).format(new Date(Date.UTC(year, month, 15)));
+  const openLabel = (cell: string) =>
+    new Intl.DateTimeFormat("en-BE", {
+      timeZone: provider.timezone,
+      weekday: "short",
+      day: "numeric",
+      month: "long",
+    }).format(new Date(`${cell}T12:00:00Z`));
+
+  return (
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-9">
+      <div className="min-w-0">
+        <p className="mb-4 text-[13.5px] leading-relaxed text-ink-3">{t.dashboard.flexibleIntro}</p>
+
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-surface px-3 py-2.5">
+          <NavSquare href={`/dashboard?date=${prevMonth}`} dir="left" />
+          <span className="font-serif text-[15px] font-medium">{monthLabel}</span>
+          <NavSquare href={`/dashboard?date=${nextMonth}`} dir="right" />
+        </div>
+
+        <div className="mb-1.5 grid grid-cols-7 gap-1.5 text-center">
+          {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+            <span key={i} className="text-[10px] font-semibold text-faint">{d}</span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1.5">
+          {cells.map((cell, i) => {
+            if (cell === null) return <span key={`e${i}`} />;
+            const s = status.get(cell);
+            const open = s?.open ?? false;
+            const isToday = cell === today;
+            const past = cell < today;
+            const cls = open
+              ? "border border-ok bg-ok-l text-ok"
+              : isToday
+                ? "border-[1.5px] border-accent [box-shadow:0_0_0_3px_var(--accent-l)] bg-surface text-ink"
+                : `border border-line bg-surface ${past ? "text-faint" : "text-ink"}`;
+            const inner = (
+              <>
+                <span className="tabular">{Number(cell.slice(-2))}</span>
+                {open ? (
+                  <span className="mt-1 h-[5px] w-[5px] rounded-full bg-ok" />
+                ) : (
+                  <span className="mt-1 h-[5px] w-[5px]" />
+                )}
+              </>
+            );
+            const base = `flex aspect-square flex-col items-center justify-center rounded-[11px] text-[13px] font-semibold ${past && !open ? "opacity-40" : ""} ${cls}`;
+            return open ? (
+              <a key={cell} href={`/dashboard?view=day&date=${cell}`} className={base}>
+                {inner}
+              </a>
+            ) : (
+              <span key={cell} className={base}>{inner}</span>
+            );
+          })}
+        </div>
+
+        <p className="mt-4 flex items-center gap-2 text-[12.5px] leading-snug text-ink-4">
+          <Clock size={14} strokeWidth={1.9} className="shrink-0" />
+          {t.dashboard.flexibleHint}
+        </p>
+      </div>
+
+      {/* Your open days */}
+      <aside className="mt-8 lg:mt-0">
+        <div className="mb-3 flex items-baseline justify-between gap-2">
+          <h2 className="font-serif text-[18px] font-semibold">{t.dashboard.yourOpenDays}</h2>
+          <Link href={SETTINGS_HREF} className="shrink-0 text-[12.5px] font-semibold text-accent">
+            {t.dashboard.openMoreDays}
+          </Link>
+        </div>
+        <p className="mb-3 text-[12.5px] text-ink-3">{t.dashboard.yourOpenDaysSub}</p>
+        {openDays.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-sm text-ink-3">
+            {t.dashboard.noOpenDaysAhead}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {openDays.map((d) => (
+              <div key={d.date} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3.5 py-3">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] bg-ok-l text-ok">
+                  <CalendarRange size={15} strokeWidth={1.9} />
+                </span>
+                <a href={`/dashboard?view=day&date=${d.date}`} className="min-w-0 flex-1">
+                  <span className="block truncate text-[13.5px] font-semibold text-ink">{openLabel(d.date)}</span>
+                  {d.start && d.end && (
+                    <span className="block text-[11.5px] text-ink-3 tabular">{d.start}–{d.end}</span>
+                  )}
+                </a>
+                <a
+                  href={`/dashboard?view=day&date=${d.date}`}
+                  title={t.dashboard.viewBookingsTitle}
+                  className="inline-flex items-center gap-1.5 rounded-[9px] border border-line bg-surface-2 px-2.5 py-1.5 text-ink-2"
+                >
+                  <Eye size={14} strokeWidth={2} />
+                  <span className={`text-[11.5px] font-bold tabular ${d.count > 0 ? "text-accent-d" : "text-ink-4"}`}>{d.count}</span>
+                </a>
+                <Link
+                  href={SETTINGS_HREF}
+                  title={t.dashboard.editHoursTitle}
+                  className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] border border-line bg-surface-2 text-ink-2"
+                >
+                  <SquarePen size={14} strokeWidth={2} />
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </aside>
+    </div>
+  );
+}
+
 async function MonthView({
   provider,
   date,
@@ -682,8 +844,6 @@ async function MonthView({
   const status = await getMonthDayStatus(provider, year, month);
   const summary = await getMonthSummary(provider, year, month);
   const today = todayLocal(provider.timezone);
-  const openDays =
-    provider.scheduleType === "flexible" ? await getUpcomingOpenDays(provider) : [];
 
   // Quiet open days = open, nothing booked, today onward — worth promoting.
   const quietDays: string[] = [];
@@ -716,10 +876,6 @@ async function MonthView({
 
   return (
     <section>
-      {provider.scheduleType === "flexible" && (
-        <OpenDaysLead provider={provider} openDays={openDays} />
-      )}
-
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_296px] lg:items-start lg:gap-9">
         <div className="min-w-0">
           <div className="mb-4 flex items-center justify-between rounded-2xl border border-line bg-surface px-3 py-2.5">
@@ -866,47 +1022,6 @@ async function MonthView({
         </aside>
       </div>
     </section>
-  );
-}
-
-function OpenDaysLead({
-  provider,
-  openDays,
-}: {
-  provider: ProviderContext;
-  openDays: OpenDayRow[];
-}) {
-  return (
-    <div className="mb-5">
-      <h2 className="mb-3 font-serif text-[18px] font-semibold">{t.dashboard.nextOpenDays}</h2>
-      {openDays.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-sm text-ink-3">
-          {t.dashboard.noOpenDaysAhead}
-        </p>
-      ) : (
-        <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-          {openDays.map((d) => (
-            <a
-              key={d.date}
-              href={`/dashboard?view=day&date=${d.date}`}
-              className="flex items-center justify-between border-b border-line-2 px-4 py-3.5 last:border-b-0"
-            >
-              <span>
-                <span className="block text-[14px] font-semibold">
-                  {dayLabel(d.date, provider.timezone)}
-                </span>
-                {d.start && d.end && (
-                  <span className="text-[12.5px] tabular text-ink-3">{d.start}–{d.end}</span>
-                )}
-              </span>
-              <span className="text-[12.5px] tabular text-ink-3">
-                {d.count > 0 ? fill(t.dashboard.bookedCount, { n: d.count }) : t.dashboard.freeGap}
-              </span>
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 
