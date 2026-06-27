@@ -68,11 +68,8 @@ export function ProfileDetails({ initial }: { initial: Initial }) {
   if (!editing) {
     return (
       <section>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="font-serif text-2xl text-ink">{t.profile.title}</h2>
-            <p className="mt-1 text-sm text-ink-3">{t.profile.intro}</p>
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-serif text-[19px] font-semibold text-ink">{t.profile.detailsTitle}</h2>
           <button
             type="button"
             onClick={() => setEditing(true)}

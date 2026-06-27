@@ -502,8 +502,18 @@ export const en = {
   profile: {
     title: "Profile",
     intro: "What clients see on your booking page.",
+    detailsTitle: "Your details",
     edit: "Edit",
     bookingLink: "Your booking link",
     lockedHint: "Locked to protect your shared links. Tap Edit to change.",
+    replaceBanner: "Replace banner",
+    addBanner: "Add banner",
+    removeBanner: "Remove",
+    viewLivePage: "View live page",
+    live: "Live",
+    bannerHint: "Shown at the top of your booking page.",
+    account: "Account",
+    language: "Language",
+    languageValue: "English",
   },
 } as const;
