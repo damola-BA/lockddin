@@ -5,14 +5,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Coffee,
-  ExternalLink,
   Plus,
 } from "lucide-react";
 import { VerifyBanner } from "@/components/provider/verify-banner";
-import { BookingLinkCard } from "@/components/provider/booking-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
-import { appUrl } from "@/lib/app-url";
 import { getDictionary, formatDuration, fill } from "@/lib/i18n";
 import {
   getProviderContext,
@@ -88,10 +85,13 @@ export default async function DashboardPage({
     ? `${t.dashboard.openToday} · ${hhmm(todayShape.startMin)}–${hhmm(todayShape.endMin)}`
     : t.dashboard.closedToday;
 
-  const bookingUrl = appUrl(`/b/${provider.slug}`);
-
   return (
-    <WorkstationShell active="schedule" businessName={provider.businessName} bleed>
+    <WorkstationShell
+      active="schedule"
+      businessName={provider.businessName}
+      bleed
+      action={{ href: "/dashboard/booking/new", label: t.dashboard.walkIn }}
+    >
       {!provider.emailVerified && <VerifyBanner email={provider.email} />}
 
       {/* Page header — business name + today's status. Section nav now lives in
@@ -110,8 +110,16 @@ export default async function DashboardPage({
             <span className="tabular">{openText}</span>
           </p>
         </div>
-        {/* Phone-only theme toggle — desktop has it in the top bar. */}
-        <div className="shrink-0 md:hidden">
+        {/* Phone-only actions — desktop has these in the top bar. */}
+        <div className="flex shrink-0 items-center gap-2 md:hidden">
+          <Link
+            href="/dashboard/booking/new"
+            title={t.dashboard.walkIn}
+            aria-label={t.dashboard.walkIn}
+            className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-full bg-accent text-white shadow-[0_5px_13px_-5px_rgba(184,66,28,.7)]"
+          >
+            <Plus size={19} strokeWidth={2.5} />
+          </Link>
           <ThemeToggle />
         </div>
       </header>
@@ -141,64 +149,28 @@ export default async function DashboardPage({
           date={date}
           today={today}
           maxDate={maxDate}
-          bookingUrl={bookingUrl}
           nowMin={date === today ? nowMinutesIn(provider.timezone) : null}
         />
       )}
       {view === "week" && (
-        <WeekView provider={provider} date={date} maxDate={maxDate} bookingUrl={bookingUrl} />
+        <WeekView provider={provider} date={date} maxDate={maxDate} />
       )}
-      {view === "month" && (
-        <MonthView provider={provider} date={date} bookingUrl={bookingUrl} />
-      )}
+      {view === "month" && <MonthView provider={provider} date={date} />}
     </WorkstationShell>
   );
 }
-
-// Dashboard-specific actions — walk-in, the shareable booking link, and a live
-// preview. Sits in the Day rail on desktop, stacks under the content on phone.
-function ActionsRail({
-  bookingUrl,
-  businessName,
-}: {
-  bookingUrl: string;
-  businessName: string;
-}) {
-  return (
-    <div className="space-y-3.5">
-      <Link
-        href="/dashboard/booking/new"
-        className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold text-white shadow-[0_12px_26px_-14px_rgba(184,66,28,.6)]"
-      >
-        <Plus size={17} strokeWidth={2.2} /> {t.dashboard.walkIn}
-      </Link>
-      <BookingLinkCard url={bookingUrl} businessName={businessName} />
-      <a
-        href={bookingUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink-2"
-      >
-        <ExternalLink size={15} strokeWidth={1.9} /> {t.dashboard.previewBookingPage}
-      </a>
-    </div>
-  );
-}
-
 
 async function DayView({
   provider,
   date,
   today,
   maxDate,
-  bookingUrl,
   nowMin,
 }: {
   provider: ProviderContext;
   date: string;
   today: string;
   maxDate: string;
-  bookingUrl: string;
   nowMin: number | null;
 }) {
   const bookings = await getDayBookings(provider, date);
@@ -295,8 +267,6 @@ async function DayView({
             </div>
           </div>
         )}
-
-        <ActionsRail bookingUrl={bookingUrl} businessName={provider.businessName} />
       </aside>
     </div>
   );
@@ -565,12 +535,10 @@ async function WeekView({
   provider,
   date,
   maxDate,
-  bookingUrl,
 }: {
   provider: ProviderContext;
   date: string;
   maxDate: string;
-  bookingUrl: string;
 }) {
   const weekStart = weekStartOf(date);
   const days = await getWeekSummary(provider, weekStart);
@@ -697,10 +665,6 @@ async function WeekView({
           );
         })}
       </div>
-
-      <div className="mx-auto mt-8 max-w-md md:mt-10">
-        <ActionsRail bookingUrl={bookingUrl} businessName={provider.businessName} />
-      </div>
     </section>
   );
 }
@@ -708,11 +672,9 @@ async function WeekView({
 async function MonthView({
   provider,
   date,
-  bookingUrl,
 }: {
   provider: ProviderContext;
   date: string;
-  bookingUrl: string;
 }) {
   const [y, m] = date.split("-").map(Number);
   const year = y;
@@ -902,10 +864,6 @@ async function MonthView({
             </div>
           )}
         </aside>
-      </div>
-
-      <div className="mx-auto mt-8 max-w-md lg:hidden">
-        <ActionsRail bookingUrl={bookingUrl} businessName={provider.businessName} />
       </div>
     </section>
   );

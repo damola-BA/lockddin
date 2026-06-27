@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Calendar as CalIcon,
+  Plus,
   Settings as SettingsIcon,
   Tag,
   User,
@@ -49,12 +50,14 @@ export function WorkstationShell({
   businessName,
   maxWidth = "640px",
   bleed = false,
+  action,
   children,
 }: {
   active: NavKey;
   businessName: string;
   maxWidth?: string;
   bleed?: boolean;
+  action?: { href: string; label: string };
   children: React.ReactNode;
 }) {
   return (
@@ -88,6 +91,16 @@ export function WorkstationShell({
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            {action && (
+              <Link
+                href={action.href}
+                title={action.label}
+                aria-label={action.label}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-[0_5px_13px_-5px_rgba(184,66,28,.7)] transition hover:brightness-105"
+              >
+                <Plus size={19} strokeWidth={2.5} />
+              </Link>
+            )}
             <ThemeToggle />
             <AccountMenu businessName={businessName} />
           </div>
