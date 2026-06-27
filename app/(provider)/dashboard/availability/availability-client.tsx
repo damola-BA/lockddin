@@ -84,6 +84,14 @@ export function AvailabilityClient({
         <ChevronLeft size={15} strokeWidth={2.2} /> {A.back}
       </a>
       <h1 className="font-serif text-[26px] font-semibold md:text-[28px]">{t.settings.settingsTitle}</h1>
+      <p className="mt-1.5 text-[13.5px] text-ink-3">{t.settings.settingsSubtitle}</p>
+
+      {/* How your hours work — leads the page; it shapes everything below. */}
+      <section className="mt-7">
+        <h2 className="font-serif text-[19px] font-semibold">{t.settings.hoursModeTitle}</h2>
+        <p className="mb-1 text-[13px] text-ink-3">{t.settings.hoursModeIntro}</p>
+        <HoursMode current={mode} />
+      </section>
 
       {mode === "regular" ? (
         <>
@@ -107,12 +115,6 @@ export function AvailabilityClient({
       )}
 
       <BookingRules rules={rules} />
-
-      <section className="mt-7">
-        <h2 className="font-serif text-[18px] font-semibold">{t.settings.hoursModeTitle}</h2>
-        <p className="mb-1 text-[13px] text-ink-3">{t.settings.settingsIntro}</p>
-        <HoursMode current={mode} />
-      </section>
 
       {sheet && (
         <ChangeDaySheet
@@ -433,15 +435,15 @@ function BookingRules({ rules }: { rules: AvailabilityRules }) {
     <section className="mt-7">
       <h2 className="font-serif text-[18px] font-semibold">{A.bookingRules}</h2>
       <p className="mb-3 text-[13px] text-ink-3">{A.bookingRulesHint}</p>
-      <form action={action} className="space-y-4 rounded-2xl border border-line bg-surface p-4">
+      <form action={action} className="rounded-2xl border border-line bg-surface px-4 py-1">
         {isFlexible ? (
           <input type="hidden" name="booking_window" value={rules.bookingWindow} />
         ) : (
-          <Rule label={A.ruleWindow}>
+          <Rule label={A.ruleWindow} hint={A.ruleWindowHint}>
             <select
               name="booking_window"
               defaultValue={rules.bookingWindow}
-              className="max-w-[55%] rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-right text-[13px] font-semibold text-accent-d focus:border-accent focus:outline-none"
+              className={RULE_SELECT}
             >
               {(["3_days", "current_week", "current_month", "3_months"] as const).map((v) => (
                 <option key={v} value={v}>
@@ -451,11 +453,11 @@ function BookingRules({ rules }: { rules: AvailabilityRules }) {
             </select>
           </Rule>
         )}
-        <Rule label={A.ruleLead}>
+        <Rule label={A.ruleLead} hint={A.ruleLeadHint}>
           <select
             name="min_lead_time_minutes"
             defaultValue={rules.minLeadTimeMinutes}
-            className="max-w-[55%] rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-right text-[13px] font-semibold text-accent-d focus:border-accent focus:outline-none"
+            className={RULE_SELECT}
           >
             {LEAD_OPTIONS.map((m) => (
               <option key={m} value={m}>
@@ -464,11 +466,11 @@ function BookingRules({ rules }: { rules: AvailabilityRules }) {
             ))}
           </select>
         </Rule>
-        <Rule label={A.ruleBuffer}>
+        <Rule label={A.ruleBuffer} hint={A.ruleBufferHint}>
           <select
             name="global_buffer_minutes"
             defaultValue={rules.globalBufferMinutes}
-            className="max-w-[55%] rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-right text-[13px] font-semibold text-accent-d focus:border-accent focus:outline-none"
+            className={RULE_SELECT}
           >
             {BUFFER_OPTIONS.map((m) => (
               <option key={m} value={m}>
@@ -477,11 +479,11 @@ function BookingRules({ rules }: { rules: AvailabilityRules }) {
             ))}
           </select>
         </Rule>
-        <Rule label={A.ruleCancel}>
+        <Rule label={A.ruleCancel} hint={A.ruleCancelHint}>
           <select
             name="cancellation_window_hours"
             defaultValue={rules.cancellationWindowHours}
-            className="max-w-[55%] rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-right text-[13px] font-semibold text-accent-d focus:border-accent focus:outline-none"
+            className={RULE_SELECT}
           >
             {[12, 24, 48, 72].map((h) => (
               <option key={h} value={h}>
@@ -492,7 +494,7 @@ function BookingRules({ rules }: { rules: AvailabilityRules }) {
           </select>
         </Rule>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 border-t border-line-2 py-4">
           <button
             type="submit"
             disabled={pending}
@@ -508,10 +510,24 @@ function BookingRules({ rules }: { rules: AvailabilityRules }) {
   );
 }
 
-function Rule({ label, children }: { label: string; children: React.ReactNode }) {
+const RULE_SELECT =
+  "max-w-[55%] shrink-0 rounded-lg border border-line bg-surface-2 px-2.5 py-2 text-right text-[13px] font-semibold text-accent-d focus:border-accent focus:outline-none";
+
+function Rule({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <label className="flex items-center justify-between gap-3">
-      <span className="text-[13.5px] font-semibold text-ink">{label}</span>
+    <label className="flex items-center justify-between gap-3 border-t border-line-2 py-[15px]">
+      <span className="min-w-0">
+        <span className="block text-[13.5px] font-semibold text-ink">{label}</span>
+        {hint && <span className="mt-0.5 block text-[11.5px] text-ink-4">{hint}</span>}
+      </span>
       {children}
     </label>
   );
