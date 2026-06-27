@@ -196,6 +196,8 @@ export const en = {
     seeYou: "See you on {day}, {name}.",
     emailReassure: "Your confirmation and any updates go here. No account needed.",
     reassureTop: "Free cancellation up to {hours}h before · no account needed",
+    cancelChip: "Free cancellation {hours}h",
+    noAccountChip: "No account needed",
     existingInline: "Heads up — this number already has an appointment:",
     existingOther: "Or enter a different number to book a new time.",
     firstName: "First name",

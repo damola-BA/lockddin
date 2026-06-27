@@ -1,8 +1,9 @@
+import { Check, Mail } from "lucide-react";
 import { getProviderBySlug } from "@/lib/booking/slots";
 import { createAdminClient } from "@/lib/db/admin";
 import { getDictionary, fill } from "@/lib/i18n";
-import { ProviderBanner } from "@/components/provider/banner";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { storageUrl } from "@/lib/storage-url";
 import { BookingFlow } from "./booking-flow";
 
 const t = getDictionary();
@@ -50,46 +51,77 @@ export default async function BookingPage({
     photos: Array.isArray(s.photos) ? (s.photos as string[]) : [],
   }));
 
+  const cancelChip = fill(t.client.cancelChip, {
+    hours: provider.cancellation_window_hours,
+  });
+
   return (
     <div className="min-h-dvh bg-canvas text-ink">
-      <main className="mx-auto w-full max-w-md px-5 py-10 lg:grid lg:max-w-[1080px] lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-14 lg:px-10 lg:py-14">
-        {/* Context rail — provider banner + reassurance. Sticky beside the flow
-            on desktop; stacked on top on phone/tablet. */}
-        <aside className="lg:sticky lg:top-14">
-          <div className="mb-3 flex justify-end">
-            <ThemeToggle />
-          </div>
-          <ProviderBanner
-            name={name}
-            city={provider.city}
-            bannerPath={provider.banner_path}
-          />
-          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-ok-l px-3 py-1 text-xs font-semibold text-ok">
-            {fill(t.client.reassureTop, {
-              hours: provider.cancellation_window_hours,
-            })}
-          </p>
-          <footer className="mt-8 hidden border-t border-line pt-4 lg:block">
-            <a href="/privacy" className="text-xs text-ink-4 underline">
-              {t.client.privacy}
-            </a>
-          </footer>
-        </aside>
+      <div className="lg:mx-auto lg:max-w-[1140px] lg:px-7 lg:py-9">
+        {/* Editorial split — a brand stage beside the booking flow. On phone the
+            stage collapses to a hero banner stacked above the flow. */}
+        <div className="lg:flex lg:min-h-[720px] lg:items-stretch lg:overflow-hidden lg:rounded-[24px] lg:border lg:border-line lg:bg-surface lg:shadow-[0_30px_70px_-42px_rgba(74,46,28,.5)]">
+          {/* Brand stage */}
+          <aside className="relative h-[230px] w-full shrink-0 overflow-hidden bg-surface-2 lg:h-auto lg:w-[432px]">
+            {provider.banner_path ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={storageUrl(provider.banner_path)} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div
+                className="h-full w-full"
+                style={{ background: "linear-gradient(135deg, #c98a5e 0%, #9a5a34 100%)" }}
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30" />
 
-        {/* Booking flow — the working pane. */}
-        <div className="mt-8 lg:mt-0">
-          <BookingFlow
-            slug={slug}
-            cancellationWindowHours={provider.cancellation_window_hours}
-            services={normalizedServices}
-          />
-          <footer className="mt-12 border-t border-line pt-4 text-center lg:hidden">
-            <a href="/privacy" className="text-xs text-ink-4 underline">
-              {t.client.privacy}
-            </a>
-          </footer>
+            <div className="absolute right-5 top-5 z-10 [&_button]:border-white/30 [&_button]:bg-white/15 [&_button]:text-white [&_button]:backdrop-blur">
+              <ThemeToggle />
+            </div>
+
+            <div className="absolute inset-x-7 bottom-7">
+              {provider.city && (
+                <p className="mb-2 text-[11.5px] font-semibold uppercase tracking-[0.14em] text-white/70">
+                  {provider.city}
+                </p>
+              )}
+              <h1 className="font-serif text-[34px] font-semibold leading-none tracking-[-0.01em] text-white lg:text-[40px]">
+                {name}
+              </h1>
+              <div className="mt-5 hidden flex-wrap gap-2.5 lg:flex">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur">
+                  <Check size={13} strokeWidth={2.4} /> {cancelChip}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur">
+                  <Mail size={13} strokeWidth={2.2} /> {t.client.noAccountChip}
+                </span>
+              </div>
+            </div>
+          </aside>
+
+          {/* Flow pane */}
+          <div className="mx-auto w-full max-w-md px-5 py-8 lg:mx-0 lg:flex lg:max-w-none lg:flex-1 lg:flex-col lg:px-12 lg:py-11">
+            {/* Mobile trust strip — the stage chips live on the photo at lg+. */}
+            <div className="mb-5 flex flex-wrap items-center gap-2.5 lg:hidden">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-ok-l px-3 py-1.5 text-[12px] font-semibold text-ok">
+                <Check size={13} strokeWidth={2.4} /> {cancelChip}
+              </span>
+              <span className="text-[12px] font-medium text-ink-3">{t.client.noAccountChip}</span>
+            </div>
+
+            <BookingFlow
+              slug={slug}
+              cancellationWindowHours={provider.cancellation_window_hours}
+              services={normalizedServices}
+            />
+
+            <footer className="mt-12 border-t border-line pt-4 text-center lg:mt-auto lg:pt-6 lg:text-left">
+              <a href="/privacy" className="text-xs text-ink-4 underline">
+                {t.client.privacy}
+              </a>
+            </footer>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
