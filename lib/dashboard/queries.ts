@@ -754,12 +754,14 @@ export type ClientDetail = {
   noShowCount: number;
   bookingCount: number;
   totalValueCents: number;
+  nextAppointment: { whenText: string; serviceName: string } | null;
   history: {
     id: string;
     whenText: string;
     serviceName: string;
     status: string;
     valueCents: number;
+    isUpcoming: boolean;
   }[];
 };
 
@@ -787,11 +789,19 @@ export async function getClientDetail(
   ]);
 
   const rows = bookings ?? [];
+  const nowIso = new Date().toISOString();
   const combined = (ids: unknown) =>
     combineServices((ids as string[]) ?? [], serviceMap);
+  const isUpcoming = (b: { status: string; starts_at: string }) =>
+    b.status === "confirmed" && b.starts_at > nowIso;
   const totalValueCents = rows
     .filter((b) => ["confirmed", "no_show"].includes(b.status))
     .reduce((sum, b) => sum + combined(b.service_ids).priceCents, 0);
+
+  // Soonest upcoming confirmed booking (rows are newest-first, so scan ascending).
+  const next = [...rows]
+    .filter(isUpcoming)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
 
   return {
     id: client.id,
@@ -800,6 +810,16 @@ export async function getClientDetail(
     noShowCount: client.no_show_count,
     bookingCount: rows.filter((b) => ["confirmed", "no_show"].includes(b.status)).length,
     totalValueCents,
+    nextAppointment: next
+      ? {
+          whenText: formatInTimeZone(
+            new Date(next.starts_at),
+            provider.timezone,
+            "EEE d MMM 'at' HH:mm",
+          ),
+          serviceName: combined(next.service_ids).label,
+        }
+      : null,
     history: rows.map((b) => ({
       id: b.id,
       whenText: formatInTimeZone(
@@ -810,6 +830,7 @@ export async function getClientDetail(
       serviceName: combined(b.service_ids).label,
       status: b.status,
       valueCents: combined(b.service_ids).priceCents,
+      isUpcoming: isUpcoming(b),
     })),
   };
 }

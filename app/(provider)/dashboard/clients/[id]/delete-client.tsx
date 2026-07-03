@@ -15,33 +15,35 @@ export function DeleteClient({ clientId }: { clientId: string }) {
 
   if (!confirming) {
     return (
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        className="mt-10 w-full rounded-xl border border-red-300 px-4 py-3 text-sm text-red-600"
-      >
-        {t.dashboard.deleteClient}
-      </button>
+      <div className="mt-10 flex justify-center border-t border-line-2 pt-6">
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="text-[13px] font-semibold text-no transition-opacity hover:opacity-80"
+        >
+          {t.dashboard.deleteClient}
+        </button>
+      </div>
     );
   }
 
   return (
-    <form action={action} className="mt-10 rounded-xl border border-red-300 bg-red-50 p-4">
+    <form action={action} className="mt-10 rounded-2xl border border-no/40 bg-no-l/60 p-4">
       <input type="hidden" name="client_id" value={clientId} />
-      <p className="mb-3 text-sm text-ink-2">{t.dashboard.deleteClientConfirm}</p>
-      {state.error && <p className="mb-2 text-sm text-red-600">{t.common.somethingWrong}</p>}
-      <div className="flex gap-2">
+      <p className="mb-3.5 text-[13px] leading-relaxed text-ink-2">{t.dashboard.deleteClientConfirm}</p>
+      {state.error && <p className="mb-2.5 text-[13px] font-medium text-no">{t.common.somethingWrong}</p>}
+      <div className="flex gap-2.5">
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="flex-1 rounded-lg border border-line px-3 py-2 text-sm text-ink-2"
+          className="flex-1 rounded-xl border border-line bg-surface px-3 py-2.5 text-[13px] font-semibold text-ink-2"
         >
           {t.common.cancel}
         </button>
         <button
           type="submit"
           disabled={pending}
-          className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="flex-1 rounded-xl bg-no px-3 py-2.5 text-[13px] font-bold text-white disabled:opacity-50"
         >
           {pending ? t.common.loading : t.dashboard.deleteClientCta}
         </button>

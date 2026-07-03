@@ -1,4 +1,4 @@
-import { ChevronLeft, Search, Users } from "lucide-react";
+import { ChevronLeft, Search, Star, Users } from "lucide-react";
 import { getDictionary } from "@/lib/i18n";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import type { ClientListRow } from "@/lib/dashboard/queries";
@@ -131,28 +131,35 @@ export function ClientsMasterDetail({
               </div>
             )
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               {clients.map((c) => {
                 const on = c.id === selectedId;
+                const regular = c.bookingCount >= 8;
                 return (
                   <a
                     key={c.id}
                     href={`/dashboard/clients/${c.id}${q ? `?q=${encodeURIComponent(q)}` : ""}`}
-                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ${
+                    aria-current={on ? "true" : undefined}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
                       on
-                        ? "border-[1.5px] border-accent bg-accent-l"
-                        : "border border-line bg-surface"
+                        ? "border-[1.5px] border-accent bg-accent-l [box-shadow:0_0_0_3px_var(--accent-l)]"
+                        : "border border-line bg-surface hover:border-desk"
                     }`}
                   >
-                    <Avatar id={c.id} name={c.firstName} size={34} />
+                    <Avatar id={c.id} name={c.firstName} size={36} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-serif text-[14.5px] font-semibold text-ink">
-                        {c.firstName}
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate font-serif text-[14.5px] font-semibold text-ink">
+                          {c.firstName}
+                        </span>
+                        {regular && (
+                          <Star size={11} strokeWidth={0} fill="#b08400" className="shrink-0" />
+                        )}
                       </span>
                       <span className={`block truncate text-[11.5px] ${on ? "text-accent-d" : "text-ink-3"}`}>
                         <span className="tabular">{c.bookingCount}</span> {t.dashboard.visits}
                         {c.noShowCount > 0 && (
-                          <span className="text-accent"> · {c.noShowCount} {t.dashboard.noShows}</span>
+                          <span className="text-no"> · {c.noShowCount} {t.dashboard.noShows}</span>
                         )}
                       </span>
                     </span>
