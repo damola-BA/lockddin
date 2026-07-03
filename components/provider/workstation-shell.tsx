@@ -7,7 +7,6 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { AccountMenu } from "@/components/provider/account-menu";
 import { getDictionary } from "@/lib/i18n";
 
@@ -101,7 +100,6 @@ export function WorkstationShell({
                 <Plus size={19} strokeWidth={2.5} />
               </Link>
             )}
-            <ThemeToggle />
             <AccountMenu businessName={businessName} />
           </div>
         </div>

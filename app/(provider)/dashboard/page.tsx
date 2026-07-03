@@ -11,7 +11,6 @@ import {
   SquarePen,
 } from "lucide-react";
 import { VerifyBanner } from "@/components/provider/verify-banner";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { WorkstationShell, SETTINGS_HREF } from "@/components/provider/workstation-shell";
 import { getDictionary, formatDuration, fill } from "@/lib/i18n";
 import {
@@ -122,7 +121,6 @@ export default async function DashboardPage({
           >
             <Plus size={19} strokeWidth={2.5} />
           </Link>
-          <ThemeToggle />
         </div>
       </header>
 
