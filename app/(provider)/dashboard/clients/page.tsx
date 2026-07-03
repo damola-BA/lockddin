@@ -19,7 +19,6 @@ export default async function ClientsPage({
       clients={clients}
       q={q}
       selectedId={null}
-      exportHref="/dashboard/clients/export"
       businessName={provider.businessName}
     >
       {/* Desktop-only empty state; on phone this pane is hidden until a client is opened. */}

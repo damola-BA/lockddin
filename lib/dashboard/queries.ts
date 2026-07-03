@@ -731,6 +731,9 @@ export async function searchClients(
     .from("clients")
     .select("id, first_name, email, no_show_count, bookings (id)")
     .eq("provider_id", provider.id)
+    // Removed clients are anonymized (their bookings still reference them), so
+    // hide them from the list by their non-deliverable placeholder email.
+    .not("email", "like", "deleted+%@lockddin.invalid")
     .order("first_name")
     .limit(100);
   if (query.trim()) {
@@ -776,7 +779,13 @@ export async function getClientDetail(
     .eq("provider_id", provider.id)
     .eq("id", clientId)
     .maybeSingle();
-  if (!client) return null;
+  // Anonymized (removed) clients are treated as gone.
+  if (
+    !client ||
+    (client.email?.startsWith("deleted+") && client.email.endsWith("@lockddin.invalid"))
+  ) {
+    return null;
+  }
 
   const [{ data: bookings }, serviceMap] = await Promise.all([
     supabase

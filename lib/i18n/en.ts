@@ -372,7 +372,6 @@ export const en = {
     clientsSelectHint: "Select a client to see their history.",
     copyEmail: "Copy email",
     accountRole: "Provider",
-    exportCsv: "Export CSV",
     clientDetail: "Client",
     bookingsCount: "Bookings",
     totalValue: "Total booked",

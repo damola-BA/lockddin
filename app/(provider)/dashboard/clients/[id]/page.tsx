@@ -46,7 +46,6 @@ export default async function ClientDetailPage({
       clients={clients}
       q={q}
       selectedId={id}
-      exportHref="/dashboard/clients/export"
       businessName={provider.businessName}
     >
       {/* Phone-only back link (desktop keeps the list pane beside this). */}

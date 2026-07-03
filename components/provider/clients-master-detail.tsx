@@ -65,14 +65,12 @@ export function ClientsMasterDetail({
   clients,
   q,
   selectedId,
-  exportHref,
   businessName,
   children,
 }: {
   clients: ClientListRow[];
   q: string;
   selectedId: string | null;
-  exportHref: string;
   businessName: string;
   children: React.ReactNode;
 }) {
@@ -86,25 +84,13 @@ export function ClientsMasterDetail({
           }`}
         >
           {/* Phone-only header */}
-          <div className="mb-1 flex items-center justify-between md:hidden">
-            <a
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-ink-3"
-            >
-              <ChevronLeft size={15} strokeWidth={2.2} /> Dashboard
-            </a>
-            <a href={exportHref} className="text-[13px] font-semibold text-accent">
-              {t.dashboard.exportCsv}
-            </a>
-          </div>
+          <a
+            href="/dashboard"
+            className="mb-1 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-ink-3 md:hidden"
+          >
+            <ChevronLeft size={15} strokeWidth={2.2} /> Dashboard
+          </a>
           <h1 className="mb-1 font-serif text-2xl md:hidden">{t.dashboard.clientsTitle}</h1>
-
-          {/* Desktop-only export */}
-          <div className="mb-1 hidden items-center justify-end md:flex">
-            <a href={exportHref} className="text-[12.5px] font-semibold text-accent">
-              {t.dashboard.exportCsv}
-            </a>
-          </div>
 
           <form method="get" action="/dashboard/clients">
             <label className="flex items-center gap-2.5 rounded-xl border border-line bg-surface px-3.5 py-2.5 focus-within:border-accent">
