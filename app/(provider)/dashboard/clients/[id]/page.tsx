@@ -10,6 +10,7 @@ import {
   ClientsMasterDetail,
   Avatar,
 } from "@/components/provider/clients-master-detail";
+import { CopyEmail } from "@/components/provider/copy-email";
 import { DeleteClient } from "./delete-client";
 
 const t = getDictionary();
@@ -57,7 +58,7 @@ export default async function ClientDetailPage({
           <h1 className="font-serif text-[22px] font-semibold leading-tight md:text-2xl">
             {client.firstName}
           </h1>
-          <p className="truncate text-[13px] text-ink-3">{client.email}</p>
+          <CopyEmail email={client.email} />
         </div>
       </div>
 

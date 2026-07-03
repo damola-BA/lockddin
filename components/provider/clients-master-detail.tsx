@@ -1,4 +1,4 @@
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, Search, Users } from "lucide-react";
 import { getDictionary } from "@/lib/i18n";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import type { ClientListRow } from "@/lib/dashboard/queries";
@@ -119,7 +119,17 @@ export function ClientsMasterDetail({
           </form>
 
           {clients.length === 0 ? (
-            <p className="mt-2 text-sm text-ink-3">{t.dashboard.clientsEmpty}</p>
+            q ? (
+              <p className="mt-2 text-sm text-ink-3">{t.dashboard.clientsNoMatch}</p>
+            ) : (
+              <div className="mt-2 flex flex-col items-center rounded-2xl border border-dashed border-desk px-5 py-9 text-center">
+                <span className="mb-3.5 inline-flex h-14 w-14 items-center justify-center rounded-full bg-accent-l text-accent">
+                  <Users size={24} strokeWidth={1.8} />
+                </span>
+                <h2 className="font-serif text-[18px] font-semibold text-ink">{t.dashboard.clientsFirstRunTitle}</h2>
+                <p className="mt-1.5 max-w-[260px] text-[13px] leading-relaxed text-ink-3">{t.dashboard.clientsFirstRunBody}</p>
+              </div>
+            )
           ) : (
             <div className="flex flex-col gap-2">
               {clients.map((c) => {

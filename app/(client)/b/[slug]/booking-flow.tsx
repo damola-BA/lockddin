@@ -541,6 +541,13 @@ function DetailsStep({
     FormData
   >(confirmBooking, {});
   const [remaining, setRemaining] = useState<number | null>(null);
+  // Client-side validation — Confirm stays disabled until a first name and a
+  // valid email are entered; the email error only shows once the field is left.
+  const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const formValid = firstName.trim().length > 0 && emailValid;
   const holdRequested = useRef(false);
   const reholds = useRef(0);
   const reholding = useRef(false);
@@ -678,6 +685,8 @@ function DetailsStep({
               name="first_name"
               required
               autoComplete="given-name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               className="w-full bg-transparent text-[15px] font-medium text-ink placeholder:text-ink-4 focus:outline-none"
             />
           </LabeledField>
@@ -685,20 +694,27 @@ function DetailsStep({
           <LabeledField
             label={t.client.email}
             icon={<Mail size={16} strokeWidth={1.8} />}
-            accent
+            accent={!emailTouched || emailValid}
           >
             <input
               name="email"
               type="email"
               required
               autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
               className="w-full bg-transparent text-[15px] text-ink placeholder:text-ink-4 focus:outline-none"
             />
           </LabeledField>
 
-          <p className="text-[12px] leading-relaxed text-ink-4">
-            {t.client.emailReassure}
-          </p>
+          {emailTouched && email.length > 0 && !emailValid ? (
+            <p className="text-[12px] font-medium text-red-600">{t.client.emailInvalid}</p>
+          ) : (
+            <p className="text-[12px] leading-relaxed text-ink-4">
+              {t.client.emailReassure}
+            </p>
+          )}
 
           {confirm.ok === false && confirm.reason === "invalid" && (
             <p className="text-sm text-red-600">{t.common.somethingWrong}</p>
@@ -706,7 +722,7 @@ function DetailsStep({
 
           <button
             type="submit"
-            disabled={!hold.ok || confirmPending}
+            disabled={!hold.ok || confirmPending || !formValid}
             className="flex w-full items-center justify-center gap-2 rounded-[15px] bg-ctrl px-4 py-4 text-[15.5px] font-bold text-ctrl-ink shadow-[var(--shadow)] disabled:opacity-50"
           >
             {confirmPending ? (

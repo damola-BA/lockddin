@@ -7,7 +7,7 @@ import {
   deleteService,
   type ActionState,
 } from "@/lib/onboarding/actions";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Tag } from "lucide-react";
 import { getDictionary, formatDuration, fill } from "@/lib/i18n";
 import { Label, TextInput, ErrorText } from "@/components/provider/ui";
 import { ServicePhotoGrid } from "@/components/provider/service-photos";
@@ -189,7 +189,7 @@ function ServiceCard({
   const cover = service.photos[0];
   return (
     <div
-      className={`overflow-hidden rounded-[18px] border border-line bg-surface transition ${
+      className={`group overflow-hidden rounded-[18px] border border-line bg-surface transition ${
         service.is_active ? "" : "opacity-60"
       }`}
     >
@@ -223,7 +223,7 @@ function ServiceCard({
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-[9px] border border-line bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-2 hover:bg-surface"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-[9px] border border-line bg-surface-2 px-3 py-2 text-[12px] font-bold text-ink-2 transition-opacity hover:bg-surface md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
           <Pencil size={12} strokeWidth={2} /> {t.common.edit}
         </button>
@@ -245,6 +245,15 @@ function ServiceSheet({
   const isEditing = !!service;
   const action = service ? updateService : addService;
   const [active, setActive] = useState(service?.is_active ?? true);
+  // Name + price are required — the Save button stays disabled until both are
+  // filled. Editing starts valid (fields are prefilled); a new service starts
+  // invalid. Validity is recomputed from the form on every input.
+  const [valid, setValid] = useState(isEditing);
+  const recomputeValid = (form: HTMLFormElement) => {
+    const name = (form.elements.namedItem("name") as HTMLInputElement | null)?.value ?? "";
+    const price = (form.elements.namedItem("price") as HTMLInputElement | null)?.value ?? "";
+    setValid(name.trim().length > 0 && price.trim().length > 0);
+  };
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     async (prev, formData) => {
       const result = await action(prev, formData);
@@ -269,7 +278,11 @@ function ServiceSheet({
             {isEditing ? t.settings.editService : t.settings.newService}
           </h2>
 
-          <form action={formAction} className="mt-4 space-y-3.5">
+          <form
+            action={formAction}
+            onChange={(e) => recomputeValid(e.currentTarget)}
+            className="mt-4 space-y-3.5"
+          >
             {service && <input type="hidden" name="service_id" value={service.id} />}
             <input type="hidden" name="is_active" value={String(active)} />
 
@@ -355,7 +368,7 @@ function ServiceSheet({
 
             <button
               type="submit"
-              disabled={pending}
+              disabled={pending || !valid}
               className="w-full rounded-2xl bg-ctrl px-4 py-3.5 text-[14.5px] font-bold text-ctrl-ink disabled:opacity-50"
             >
               {pending ? t.common.loading : isEditing ? t.settings.saveChanges : t.onboarding.addService}
@@ -453,6 +466,29 @@ export function ServicesEditor({
   if (layout === "grid") {
     const editingService =
       editing && editing !== "new" ? services.find((s) => s.id === editing) : undefined;
+
+    if (services.length === 0) {
+      return (
+        <>
+          <div className="flex flex-col items-center rounded-[18px] border-[1.5px] border-dashed border-desk px-6 py-12 text-center">
+            <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-accent-l text-accent">
+              <Tag size={24} strokeWidth={1.8} />
+            </span>
+            <h2 className="font-serif text-[19px] font-semibold text-ink">{t.settings.servicesEmptyTitle}</h2>
+            <p className="mt-1.5 max-w-[300px] text-[13.5px] leading-relaxed text-ink-3">{t.settings.servicesEmptyBody}</p>
+            <button
+              type="button"
+              onClick={() => setEditing("new")}
+              className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-accent px-5 py-3 text-sm font-bold text-white"
+            >
+              <Plus size={16} strokeWidth={2.4} /> {t.onboarding.addService}
+            </button>
+          </div>
+          {editing === "new" && <ServiceSheet onClose={() => setEditing(null)} />}
+        </>
+      );
+    }
+
     return (
       <>
         <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 lg:grid-cols-3 lg:gap-4">
