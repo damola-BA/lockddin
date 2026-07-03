@@ -205,11 +205,26 @@ export async function deleteClient(
   const clientId = String(formData.get("client_id") ?? "");
   if (!clientId) return { error: "invalid" };
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc("anonymize_client", {
-    p_client_id: clientId,
-    p_provider_id: providerId,
-  });
-  if (error || !data) return { error: "gone" };
+  // Bookings reference the client by FK, so we anonymize rather than hard-delete:
+  // blank the PII and repoint the (provider_id, email) identity to a unique,
+  // non-deliverable placeholder. `email` is NOT NULL since the phone→email re-key
+  // (migration 20260620) — it must never be set to null here, which is what the
+  // old anonymize_client RPC did, silently failing every delete.
+  const { data, error } = await admin
+    .from("clients")
+    .update({
+      first_name: "Deleted client",
+      email: `deleted+${clientId}@lockddin.invalid`,
+      phone: null,
+    })
+    .eq("id", clientId)
+    .eq("provider_id", providerId)
+    .select("id");
+  if (error || !data || data.length === 0) return { error: "gone" };
+  await admin
+    .from("waitlist_entries")
+    .update({ is_active: false })
+    .eq("client_id", clientId);
   revalidatePath("/dashboard/clients");
   redirect("/dashboard/clients");
 }
