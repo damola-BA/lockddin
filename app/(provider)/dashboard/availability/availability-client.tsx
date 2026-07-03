@@ -22,6 +22,7 @@ import {
 import { updateBookingRules, type SettingsState } from "@/lib/dashboard/settings-actions";
 import { BlocksEditor, type Block } from "@/app/(provider)/dashboard/schedule/blocks-editor";
 import { HoursMode } from "@/components/provider/hours-mode";
+import { AppearanceSetting } from "@/components/provider/appearance-setting";
 import { getDictionary, fill } from "@/lib/i18n";
 import type {
   AvailabilityRules,
@@ -115,6 +116,13 @@ export function AvailabilityClient({
       )}
 
       <BookingRules rules={rules} />
+
+      {/* Appearance — a persisted light/dark preference for this device. */}
+      <section className="mt-7">
+        <h2 className="font-serif text-[19px] font-semibold">{t.settings.appearanceTitle}</h2>
+        <p className="mb-1 text-[13px] text-ink-3">{t.settings.appearanceIntro}</p>
+        <AppearanceSetting />
+      </section>
 
       {sheet && (
         <ChangeDaySheet
