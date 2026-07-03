@@ -4,9 +4,11 @@ import { startTransition, useActionState, useState } from "react";
 import {
   AlertTriangle,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Minus,
+  Pencil,
   Plus,
   X,
 } from "lucide-react";
@@ -99,7 +101,7 @@ export function AvailabilityClient({
           <UsualWeek week={week} />
           <WeekList
             week={byWeekday}
-            timezone={timezone}
+            services={services}
             onTap={(weekday) => setSheet({ weekday, day: byWeekday.get(weekday) ?? null })}
           />
           <TimeOff closures={closures} timezone={timezone} today={today} />
@@ -222,41 +224,155 @@ function UsualWeek({ week }: { week: WeekDay[] }) {
 
 // ── The week as a tappable day list ──────────────────────────────────
 
+// Signature of a day's full config — used to flag days that differ from the
+// most common ("usual") setup with a Custom badge.
+function daySignature(d: WeekDay): string {
+  const breaks = d.blocks
+    .map((b) => `${b.start}-${b.end}`)
+    .sort()
+    .join(",");
+  const services = d.serviceIds ? [...d.serviceIds].sort().join(",") : "";
+  return `${d.start}|${d.end}|${breaks}|${d.dailyCap ?? ""}|${services}`;
+}
+
+// One-line summary for the collapsed row: hours · breaks · cap.
+function daySummary(d: WeekDay): string {
+  const parts = [`${d.start}–${d.end}`];
+  if (d.blocks.length === 1) parts.push(d.blocks[0].label || A.breaks);
+  else if (d.blocks.length > 1) parts.push(fill(A.breaksCount, { n: d.blocks.length }));
+  if (d.dailyCap != null) parts.push(fill(A.capPerDay, { n: d.dailyCap }));
+  return parts.join(" · ");
+}
+
 function WeekList({
   week,
+  services,
   onTap,
 }: {
   week: Map<number, WeekDay>;
-  timezone: string;
+  services: { id: string; name: string }[];
   onTap: (weekday: number) => void;
 }) {
+  const [open, setOpen] = useState<number | null>(null);
+
+  // "Usual" = the most common day signature among working days; anything else
+  // is flagged Custom.
+  const counts = new Map<string, number>();
+  for (const d of week.values()) {
+    const s = daySignature(d);
+    counts.set(s, (counts.get(s) ?? 0) + 1);
+  }
+  let usualSig = "";
+  let best = -1;
+  for (const [s, n] of counts) if (n > best) [best, usualSig] = [n, s];
+
+  const serviceName = (id: string) => services.find((s) => s.id === id)?.name ?? id;
+
   return (
     <div className="mt-3.5 overflow-hidden rounded-2xl border border-line bg-surface">
       {WEEKDAYS.map((name, weekday) => {
         const day = week.get(weekday);
+        const isOpen = open === weekday;
+        const custom = day && counts.size > 1 && daySignature(day) !== usualSig;
         return (
-          <button
-            key={weekday}
-            type="button"
-            onClick={() => onTap(weekday)}
-            className="flex w-full items-center justify-between border-b border-line-2 px-4 py-3.5 text-left last:border-b-0"
-          >
-            <span className={`text-[14.5px] font-semibold ${day ? "text-ink" : "text-ink-4"}`}>
-              {name}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              {day ? (
-                <span className="text-[13.5px] tabular text-ink-2">
-                  {day.start}–{day.end}
+          <div key={weekday} className="border-b border-line-2 last:border-b-0">
+            <button
+              type="button"
+              onClick={() => setOpen(isOpen ? null : weekday)}
+              aria-expanded={isOpen}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+            >
+              <span className="min-w-0">
+                <span className={`block text-[14.5px] font-semibold ${day ? "text-ink" : "text-ink-4"}`}>
+                  {name}
                 </span>
-              ) : (
-                <span className="text-[13.5px] text-ink-4">{A.closed}</span>
-              )}
-              <ChevronRight size={15} strokeWidth={2} className="text-faint" />
-            </span>
-          </button>
+                <span className={`mt-0.5 block truncate text-[12.5px] tabular ${day ? "text-ink-3" : "text-ink-4"}`}>
+                  {day ? daySummary(day) : A.closed}
+                </span>
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-2">
+                {custom && (
+                  <span className="rounded-full bg-accent-l px-2 py-0.5 text-[10.5px] font-bold text-accent">
+                    {A.custom}
+                  </span>
+                )}
+                <ChevronDown
+                  size={16}
+                  strokeWidth={2}
+                  className={`text-faint transition-transform ${isOpen ? "rotate-180" : ""}`}
+                />
+              </span>
+            </button>
+
+            {isOpen && (
+              <div className="border-t border-line-2 px-4 pb-4 pt-3">
+                {day ? (
+                  <dl className="space-y-2.5">
+                    <DetailRow label={A.rowHours}>
+                      <span className="tabular">{day.start}–{day.end}</span>
+                    </DetailRow>
+                    <DetailRow label={A.breaks}>
+                      {day.blocks.length === 0 ? (
+                        <span className="text-ink-4">{A.noBreaks}</span>
+                      ) : (
+                        <span className="flex flex-wrap justify-end gap-1.5">
+                          {day.blocks.map((b, i) => (
+                            <span
+                              key={i}
+                              className="rounded-md border border-line bg-surface-2 px-2 py-0.5 text-[12px] font-semibold text-ink-2 tabular"
+                            >
+                              {b.label ? `${b.label} ` : ""}
+                              {b.start}–{b.end}
+                            </span>
+                          ))}
+                        </span>
+                      )}
+                    </DetailRow>
+                    <DetailRow label={A.rowCap}>
+                      {day.dailyCap != null ? fill(A.capPerDay, { n: day.dailyCap }) : A.noLimit}
+                    </DetailRow>
+                    <DetailRow label={A.rowServices}>
+                      {day.serviceIds ? (
+                        <span className="flex flex-wrap justify-end gap-1.5">
+                          {day.serviceIds.map((id) => (
+                            <span
+                              key={id}
+                              className="rounded-md border border-line bg-surface-2 px-2 py-0.5 text-[12px] font-semibold text-ink-2"
+                            >
+                              {serviceName(id)}
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        A.allServices
+                      )}
+                    </DetailRow>
+                  </dl>
+                ) : (
+                  <p className="text-[13px] text-ink-3">{A.closedDayHint}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onTap(weekday)}
+                  className="mt-3.5 inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 py-2 text-[12.5px] font-bold text-ink-2 hover:bg-surface-2"
+                >
+                  <Pencil size={13} strokeWidth={2} />
+                  {day ? A.editDayBtn : A.openDayBtn}
+                </button>
+              </div>
+            )}
+          </div>
         );
       })}
+    </div>
+  );
+}
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 text-[13px]">
+      <dt className="shrink-0 text-ink-3">{label}</dt>
+      <dd className="min-w-0 text-right font-semibold text-ink">{children}</dd>
     </div>
   );
 }
