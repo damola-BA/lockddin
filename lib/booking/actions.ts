@@ -9,7 +9,7 @@ import { getAvailabilityInput } from "@/lib/scheduling/availability";
 import { getProviderBySlug } from "@/lib/booking/slots";
 import { resolveServiceSet } from "@/lib/booking/service-set";
 import { sendEmail } from "@/lib/notifications";
-import { appUrl } from "@/lib/app-url";
+import { appUrlFromRequest } from "@/lib/app-url";
 import { inngest } from "@/lib/inngest/client";
 
 // Public booking actions (F5). Anonymous clients act only through these —
@@ -181,7 +181,7 @@ export async function confirmBooking(
         locationText: provider.location_text,
         prepInstructions: services.prepInstructions,
         cancellationText,
-        manageUrl: appUrl(`/manage/${manageToken}`),
+        manageUrl: await appUrlFromRequest(`/manage/${manageToken}`),
       },
     });
   } catch {

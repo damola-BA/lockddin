@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/db/admin";
 import { checkManageToken, makeManageToken } from "@/lib/booking/manage-token";
 import { sendEmail } from "@/lib/notifications";
 import { getBookingFacts } from "@/lib/notifications/booking-facts";
-import { appUrl } from "@/lib/app-url";
+import { appUrlFromRequest } from "@/lib/app-url";
 import { inngest } from "@/lib/inngest/client";
 
 // Manage-link actions (F5): cancel / reschedule via emailed token.
@@ -194,7 +194,7 @@ export async function rescheduleViaToken(
             "Europe/Brussels",
             "EEEE d MMMM 'at' HH:mm",
           )}.`,
-          manageUrl: appUrl(`/manage/${newToken}`),
+          manageUrl: await appUrlFromRequest(`/manage/${newToken}`),
         },
       });
     } catch {
