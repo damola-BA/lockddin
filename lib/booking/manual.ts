@@ -43,6 +43,8 @@ export async function searchClientsForBooking(
     .from("clients")
     .select("id, first_name, email")
     .eq("provider_id", providerId)
+    // Removed (anonymized) clients must not appear in the walk-in picker.
+    .not("email", "like", "deleted+%@lockddin.invalid")
     .order("first_name")
     .limit(20);
   if (term) q = q.or(`first_name.ilike.%${term}%,email.ilike.%${term}%`);
