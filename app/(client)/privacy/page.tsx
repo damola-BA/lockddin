@@ -1,7 +1,7 @@
 // Plain-language privacy notice (F5 footer link; AD12 GDPR-light posture).
 export default function PrivacyPage() {
   return (
-    <div className="min-h-dvh bg-[#faf6f0] text-ink">
+    <div className="min-h-dvh bg-canvas text-ink">
       <main className="mx-auto w-full max-w-md px-5 py-10">
         <h1 className="mb-4 font-serif text-2xl text-ink">Privacy notice</h1>
         <div className="space-y-4 text-sm leading-relaxed text-ink-2">

@@ -221,7 +221,7 @@ export function ManageBooking({
                       fd.set("date", localDateOf(slot.startsAt));
                       holdAction(fd);
                     }}
-                    className="w-full rounded-xl border border-line bg-white px-4 py-3 text-left font-mono text-sm text-ink shadow-sm disabled:opacity-50"
+                    className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-left font-mono text-sm text-ink shadow-sm disabled:opacity-50"
                   >
                     {slotLabel(slot.startsAt)}
                   </button>

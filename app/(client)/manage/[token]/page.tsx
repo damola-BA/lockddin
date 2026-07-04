@@ -100,7 +100,7 @@ function BookAgain({ slug }: { slug: string }) {
 // centered on a branded paper wash, wordmark above — intentional, not stranded.
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[#faf6f0] text-ink lg:flex lg:items-start lg:justify-center lg:bg-[#f1e9df] lg:px-6 lg:py-16 lg:[background-image:radial-gradient(120%_70%_at_50%_-20%,#faf6f0_0%,#efe6da_75%)]">
+    <div className="min-h-dvh bg-canvas text-ink lg:flex lg:items-start lg:justify-center lg:bg-canvas-2 lg:px-6 lg:py-16 lg:[background-image:radial-gradient(120%_70%_at_50%_-20%,var(--canvas)_0%,var(--canvas-2)_75%)]">
       <main className="mx-auto w-full max-w-md px-5 py-10 lg:mx-0 lg:w-[440px] lg:px-0 lg:py-0">
         <div className="mb-5 hidden text-center text-[18px] font-extrabold tracking-[-0.02em] lg:block">
           Lock<span className="font-serif font-medium italic text-accent">d</span>Din
