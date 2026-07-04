@@ -17,9 +17,9 @@ import {
   Mail,
   MapPin,
   User,
-  Zap,
 } from "lucide-react";
 import { storageUrl } from "@/lib/storage-url";
+import { WeekPicker, MonthPicker } from "@/app/(client)/b/[slug]/slot-calendar";
 import {
   placeHold,
   releaseHold,
@@ -116,6 +116,9 @@ export function BookingFlow({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dayDate, setDayDate] = useState<string | null>(null);
   const [daySlots, setDaySlots] = useState<PublicSlot[] | null>(null);
+  // Time-step picker: earliest suggestions, or a Week / Month calendar.
+  const [timeView, setTimeView] = useState<"soonest" | "week" | "month">("soonest");
+  const [anchor, setAnchor] = useState("");
   const [picked, setPicked] = useState<PublicSlot | null>(null);
   const [notice, setNotice] = useState<"released" | "taken" | null>(null);
   const [galleryService, setGalleryService] = useState<Service | null>(null);
@@ -241,7 +244,24 @@ export function BookingFlow({
 
   // ── step 2: time picker ─────────────────────────────────────────────
   const visibleSlots = calendarOpen ? daySlots : slots;
-  const showWaitlist = !calendarOpen && slots !== null && slots.length === 0;
+  const showWaitlist =
+    timeView === "soonest" && !calendarOpen && slots !== null && slots.length === 0;
+  const today = localDateOf(new Date().toISOString());
+  const bookableSet = new Set(bookableDays);
+  const lastBookable = bookableDays.length ? bookableDays[bookableDays.length - 1] : today;
+
+  function openTimeView(next: "soonest" | "week" | "month") {
+    setTimeView(next);
+    setCalendarOpen(false);
+    setDayDate(null);
+    setDaySlots(null);
+    if (next !== "soonest" && !anchor) setAnchor(today);
+  }
+  function pickCalendarDay(date: string) {
+    setCalendarOpen(true);
+    setDayDate(date);
+    void loadDay(serviceCsv, date);
+  }
 
   return (
     <section>
@@ -286,60 +306,51 @@ export function BookingFlow({
         {t.client.pickTime}
       </h2>
 
-      {/* Day strip — "Soonest" plus each bookable day */}
+      {/* Soonest · Week · Month — earliest suggestions or browse the calendar. */}
       {bookableDays.length > 0 && (
-        <div className="mb-1 flex gap-2.5 overflow-x-auto pb-1">
-          <button
-            type="button"
-            onClick={() => {
-              setCalendarOpen(false);
-              setDayDate(null);
-              setDaySlots(null);
-            }}
-            className={`flex w-[62px] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl py-2.5 ${
-              !calendarOpen
-                ? "bg-accent text-white"
-                : "border border-line bg-surface text-ink-2"
-            }`}
-          >
-            <Zap size={16} strokeWidth={1.9} />
-            <span className="text-[11px] font-bold">{t.client.soonest}</span>
-          </button>
-          {bookableDays.map((date) => {
-            const d = new Date(`${date}T12:00:00Z`);
-            const active = calendarOpen && dayDate === date;
-            return (
+        <>
+          <div className="mb-3 inline-flex rounded-xl bg-surface-2 p-1">
+            {(["soonest", "week", "month"] as const).map((v) => (
               <button
-                key={date}
+                key={v}
                 type="button"
-                onClick={() => {
-                  setCalendarOpen(true);
-                  setDayDate(date);
-                  void loadDay(serviceCsv, date);
-                }}
-                className={`flex w-[54px] shrink-0 flex-col items-center gap-0.5 rounded-2xl py-2.5 ${
-                  active
-                    ? "bg-accent text-white"
-                    : "border border-line bg-surface text-ink"
+                onClick={() => openTimeView(v)}
+                className={`rounded-lg px-3.5 py-1.5 text-[13px] font-semibold ${
+                  timeView === v ? "bg-ctrl text-ctrl-ink shadow-sm" : "text-ink-3"
                 }`}
               >
-                <span
-                  className={`text-[10.5px] font-semibold uppercase tracking-wide ${
-                    active ? "text-white/80" : "text-ink-4"
-                  }`}
-                >
-                  {new Intl.DateTimeFormat("en-BE", { timeZone: TZ, weekday: "short" }).format(d)}
-                </span>
-                <span className="text-lg font-bold tabular">
-                  {new Intl.DateTimeFormat("en-BE", { timeZone: TZ, day: "numeric" }).format(d)}
-                </span>
+                {v === "soonest" ? t.client.soonest : v === "week" ? t.client.weekView : t.client.monthView}
               </button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+          {timeView === "week" && (
+            <WeekPicker
+              anchor={anchor || today}
+              today={today}
+              lastBookable={lastBookable}
+              bookable={bookableSet}
+              selected={dayDate}
+              onAnchor={setAnchor}
+              onPick={pickCalendarDay}
+            />
+          )}
+          {timeView === "month" && (
+            <MonthPicker
+              anchor={anchor || today}
+              today={today}
+              lastBookable={lastBookable}
+              bookable={bookableSet}
+              selected={dayDate}
+              onAnchor={setAnchor}
+              onPick={pickCalendarDay}
+            />
+          )}
+        </>
       )}
 
-      {visibleSlots === null ? (
+      {timeView !== "soonest" && !calendarOpen ? (
+        <p className="mt-4 text-sm text-ink-3">{t.client.pickADay}</p>
+      ) : visibleSlots === null ? (
         <p className="mt-4 text-sm text-ink-4">{t.common.loading}</p>
       ) : visibleSlots.length === 0 ? (
         calendarOpen ? (
