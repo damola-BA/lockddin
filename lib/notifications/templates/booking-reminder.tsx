@@ -1,5 +1,6 @@
 import { Text } from "@react-email/components";
 import { EmailShell, EmailButton, paragraph } from "./base";
+import { emailCopy } from "../email-copy";
 
 export function BookingReminder({
   clientFirstName,
@@ -9,6 +10,7 @@ export function BookingReminder({
   locationText,
   prepInstructions,
   manageUrl,
+  lang,
 }: {
   clientFirstName: string;
   businessName: string;
@@ -17,13 +19,13 @@ export function BookingReminder({
   locationText: string | null;
   prepInstructions: string | null;
   manageUrl: string;
+  lang?: string;
 }) {
+  const t = emailCopy(lang);
   return (
-    <EmailShell preview={`Reminder: ${serviceName} — ${whenText}`}>
-      <Text style={paragraph}>Hi {clientFirstName},</Text>
-      <Text style={paragraph}>
-        A friendly reminder of your appointment with {businessName}:
-      </Text>
+    <EmailShell preview={t.reminderPreview(serviceName, whenText)} lang={t.htmlLang}>
+      <Text style={paragraph}>{t.hi(clientFirstName)}</Text>
+      <Text style={paragraph}>{t.reminderIntro(businessName)}</Text>
       <Text style={{ ...paragraph, fontFamily: "monospace" }}>
         {serviceName}
         <br />
@@ -37,10 +39,10 @@ export function BookingReminder({
       </Text>
       {prepInstructions && (
         <Text style={paragraph}>
-          <strong>Before your appointment:</strong> {prepInstructions}
+          <strong>{t.beforeAppt}</strong> {prepInstructions}
         </Text>
       )}
-      <EmailButton href={manageUrl} label="Cancel or reschedule" />
+      <EmailButton href={manageUrl} label={t.cancelReschedule} />
     </EmailShell>
   );
 }

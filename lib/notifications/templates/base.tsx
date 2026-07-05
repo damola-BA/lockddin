@@ -13,12 +13,14 @@ import type { ReactNode } from "react";
 export function EmailShell({
   preview,
   children,
+  lang = "en",
 }: {
   preview: string;
   children: ReactNode;
+  lang?: string;
 }) {
   return (
-    <Html lang="en">
+    <Html lang={lang}>
       <Preview>{preview}</Preview>
       <Body
         style={{

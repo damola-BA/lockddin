@@ -10,6 +10,7 @@ import { ProviderNewBooking } from "./templates/provider-new-booking";
 import { ClientCancelConfirmed } from "./templates/client-cancel-confirmed";
 import { ProviderClientCancelled } from "./templates/provider-client-cancelled";
 import { CancelledByProvider } from "./templates/cancelled-by-provider";
+import { emailCopy } from "./email-copy";
 
 // The single email gateway (hard rule 6). Every send writes a
 // notification_log row first; no ad-hoc Resend calls anywhere else.
@@ -65,12 +66,21 @@ export type SendArgs = TemplateInput & {
   /** From-name; falls back to "LockdDin" for auth email. */
   fromName?: string;
   replyTo?: string;
+  /**
+   * Language for subject + body. If omitted, resolved from the provider's
+   * `language` column (via providerId). Auth email has no provider → English.
+   */
+  language?: string;
 };
 
-function renderTemplate(input: TemplateInput): {
+function renderTemplate(
+  input: TemplateInput,
+  lang: string,
+): {
   subject: string;
   react: ReactElement;
 } {
+  const t = emailCopy(lang);
   switch (input.templateKey) {
     case "auth.verify_email":
       return {
@@ -84,33 +94,36 @@ function renderTemplate(input: TemplateInput): {
       };
     case "booking.confirmed":
       return {
-        subject: `Booked: ${input.payload.serviceName} — ${input.payload.whenText}`,
-        react: BookingConfirmed(input.payload),
+        subject: t.subjBooked(input.payload.serviceName, input.payload.whenText),
+        react: BookingConfirmed({ ...input.payload, lang }),
       };
     case "booking.reminder":
       return {
-        subject: `Today: ${input.payload.serviceName} at ${input.payload.businessName}`,
-        react: BookingReminder(input.payload),
+        subject: t.subjReminder(input.payload.serviceName, input.payload.businessName),
+        react: BookingReminder({ ...input.payload, lang }),
       };
     case "booking.new_for_provider":
       return {
-        subject: `New booking: ${input.payload.clientFirstName} — ${input.payload.whenText}`,
-        react: ProviderNewBooking(input.payload),
+        subject: t.subjNewBooking(input.payload.clientFirstName, input.payload.whenText),
+        react: ProviderNewBooking({ ...input.payload, lang }),
       };
     case "booking.cancelled_by_client":
       return {
-        subject: `Cancelled: ${input.payload.serviceName} — ${input.payload.whenText}`,
-        react: ClientCancelConfirmed(input.payload),
+        subject: t.subjClientCancelled(input.payload.serviceName, input.payload.whenText),
+        react: ClientCancelConfirmed({ ...input.payload, lang }),
       };
     case "booking.client_cancelled_for_provider":
       return {
-        subject: `${input.payload.clientFirstName} cancelled — ${input.payload.whenText} is free again`,
-        react: ProviderClientCancelled(input.payload),
+        subject: t.subjProviderClientCancelled(
+          input.payload.clientFirstName,
+          input.payload.whenText,
+        ),
+        react: ProviderClientCancelled({ ...input.payload, lang }),
       };
     case "booking.cancelled_by_provider":
       return {
-        subject: `Your appointment was cancelled — ${input.payload.whenText}`,
-        react: CancelledByProvider(input.payload),
+        subject: t.subjCancelledByProvider(input.payload.whenText),
+        react: CancelledByProvider({ ...input.payload, lang }),
       };
   }
 }
@@ -132,7 +145,20 @@ export async function sendEmail(args: SendArgs): Promise<void> {
     .single();
   if (logError) throw new Error(`notification_log write failed: ${logError.message}`);
 
-  const { subject, react } = renderTemplate(args);
+  // Resolve the language: caller-supplied wins; otherwise look it up from the
+  // provider (one cheap read — email is not a hot path). Auth email has no
+  // provider and no override, so it stays English.
+  let language = args.language;
+  if (!language && args.providerId) {
+    const { data: prov } = await supabase
+      .from("providers")
+      .select("language")
+      .eq("id", args.providerId)
+      .single();
+    language = prov?.language ?? "en";
+  }
+
+  const { subject, react } = renderTemplate(args, language ?? "en");
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { error: sendError } = await resend.emails.send({
     from: `${args.fromName ?? "LockdDin"} <${FROM_ADDRESS}>`,

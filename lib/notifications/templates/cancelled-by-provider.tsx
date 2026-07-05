@@ -1,5 +1,6 @@
 import { Text } from "@react-email/components";
 import { EmailShell, EmailButton, paragraph } from "./base";
+import { emailCopy } from "../email-copy";
 
 export function CancelledByProvider({
   clientFirstName,
@@ -8,6 +9,7 @@ export function CancelledByProvider({
   whenText,
   reason,
   rebookUrl,
+  lang,
 }: {
   clientFirstName: string;
   businessName: string;
@@ -16,13 +18,13 @@ export function CancelledByProvider({
   locationText: string | null;
   reason: string | null;
   rebookUrl: string;
+  lang?: string;
 }) {
+  const t = emailCopy(lang);
   return (
-    <EmailShell preview={`Your appointment was cancelled — ${whenText}`}>
-      <Text style={paragraph}>Hi {clientFirstName},</Text>
-      <Text style={paragraph}>
-        We&apos;re sorry — {businessName} had to cancel your appointment:
-      </Text>
+    <EmailShell preview={t.cbpPreview(whenText)} lang={t.htmlLang}>
+      <Text style={paragraph}>{t.hi(clientFirstName)}</Text>
+      <Text style={paragraph}>{t.cbpIntro(businessName)}</Text>
       <Text style={{ ...paragraph, fontFamily: "monospace" }}>
         {serviceName}
         <br />
@@ -30,14 +32,11 @@ export function CancelledByProvider({
       </Text>
       {reason && (
         <Text style={paragraph}>
-          <strong>Their message:</strong> {reason}
+          <strong>{t.cbpTheirMessage}</strong> {reason}
         </Text>
       )}
-      <Text style={paragraph}>
-        They&apos;d love to see you another time — picking a new slot only
-        takes a minute:
-      </Text>
-      <EmailButton href={rebookUrl} label="Book a new time" />
+      <Text style={paragraph}>{t.cbpLoveToSee}</Text>
+      <EmailButton href={rebookUrl} label={t.cbpBookNewTime} />
     </EmailShell>
   );
 }

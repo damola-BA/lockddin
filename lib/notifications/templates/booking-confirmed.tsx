@@ -1,5 +1,6 @@
 import { Text } from "@react-email/components";
 import { EmailShell, EmailButton, paragraph } from "./base";
+import { emailCopy } from "../email-copy";
 
 export function BookingConfirmed({
   clientFirstName,
@@ -10,6 +11,7 @@ export function BookingConfirmed({
   prepInstructions,
   cancellationText,
   manageUrl,
+  lang,
 }: {
   clientFirstName: string;
   businessName: string;
@@ -19,13 +21,13 @@ export function BookingConfirmed({
   prepInstructions: string | null;
   cancellationText: string;
   manageUrl: string;
+  lang?: string;
 }) {
+  const t = emailCopy(lang);
   return (
-    <EmailShell preview={`Booked: ${serviceName} — ${whenText}`}>
-      <Text style={paragraph}>Hi {clientFirstName},</Text>
-      <Text style={paragraph}>
-        You&apos;re booked with {businessName}.
-      </Text>
+    <EmailShell preview={t.confirmedPreview(serviceName, whenText)} lang={t.htmlLang}>
+      <Text style={paragraph}>{t.hi(clientFirstName)}</Text>
+      <Text style={paragraph}>{t.youreBooked(businessName)}</Text>
       <Text style={{ ...paragraph, fontFamily: "monospace" }}>
         {serviceName}
         <br />
@@ -39,15 +41,15 @@ export function BookingConfirmed({
       </Text>
       {prepInstructions && (
         <Text style={paragraph}>
-          <strong>Before your appointment:</strong> {prepInstructions}
+          <strong>{t.beforeAppt}</strong> {prepInstructions}
         </Text>
       )}
       <Text style={{ ...paragraph, color: "#8a7d6b", fontSize: "13px" }}>
         {cancellationText}
       </Text>
-      <EmailButton href={manageUrl} label="Cancel or reschedule" />
+      <EmailButton href={manageUrl} label={t.cancelReschedule} />
       <Text style={{ ...paragraph, color: "#8a7d6b", fontSize: "13px" }}>
-        This link is personal to you and works for 7 days.
+        {t.linkPersonal}
       </Text>
     </EmailShell>
   );
