@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import { VerifyBanner } from "@/components/provider/verify-banner";
 import { WorkstationShell, SETTINGS_HREF } from "@/components/provider/workstation-shell";
-import { getDictionary, formatDuration, fill } from "@/lib/i18n";
+import { formatDuration, fill } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import {
   getProviderContext,
   getDayBookings,
@@ -29,8 +30,6 @@ import {
   type TimelineSegment,
   type DayTimeline,
 } from "@/lib/dashboard/queries";
-
-const t = getDictionary();
 
 function euros(cents: number): string {
   return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
@@ -73,6 +72,7 @@ export default async function DashboardPage({
 }) {
   const provider = await getProviderContext();
   if (!provider) return null;
+  const t = await getServerDict();
   // Default view follows the schedule mode: a sparse (flexible) provider lands on
   // Month to see their scattered open days; a weekly provider lands on Day.
   const { view: viewParam, date: dateParam } = await searchParams;
@@ -185,6 +185,7 @@ async function DayView({
   maxDate: string;
   nowMin: number | null;
 }) {
+  const t = await getServerDict();
   const bookings = await getDayBookings(provider, date);
   const stats = await getDayStats(provider, date, bookings);
   const timeline = await getDayTimeline(provider, date, bookings);
@@ -284,7 +285,8 @@ async function DayView({
   );
 }
 
-function StatRow({ stats }: { stats: { count: number; valueCents: number; freeMinutes: number } }) {
+async function StatRow({ stats }: { stats: { count: number; valueCents: number; freeMinutes: number } }) {
+  const t = await getServerDict();
   return (
     <div className="flex items-stretch">
       <StatCell label={t.dashboard.statBookings} value={String(stats.count)} />
@@ -311,13 +313,14 @@ function RailSep() {
 
 // "Happening now" — the in-progress booking lifted out of the timeline with a
 // live dot, minutes-left, and a progress fill. The day's emotional anchor.
-function HappeningNow({
+async function HappeningNow({
   seg,
   nowMin,
 }: {
   seg: Extract<TimelineSegment, { kind: "booking" }>;
   nowMin: number;
 }) {
+  const t = await getServerDict();
   const pct = Math.min(
     100,
     Math.max(0, ((nowMin - seg.startMin) / (seg.endMin - seg.startMin)) * 100),
@@ -362,13 +365,14 @@ function HappeningNow({
 
 // Segmented "Today's shape" bar — each timeline segment sized by its share of
 // the working day, coloured by kind (booked / open / break / no-show).
-function DayShape({
+async function DayShape({
   timeline,
   bookedPct,
 }: {
   timeline: Extract<DayTimeline, { working: true }>;
   bookedPct: number;
 }) {
+  const t = await getServerDict();
   const span = timeline.endMin - timeline.startMin;
   if (span <= 0) return null;
   const color = (seg: TimelineSegment) => {
@@ -414,7 +418,8 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 // First-glance empty state for a working day with zero bookings.
-function EmptyDay() {
+async function EmptyDay() {
+  const t = await getServerDict();
   return (
     <div className="flex flex-col items-center rounded-[20px] border-[1.5px] border-dashed border-desk bg-surface px-5 pb-7 pt-9 text-center">
       <span className="mb-3.5 inline-flex h-[62px] w-[62px] items-center justify-center rounded-full bg-accent-l text-accent">
@@ -441,7 +446,8 @@ function Divider() {
 
 // Time gutter + card row. Past dimmed, in-progress gets the accent halo,
 // free gaps are dashed "Book this gap" rows, breaks are filled tiles.
-function TimelineRow({ seg, nowMin }: { seg: TimelineSegment; nowMin: number | null }) {
+async function TimelineRow({ seg, nowMin }: { seg: TimelineSegment; nowMin: number | null }) {
+  const t = await getServerDict();
   const startLabel = hhmm(seg.startMin);
 
   if (seg.kind === "free") {
@@ -552,6 +558,7 @@ async function WeekView({
   date: string;
   maxDate: string;
 }) {
+  const t = await getServerDict();
   const weekStart = weekStartOf(date);
   const days = await getWeekSummary(provider, weekStart);
   const today = todayLocal(provider.timezone);
@@ -692,6 +699,7 @@ async function FlexibleSchedule({
   provider: ProviderContext;
   date: string;
 }) {
+  const t = await getServerDict();
   const today = todayLocal(provider.timezone);
   const [y, m] = date.split("-").map(Number);
   const year = y;
@@ -836,6 +844,7 @@ async function MonthView({
   provider: ProviderContext;
   date: string;
 }) {
+  const t = await getServerDict();
   const [y, m] = date.split("-").map(Number);
   const year = y;
   const month = m - 1;
@@ -1023,7 +1032,7 @@ async function MonthView({
   );
 }
 
-function DateNav({
+async function DateNav({
   view,
   date,
   step,
@@ -1038,6 +1047,7 @@ function DateNav({
   maxDate: string;
   label: string;
 }) {
+  const t = await getServerDict();
   const prev = addDays(date, -step);
   const next = addDays(date, step);
   const nextAllowed = next <= maxDate;

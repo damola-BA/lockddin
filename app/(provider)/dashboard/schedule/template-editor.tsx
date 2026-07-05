@@ -2,11 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { saveTemplateDay, type ActionState } from "@/lib/schedule/actions";
-import { getDictionary } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import { PageTitle, Hint, ErrorText } from "@/components/provider/ui";
 import { BlocksEditor, type Block } from "./blocks-editor";
-
-const t = getDictionary();
 
 export type TemplateDayData = {
   weekday: number; // 0=Mon..6=Sun
@@ -28,6 +26,7 @@ function DayCard({
   data: TemplateDayData | undefined;
   services: ServiceOption[];
 }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     saveTemplateDay,
     {},
@@ -143,6 +142,7 @@ export function TemplateEditor({
   days: TemplateDayData[];
   services: ServiceOption[];
 }) {
+  const t = useT();
   const byWeekday = new Map(days.map((d) => [d.weekday, d]));
   return (
     <div className="mt-4">

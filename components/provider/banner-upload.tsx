@@ -6,9 +6,7 @@ import { ImagePlus, X } from "lucide-react";
 import { recordBanner, deleteBanner } from "@/lib/dashboard/photo-actions";
 import { uploadToWorkPhotos } from "@/lib/upload-photo";
 import { storageUrl } from "@/lib/storage-url";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 function initials(name: string): string {
   return (
@@ -33,6 +31,7 @@ export function BannerUpload({
   providerName: string;
   city?: string | null;
 }) {
+  const t = useT();
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);

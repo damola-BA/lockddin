@@ -2,11 +2,10 @@
 
 import { useActionState, useState } from "react";
 import { deleteClient, type DashActionState } from "@/lib/dashboard/actions";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 export function DeleteClient({ clientId }: { clientId: string }) {
+  const t = useT();
   const [state, action, pending] = useActionState<DashActionState, FormData>(
     deleteClient,
     {},

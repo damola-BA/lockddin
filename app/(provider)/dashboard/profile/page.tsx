@@ -2,15 +2,14 @@ import { createServerSupabase } from "@/lib/db/server";
 import { Globe, LogOut } from "lucide-react";
 import { signOut } from "@/lib/auth/actions";
 import { appUrl } from "@/lib/app-url";
-import { getDictionary } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import { BannerUpload } from "@/components/provider/banner-upload";
 import { BookingLinkCard } from "@/components/provider/booking-link";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { ProfileDetails } from "./profile-details";
 
-const t = getDictionary();
-
 export default async function ProfilePage() {
+  const t = await getServerDict();
   const supabase = await createServerSupabase();
   const {
     data: { user },

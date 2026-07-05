@@ -8,11 +8,10 @@ import {
   type ActionState,
   type PreviewState,
 } from "@/lib/schedule/actions";
-import { getDictionary, fill } from "@/lib/i18n";
+import { fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import { PageTitle, Hint, Label, ErrorText } from "@/components/provider/ui";
 import { BlocksEditor } from "../schedule/blocks-editor";
-
-const t = getDictionary();
 
 type ExistingOverride = {
   date: string;
@@ -44,6 +43,7 @@ function fmt(iso: string): string {
 }
 
 function RemoveButton({ date }: { date: string }) {
+  const t = useT();
   const [, formAction, pending] = useActionState<ActionState, FormData>(
     removeOverride,
     {},
@@ -69,6 +69,7 @@ export function DayOverrides({
   scheduleType: string;
   existing: ExistingOverride[];
 }) {
+  const t = useT();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [kind, setKind] = useState<"closed" | "modified" | "open">("closed");

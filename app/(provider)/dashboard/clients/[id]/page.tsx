@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CalendarCheck, ChevronLeft, Mail, Plus, Star } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import {
   getProviderContext,
   getClientDetail,
@@ -13,8 +13,6 @@ import {
 } from "@/components/provider/clients-master-detail";
 import { CopyEmail } from "@/components/provider/copy-email";
 import { DeleteClient } from "./delete-client";
-
-const t = getDictionary();
 
 const REGULAR_THRESHOLD = 8;
 
@@ -31,6 +29,7 @@ export default async function ClientDetailPage({
 }) {
   const { id } = await params;
   const { q = "" } = await searchParams;
+  const t = await getServerDict();
   const provider = await getProviderContext();
   if (!provider) return null;
   const [clients, client] = await Promise.all([

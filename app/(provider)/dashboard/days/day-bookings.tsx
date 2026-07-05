@@ -3,10 +3,9 @@
 import { useActionState, useState } from "react";
 import { providerCancelBooking, type DashActionState } from "@/lib/dashboard/actions";
 import { CANCEL_REASONS } from "@/lib/dashboard/cancel-reasons";
-import { getDictionary, fill } from "@/lib/i18n";
+import { fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import type { DayBooking } from "@/lib/dashboard/queries";
-
-const t = getDictionary();
 
 function euros(cents: number): string {
   return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
@@ -14,6 +13,7 @@ function euros(cents: number): string {
 
 // All of the day's bookings with an inline cancel (reason → email).
 export function DayBookingsList({ bookings }: { bookings: DayBooking[] }) {
+  const t = useT();
   if (bookings.length === 0) {
     return <p className="text-sm text-ink-3">{t.dashboard.noBookingsDay}</p>;
   }
@@ -27,6 +27,7 @@ export function DayBookingsList({ bookings }: { bookings: DayBooking[] }) {
 }
 
 function BookingRow({ booking }: { booking: DayBooking }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState<DashActionState, FormData>(
     providerCancelBooking,

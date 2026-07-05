@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { LogOut, Settings as SettingsIcon, User } from "lucide-react";
 import { signOut } from "@/lib/auth/actions";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 function initials(name: string): string {
   return (
@@ -23,6 +21,7 @@ function initials(name: string): string {
 // with the provider's identity, a link into their profile/settings, and sign out
 // — the one place sign out lives on desktop.
 export function AccountMenu({ businessName }: { businessName: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

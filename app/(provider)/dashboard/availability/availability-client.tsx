@@ -26,16 +26,13 @@ import { BlocksEditor, type Block } from "@/app/(provider)/dashboard/schedule/bl
 import { HoursMode } from "@/components/provider/hours-mode";
 import { AppearanceSetting } from "@/components/provider/appearance-setting";
 import { LanguageSetting } from "@/components/provider/language-setting";
-import { getDictionary, fill } from "@/lib/i18n";
+import { fill, type Dictionary } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import type {
   AvailabilityRules,
   UpcomingChange,
   WeekDay,
 } from "./page";
-
-const t = getDictionary();
-const A = t.availability;
-const WEEKDAYS = t.schedule.weekdays; // 0=Mon..6=Sun
 
 type Service = { id: string; name: string };
 
@@ -72,6 +69,8 @@ export function AvailabilityClient({
   services: Service[];
   language: string;
 }) {
+  const t = useT();
+  const A = t.availability;
   // The mode is decided at onboarding (and changed only in Settings) — there's
   // no toggle here. Each mode gets its own focused dashboard.
   const mode = rules.scheduleType;
@@ -152,6 +151,9 @@ export function AvailabilityClient({
 // ── Your usual week ──────────────────────────────────────────────────
 
 function UsualWeek({ week }: { week: WeekDay[] }) {
+  const t = useT();
+  const A = t.availability;
+  const WEEKDAYS = t.schedule.weekdays;
   const [state, action, pending] = useActionState<ActionState, FormData>(saveUsualWeek, {});
   const initialDays = week.length > 0 ? week.map((d) => d.weekday) : [0, 1, 2, 3, 4];
   const [days, setDays] = useState<Set<number>>(new Set(initialDays));
@@ -246,7 +248,7 @@ function daySignature(d: WeekDay): string {
 }
 
 // One-line summary for the collapsed row: hours · breaks · cap.
-function daySummary(d: WeekDay): string {
+function daySummary(d: WeekDay, A: Dictionary["availability"]): string {
   const parts = [`${d.start}–${d.end}`];
   if (d.blocks.length === 1) parts.push(d.blocks[0].label || A.breaks);
   else if (d.blocks.length > 1) parts.push(fill(A.breaksCount, { n: d.blocks.length }));
@@ -263,6 +265,9 @@ function WeekList({
   services: { id: string; name: string }[];
   onTap: (weekday: number) => void;
 }) {
+  const t = useT();
+  const A = t.availability;
+  const WEEKDAYS = t.schedule.weekdays;
   const [open, setOpen] = useState<number | null>(null);
 
   // "Usual" = the most common day signature among working days; anything else
@@ -297,7 +302,7 @@ function WeekList({
                   {name}
                 </span>
                 <span className={`mt-0.5 block truncate text-[12.5px] tabular ${day ? "text-ink-3" : "text-ink-4"}`}>
-                  {day ? daySummary(day) : A.closed}
+                  {day ? daySummary(day, A) : A.closed}
                 </span>
               </span>
               <span className="inline-flex shrink-0 items-center gap-2">
@@ -399,6 +404,8 @@ function TimeOff({
   timezone: string;
   today: string;
 }) {
+  const t = useT();
+  const A = t.availability;
   const [, removeAction] = useActionState<ActionState, FormData>(removeOverride, {});
   const [closing, setClosing] = useState(false);
 
@@ -463,6 +470,8 @@ function TimeOff({
 // Close a single date or an inclusive range → saveDay (kind=closed) with the
 // destructive consequence preview.
 function CloseDateForm({ today, onDone }: { today: string; onDone: () => void }) {
+  const t = useT();
+  const A = t.availability;
   const [state, action, pending] = useActionState<PreviewState, FormData>(saveDay, {});
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState("");
@@ -551,7 +560,7 @@ function CloseDateForm({ today, onDone }: { today: string; onDone: () => void })
 const LEAD_OPTIONS = [0, 60, 120, 240, 720, 1440, 2880, 10080, 20160];
 const BUFFER_OPTIONS = [0, 5, 10, 15, 20, 30, 45, 60];
 
-function leadLabel(minutes: number): string {
+function leadLabel(minutes: number, t: Dictionary): string {
   if (minutes === 0) return t.onboarding.minLeadNone;
   if (minutes < 1440) return `${minutes / 60}h`;
   if (minutes < 10080) return `${minutes / 1440} days`;
@@ -559,6 +568,8 @@ function leadLabel(minutes: number): string {
 }
 
 function BookingRules({ rules }: { rules: AvailabilityRules }) {
+  const t = useT();
+  const A = t.availability;
   const [state, action, pending] = useActionState<SettingsState, FormData>(updateBookingRules, {});
   // "How far ahead can people book?" is meaningless for a calendar provider —
   // they open the exact dates themselves, so the relative window never applies
@@ -595,7 +606,7 @@ function BookingRules({ rules }: { rules: AvailabilityRules }) {
           >
             {LEAD_OPTIONS.map((m) => (
               <option key={m} value={m}>
-                {leadLabel(m)}
+                {leadLabel(m, t)}
               </option>
             ))}
           </select>
@@ -682,6 +693,9 @@ function ChangeDaySheet({
   timezone: string;
   onClose: () => void;
 }) {
+  const t = useT();
+  const A = t.availability;
+  const WEEKDAYS = t.schedule.weekdays;
   // Two entry points: a weekday tapped in the weekly list (offers every/once),
   // or a fixed date from the calendar provider's open-days list (always once).
   const isPreset = "presetDate" in target;
@@ -888,6 +902,8 @@ function SheetOpenFields({
   picked: Set<string>;
   setPicked: (s: Set<string>) => void;
 }) {
+  const t = useT();
+  const A = t.availability;
   return (
     <>
       <div className="flex items-center gap-2.5">
@@ -1004,6 +1020,7 @@ function SheetSaveButton({
   onEvery: () => void;
   onOnce: () => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -1029,6 +1046,8 @@ function DestructiveConfirm({
   buildFields: () => FormData;
   onCancel: () => void;
 }) {
+  const t = useT();
+  const A = t.availability;
   const [reason, setReason] = useState("");
   return (
     <div>
@@ -1095,6 +1114,8 @@ function DestructiveConfirm({
 // ── Flexible mode ────────────────────────────────────────────────────
 
 function FlexibleMode({ today, timezone }: { today: string; timezone: string }) {
+  const t = useT();
+  const A = t.availability;
   const [state, action, pending] = useActionState<PreviewState, FormData>(applyOverride, {});
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [monthAnchor, setMonthAnchor] = useState(today);
@@ -1158,6 +1179,8 @@ function YourOpenDays({
   timezone: string;
   onEdit: (c: UpcomingChange) => void;
 }) {
+  const t = useT();
+  const A = t.availability;
   return (
     <section className="mt-7">
       <h2 className="font-serif text-[18px] font-semibold">{A.yourOpenDays}</h2>

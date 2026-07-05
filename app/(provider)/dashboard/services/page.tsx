@@ -1,12 +1,12 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { ChevronLeft } from "lucide-react";
-import { getDictionary, fill } from "@/lib/i18n";
+import { fill } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { ServicesEditor } from "@/components/provider/services-editor";
 
-const t = getDictionary();
-
 export default async function ServicesPage() {
+  const t = await getServerDict();
   const supabase = await createServerSupabase();
   const {
     data: { user },

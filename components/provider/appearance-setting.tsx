@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 type Pref = "light" | "dark" | "system";
 
@@ -21,6 +19,7 @@ function currentPref(): Pref {
 // ThemeToggle: "light"/"dark" pin a theme, "system" follows the OS (stored as no
 // key, so the pre-paint script in app/layout.tsx falls back to prefers-color-scheme).
 export function AppearanceSetting() {
+  const t = useT();
   const [pref, setPref] = useState<Pref | null>(null);
 
   // Read the stored value after mount (avoids SSR/localStorage mismatch) and

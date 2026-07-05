@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import { getProviderContext, getBookingDetail } from "@/lib/dashboard/queries";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { Avatar } from "@/components/provider/clients-master-detail";
 import { BookingActions } from "./booking-actions";
-
-const t = getDictionary();
 
 function euros(cents: number): string {
   return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
@@ -17,6 +15,7 @@ export default async function BookingDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = await getServerDict();
   const { id } = await params;
   const provider = await getProviderContext();
   if (!provider) return null;

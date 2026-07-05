@@ -8,10 +8,8 @@ import {
   type SettingsState,
 } from "@/lib/dashboard/settings-actions";
 import { normalizeSlug } from "@/lib/onboarding/slug";
-import { getDictionary } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import { Label, TextInput, ErrorText } from "@/components/provider/ui";
-
-const t = getDictionary();
 
 type Initial = {
   business_name: string | null;
@@ -27,6 +25,7 @@ type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 // profile, not a form); the three shared-everywhere fields — business name, your
 // name and the booking link — carry a lock. Tapping Edit unlocks the whole form.
 export function ProfileDetails({ initial }: { initial: Initial }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(
     updateProfileSettings,

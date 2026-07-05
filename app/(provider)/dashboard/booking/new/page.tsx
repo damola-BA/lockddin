@@ -1,12 +1,11 @@
 import { createServerSupabase } from "@/lib/db/server";
 import { ChevronLeft } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { ManualBooking } from "./manual-booking";
 
-const t = getDictionary();
-
 export default async function NewBookingPage() {
+  const t = await getServerDict();
   const supabase = await createServerSupabase();
   const {
     data: { user },

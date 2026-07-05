@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { ArrowUpRight, Check, Copy, Link2, Share2 } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 function useCopied() {
   const [copied, setCopied] = useState(false);
@@ -26,6 +24,7 @@ export function BookingLinkCard({
   businessName?: string;
   viewUrl?: string;
 }) {
+  const t = useT();
   const [copied, flash] = useCopied();
   const display = url.replace(/^https?:\/\//, "");
 

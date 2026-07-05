@@ -2,9 +2,7 @@
 
 import { useEffect } from "react";
 import { RotateCw, TriangleAlert } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 // Recovery state for the provider dashboard (and its nested routes). A load
 // failure shows a clear message + a retry that re-runs the failed render,
@@ -16,6 +14,7 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useT();
   useEffect(() => {
     // Surfaces in the server/console log for debugging; not shown to the user.
     console.error(error);

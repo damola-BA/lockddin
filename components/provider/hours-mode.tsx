@@ -3,15 +3,14 @@
 import { startTransition, useActionState } from "react";
 import { Check } from "lucide-react";
 import { setScheduleType, type ActionState } from "@/lib/schedule/actions";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 // How your hours work — the ONLY place to switch modes after onboarding. Both
 // options are shown so the choice is legible; only one is active. Changing it is
 // forward-only (confirmed): it affects how future days are offered, never booked
 // appointments.
 export function HoursMode({ current }: { current: "regular" | "flexible" }) {
+  const t = useT();
   const [state, action, pending] = useActionState<ActionState, FormData>(setScheduleType, {});
 
   function choose(next: "regular" | "flexible") {

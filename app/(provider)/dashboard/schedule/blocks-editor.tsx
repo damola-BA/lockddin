@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 export type Block = { start: string; end: string; label: string };
 
@@ -19,6 +17,7 @@ export function BlocksEditor({
   initial: Block[];
   showLabel: boolean;
 }) {
+  const t = useT();
   const [blocks, setBlocks] = useState<Block[]>(initial);
   const [draft, setDraft] = useState<Block>({ start: "", end: "", label: "" });
 

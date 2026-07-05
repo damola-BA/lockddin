@@ -9,17 +9,11 @@ import {
   createManualBooking,
   type ManualClient,
 } from "@/lib/booking/manual";
-import { getDictionary, formatDuration } from "@/lib/i18n";
+import { formatDuration } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import { StepSpine } from "@/components/provider/ui";
 
-const t = getDictionary();
 const TZ = "Europe/Brussels";
-
-const SPINE = [
-  { key: "client", label: t.dashboard.walkInRailClient },
-  { key: "service", label: t.dashboard.walkInRailService },
-  { key: "confirm", label: t.dashboard.walkInRailConfirm },
-];
 
 type Service = {
   id: string;
@@ -33,6 +27,12 @@ function euros(cents: number): string {
 }
 
 export function ManualBooking({ services }: { services: Service[] }) {
+  const t = useT();
+  const SPINE = [
+    { key: "client", label: t.dashboard.walkInRailClient },
+    { key: "service", label: t.dashboard.walkInRailService },
+    { key: "confirm", label: t.dashboard.walkInRailConfirm },
+  ];
   const router = useRouter();
   const [client, setClient] = useState<ManualClient | null>(null);
   const [picked, setPicked] = useState<Service[]>([]);
@@ -213,6 +213,7 @@ function PickedClient({
   client: ManualClient;
   onChange: () => void;
 }) {
+  const t = useT();
   return (
     <div className="flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-3">
       <span>
@@ -227,6 +228,7 @@ function PickedClient({
 }
 
 function ClientStep({ onPick }: { onPick: (c: ManualClient) => void }) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ManualClient[]>([]);
   const [creating, setCreating] = useState(false);

@@ -8,12 +8,11 @@ import {
   type PreviewState,
   type ActionState,
 } from "@/lib/schedule/actions";
-import { getDictionary, fill } from "@/lib/i18n";
+import { fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import { ErrorText } from "@/components/provider/ui";
 import { BlocksEditor, type Block } from "../schedule/blocks-editor";
 import type { DayManager } from "@/lib/dashboard/queries";
-
-const t = getDictionary();
 
 function fmtTime(iso: string): string {
   return new Intl.DateTimeFormat("en-BE", {
@@ -35,6 +34,7 @@ export function DaySettings({
   data: DayManager;
   scheduleType: "regular" | "flexible";
 }) {
+  const t = useT();
   const router = useRouter();
   const startDefault = data.override?.start ?? data.template?.start ?? "09:00";
   const endDefault = data.override?.end ?? data.template?.end ?? "18:00";

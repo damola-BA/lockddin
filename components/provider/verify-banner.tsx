@@ -2,14 +2,14 @@
 
 import { useActionState } from "react";
 import { resendVerification, type ActionState } from "@/lib/auth/actions";
-import { getDictionary, fill } from "@/lib/i18n";
-
-const t = getDictionary();
+import { fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 
 // Email verification no longer blocks finishing onboarding (DD34) — this
 // persistent, dismissable-by-verifying nudge lives on the dashboard instead,
 // so a provider reaches their link immediately and confirms email in parallel.
 export function VerifyBanner({ email }: { email: string }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     async () => resendVerification(),
     {},

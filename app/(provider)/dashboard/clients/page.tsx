@@ -1,8 +1,6 @@
-import { getDictionary } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import { getProviderContext, searchClients } from "@/lib/dashboard/queries";
 import { ClientsMasterDetail } from "@/components/provider/clients-master-detail";
-
-const t = getDictionary();
 
 export default async function ClientsPage({
   searchParams,
@@ -10,6 +8,7 @@ export default async function ClientsPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q = "" } = await searchParams;
+  const t = await getServerDict();
   const provider = await getProviderContext();
   if (!provider) return null;
   const clients = await searchClients(provider, q);

@@ -10,9 +10,8 @@ import {
   type DashActionState,
 } from "@/lib/dashboard/actions";
 import { CANCEL_REASONS } from "@/lib/dashboard/cancel-reasons";
-import { getDictionary, fill } from "@/lib/i18n";
-
-const t = getDictionary();
+import { fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 
 type Mode = "menu" | "cancel" | "reschedule";
 
@@ -39,6 +38,7 @@ export function BookingActions({
   isNoShow: boolean;
   timezone: string;
 }) {
+  const t = useT();
   const [mode, setMode] = useState<Mode>("menu");
 
   // Past bookings: the only action is the gentle no-show prompt (AD08).
@@ -105,6 +105,7 @@ function NoShowControl({
   clientName: string;
   isNoShow: boolean;
 }) {
+  const t = useT();
   const [state, action, pending] = useActionState<DashActionState, FormData>(
     toggleNoShow,
     {},
@@ -155,6 +156,7 @@ function CancelForm({
   whenText: string;
   onBack: () => void;
 }) {
+  const t = useT();
   const [state, action, pending] = useActionState<DashActionState, FormData>(
     providerCancelBooking,
     {},
@@ -255,6 +257,7 @@ function RescheduleForm({
   serviceIds: string[];
   onBack: () => void;
 }) {
+  const t = useT();
   const [state, action, pending] = useActionState<DashActionState, FormData>(
     providerReschedule,
     {},

@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { useT } from "@/lib/i18n/context";
 
 // A scannable value (client email) with copy-to-clipboard revealed on hover —
 // the canonical pattern from the Profile booking-link copy (icon → check swap).
 export function CopyEmail({ email }: { email: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   async function copy() {

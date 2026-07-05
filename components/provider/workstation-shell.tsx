@@ -8,9 +8,9 @@ import {
   Users,
 } from "lucide-react";
 import { AccountMenu } from "@/components/provider/account-menu";
+import { getProviderLanguage } from "@/lib/i18n/server";
 import { getDictionary } from "@/lib/i18n";
-
-const t = getDictionary();
+import { LocaleProvider } from "@/lib/i18n/context";
 
 export type NavKey =
   | "schedule"
@@ -21,30 +21,15 @@ export type NavKey =
 
 type NavItem = { key: NavKey; href: string; label: string; Icon: typeof CalIcon };
 
-// Top bar (desktop) — the daily working sections only. Settings (which now holds
-// the availability/hours editor), Profile and sign out live in the account menu.
-const TOP_NAV: NavItem[] = [
-  { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
-  { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
-  { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
-];
-
 // Settings = the availability/hours surface (still served at /dashboard/availability).
 export const SETTINGS_HREF = "/dashboard/availability";
-
-// Bottom tab bar (phone, no account menu) — working sections + Settings + Profile.
-const BOTTOM_NAV: NavItem[] = [
-  ...TOP_NAV,
-  { key: "settings", href: SETTINGS_HREF, label: t.settings.settingsTitle, Icon: SettingsIcon },
-  { key: "profile", href: "/dashboard/profile", label: t.settings.navProfile, Icon: User },
-];
 
 // Shared shell for the provider back-office pages (Clients, Services, Settings…).
 // Phone: full-bleed column + a fixed bottom tab bar (native-app feel). Tablet/
 // desktop: an edge-to-edge top bar (wordmark · section nav · account) over the
 // page content. `maxWidth` caps the working measure so forms don't sprawl on a
 // wide monitor; pass `bleed` for master-detail screens that fill the canvas.
-export function WorkstationShell({
+export async function WorkstationShell({
   active,
   businessName,
   maxWidth = "640px",
@@ -59,7 +44,24 @@ export function WorkstationShell({
   action?: { href: string; label: string };
   children: React.ReactNode;
 }) {
+  const language = await getProviderLanguage();
+  const t = getDictionary(language);
+
+  // Daily working sections (top bar). Settings/Profile/sign out live in the
+  // account menu on desktop and in the bottom bar on phone.
+  const TOP_NAV: NavItem[] = [
+    { key: "schedule", href: "/dashboard", label: t.dashboard.navSchedule, Icon: CalIcon },
+    { key: "clients", href: "/dashboard/clients", label: t.dashboard.clients, Icon: Users },
+    { key: "services", href: "/dashboard/services", label: t.dashboard.services, Icon: Tag },
+  ];
+  const BOTTOM_NAV: NavItem[] = [
+    ...TOP_NAV,
+    { key: "settings", href: SETTINGS_HREF, label: t.settings.settingsTitle, Icon: SettingsIcon },
+    { key: "profile", href: "/dashboard/profile", label: t.settings.navProfile, Icon: User },
+  ];
+
   return (
+    <LocaleProvider locale={language}>
     <div className="min-h-dvh bg-canvas text-ink">
       {/* Top bar — tablet & desktop. Background spans edge to edge. */}
       <header className="sticky top-0 z-30 hidden border-b border-line bg-surface/85 backdrop-blur md:block">
@@ -135,5 +137,6 @@ export function WorkstationShell({
         })}
       </nav>
     </div>
+    </LocaleProvider>
   );
 }

@@ -1,9 +1,7 @@
 import { ChevronLeft, Search, Star, Users } from "lucide-react";
-import { getDictionary } from "@/lib/i18n";
+import { getServerDict } from "@/lib/i18n/server";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import type { ClientListRow } from "@/lib/dashboard/queries";
-
-const t = getDictionary();
 
 // Rotating avatar tints so the list scans fast without photos (handoff rule 4).
 const TINTS = [
@@ -61,7 +59,7 @@ export function Avatar({
 // detail page shows the client); desktop fuses them into a 288px list + detail
 // card with the selected row highlighted. Both routes render this; the list page
 // passes selectedId=null (empty detail), the detail page passes the open client.
-export function ClientsMasterDetail({
+export async function ClientsMasterDetail({
   clients,
   q,
   selectedId,
@@ -74,6 +72,7 @@ export function ClientsMasterDetail({
   businessName: string;
   children: React.ReactNode;
 }) {
+  const t = await getServerDict();
   return (
     <WorkstationShell active="clients" businessName={businessName} bleed>
       <div className="md:mx-auto md:min-h-[560px] md:max-w-[980px] md:overflow-hidden md:rounded-2xl md:border md:border-line md:bg-surface md:grid md:grid-cols-[300px_minmax(0,1fr)]">

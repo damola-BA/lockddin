@@ -2,10 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { applyOverride, type PreviewState } from "@/lib/schedule/actions";
-import { getDictionary, fill } from "@/lib/i18n";
+import { fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import { PageTitle, Hint, ErrorText } from "@/components/provider/ui";
-
-const t = getDictionary();
 
 function nextDays(count: number): string[] {
   const out: string[] = [];
@@ -21,6 +20,7 @@ function nextDays(count: number): string[] {
 // Flexible mode: tick the days you'll work, set default hours, add them in
 // one batch — each becomes a kind='open' day override (F4).
 export function FlexibleBatchAdd() {
+  const t = useT();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [state, formAction, pending] = useActionState<PreviewState, FormData>(
     applyOverride,

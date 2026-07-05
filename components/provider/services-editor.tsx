@@ -8,7 +8,8 @@ import {
   type ActionState,
 } from "@/lib/onboarding/actions";
 import { Pencil, Plus, Tag } from "lucide-react";
-import { getDictionary, formatDuration, fill } from "@/lib/i18n";
+import { formatDuration, fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 import { Label, TextInput, ErrorText } from "@/components/provider/ui";
 import { ServicePhotoGrid } from "@/components/provider/service-photos";
 import { storageUrl } from "@/lib/storage-url";
@@ -16,8 +17,6 @@ import { storageUrl } from "@/lib/storage-url";
 // Diagonal-hatch placeholder for a service with no photo yet (matches handoff).
 const HATCH =
   "repeating-linear-gradient(135deg,rgba(184,66,28,.06) 0 2px,transparent 2px 14px)";
-
-const t = getDictionary();
 
 export type Service = {
   id: string;
@@ -42,6 +41,7 @@ function ServiceForm({
   service?: Service;
   onDone: () => void;
 }) {
+  const t = useT();
   const action = service ? updateService : addService;
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     async (prev, formData) => {
@@ -133,6 +133,7 @@ function ServiceForm({
 }
 
 function DeleteButton({ service }: { service: Service }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     deleteService,
     {},
@@ -186,6 +187,7 @@ function ServiceCard({
   service: Service;
   onEdit: () => void;
 }) {
+  const t = useT();
   const cover = service.photos[0];
   return (
     <div
@@ -242,6 +244,7 @@ function ServiceSheet({
   service?: Service;
   onClose: () => void;
 }) {
+  const t = useT();
   const isEditing = !!service;
   const action = service ? updateService : addService;
   const [active, setActive] = useState(service?.is_active ?? true);
@@ -385,6 +388,7 @@ function ServiceSheet({
 // Arm→confirm delete with consequence copy (handoff pattern), reusing the
 // server action's last-active and has-bookings guards.
 function ServiceDeleteConfirm({ service }: { service: Service }) {
+  const t = useT();
   const [confirming, setConfirming] = useState(false);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(deleteService, {});
   const blocking = state.error?.startsWith("has_bookings:")
@@ -459,6 +463,7 @@ export function ServicesEditor({
   services: Service[];
   layout?: "list" | "grid";
 }) {
+  const t = useT();
   const [editing, setEditing] = useState<string | "new" | null>(
     services.length === 0 ? "new" : null,
   );
