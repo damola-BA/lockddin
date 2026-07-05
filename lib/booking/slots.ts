@@ -23,6 +23,7 @@ export type PublicProvider = {
   global_buffer_minutes: number;
   schedule_type: "regular" | "flexible";
   is_active: boolean;
+  language: string;
 };
 
 export async function getProviderBySlug(
@@ -32,7 +33,7 @@ export async function getProviderBySlug(
   const { data } = await admin
     .from("providers")
     .select(
-      "id, email, business_name, provider_name, city, location_text, work_photos, banner_path, timezone, booking_window, cancellation_window_hours, global_buffer_minutes, schedule_type, is_active, onboarding_step",
+      "id, email, business_name, provider_name, city, location_text, work_photos, banner_path, timezone, booking_window, cancellation_window_hours, global_buffer_minutes, schedule_type, is_active, onboarding_step, language",
     )
     .eq("slug", slug)
     .maybeSingle();

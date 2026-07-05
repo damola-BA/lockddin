@@ -30,9 +30,8 @@ import {
   type WaitlistState,
 } from "@/lib/booking/actions";
 import { StepSpine } from "@/components/provider/ui";
-import { getDictionary, fill, formatDuration } from "@/lib/i18n";
-
-const t = getDictionary();
+import { fill, formatDuration, type Dictionary } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 
 type Service = {
   id: string;
@@ -47,7 +46,7 @@ type PublicSlot = { startsAt: string; endsAt: string };
 
 const TZ = "Europe/Brussels";
 
-const SPINE = [
+const spine = (t: Dictionary) => [
   { key: "service", label: t.client.stepService },
   { key: "time", label: t.client.stepTime },
   { key: "details", label: t.client.stepDetails },
@@ -106,6 +105,8 @@ export function BookingFlow({
   services: Service[];
   cancellationWindowHours: number;
 }) {
+  const t = useT();
+  const SPINE = spine(t);
   // Multiple services can be booked in one visit (done back-to-back).
   const [selected, setSelected] = useState<Service[]>(
     services.length === 1 ? [services[0]] : [],
@@ -394,6 +395,7 @@ function ServiceCard({
   onToggle: () => void;
   onGallery: () => void;
 }) {
+  const t = useT();
   const cover = service.photos[0];
   return (
     <div
@@ -476,6 +478,7 @@ function DayTimes({
   slots: PublicSlot[];
   onPick: (s: PublicSlot) => void;
 }) {
+  const t = useT();
   const morning = slots.filter((s) => slotHour(s.startsAt) < 12);
   const afternoon = slots.filter((s) => slotHour(s.startsAt) >= 12);
 
@@ -545,6 +548,8 @@ function DetailsStep({
   onTaken: () => void;
   onBack: () => void;
 }) {
+  const t = useT();
+  const SPINE = spine(t);
   const serviceCsv = selected.map((s) => s.id).join(",");
   const [hold, holdAction] = useActionState<HoldState, FormData>(placeHold, {});
   const [confirm, confirmAction, confirmPending] = useActionState<
@@ -814,6 +819,7 @@ function ConfirmedTicket({
   slot: PublicSlot;
   comboLabel: string;
 }) {
+  const t = useT();
   const calUrl = googleCalendarUrl(
     confirm.serviceName,
     slot,
@@ -893,6 +899,7 @@ function ConfirmedTicket({
 // ── waitlist join (no availability edge state) ───────────────────────
 
 function WaitlistJoin({ slug, serviceId }: { slug: string; serviceId: string }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState<WaitlistState, FormData>(
     joinWaitlist,
     {},

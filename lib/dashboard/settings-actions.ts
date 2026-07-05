@@ -17,6 +17,30 @@ const MAX_LEAD_MINUTES = 20160;
 // Post-onboarding edit of the profile fields collected in F2. Unlike
 // saveProfile this never touches onboarding_step and never redirects — it
 // updates in place and reports success so the provider stays on Settings.
+const LANGUAGES = ["en", "fr", "nl", "de"];
+
+// The provider's language. Applies to their client-facing booking/reschedule
+// pages and emails (and, as it's translated, the dashboard).
+export async function setLanguage(language: string): Promise<SettingsState> {
+  if (!LANGUAGES.includes(language)) return { error: "invalid" };
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/onboarding/email");
+
+  const { error } = await supabase
+    .from("providers")
+    .update({ language })
+    .eq("id", user.id);
+  if (error) return { error: "server" };
+
+  revalidatePath("/dashboard/availability");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/profile");
+  return { ok: true };
+}
+
 export async function updateProfileSettings(
   _prev: SettingsState,
   formData: FormData,

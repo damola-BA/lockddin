@@ -529,6 +529,8 @@ export const en = {
     keepIt: "Keep it",
     servicesEmptyTitle: "No services yet",
     servicesEmptyBody: "Add what clients can book — your prices, timing and photos.",
+    languageTitle: "Language",
+    languageIntro: "Your booking page and confirmation emails will be shown to clients in this language.",
     rulesMovedNote: "Your booking rules (how far ahead, notice, gaps, free cancellation) now live with your hours on",
     hoursModeTitle: "How your hours work",
     hoursModeIntro: "This shapes your whole schedule. Most providers keep a regular week.",
@@ -569,4 +571,4 @@ export const en = {
     language: "Language",
     languageValue: "English",
   },
-} as const;
+};

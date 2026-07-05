@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/db/admin";
 import { checkManageToken } from "@/lib/booking/manage-token";
 import { resolveServiceSet } from "@/lib/booking/service-set";
 import { getDictionary } from "@/lib/i18n";
+import { LocaleProvider } from "@/lib/i18n/context";
 import { ManageBooking } from "./manage-booking";
 
 const t = getDictionary();
@@ -23,7 +24,7 @@ export default async function ManagePage({
   const { data: booking } = await admin
     .from("bookings")
     .select(
-      "id, starts_at, status, cancellation_window_hours, provider_id, service_ids, providers (slug, business_name, provider_name, email, timezone, location_text), clients (first_name)",
+      "id, starts_at, status, cancellation_window_hours, provider_id, service_ids, providers (slug, business_name, provider_name, email, timezone, location_text, language), clients (first_name)",
     )
     .eq("manage_token", token)
     .maybeSingle();
@@ -58,6 +59,7 @@ export default async function ManagePage({
     email: string;
     timezone: string;
     location_text: string | null;
+    language: string;
   };
   const client = booking.clients as unknown as { first_name: string };
   const serviceIds = (booking.service_ids as string[]) ?? [];
@@ -65,22 +67,24 @@ export default async function ManagePage({
 
   return (
     <Shell>
-      <ManageBooking
-        token={token}
-        slug={provider.slug}
-        businessName={provider.business_name ?? provider.provider_name ?? ""}
-        providerEmail={provider.email}
-        clientFirstName={client.first_name}
-        serviceIds={serviceIds}
-        serviceName={services.label}
-        startsAt={booking.starts_at}
-        whenText={formatInTimeZone(
-          new Date(booking.starts_at),
-          provider.timezone,
-          "EEEE d MMMM yyyy 'at' HH:mm",
-        )}
-        cancellationWindowHours={booking.cancellation_window_hours}
-      />
+      <LocaleProvider locale={provider.language}>
+        <ManageBooking
+          token={token}
+          slug={provider.slug}
+          businessName={provider.business_name ?? provider.provider_name ?? ""}
+          providerEmail={provider.email}
+          clientFirstName={client.first_name}
+          serviceIds={serviceIds}
+          serviceName={services.label}
+          startsAt={booking.starts_at}
+          whenText={formatInTimeZone(
+            new Date(booking.starts_at),
+            provider.timezone,
+            "EEEE d MMMM yyyy 'at' HH:mm",
+          )}
+          cancellationWindowHours={booking.cancellation_window_hours}
+        />
+      </LocaleProvider>
     </Shell>
   );
 }

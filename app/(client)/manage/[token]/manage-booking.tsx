@@ -9,9 +9,8 @@ import {
 import { placeHold, type HoldState } from "@/lib/booking/actions";
 import { localDateOf } from "@/app/(client)/b/[slug]/booking-flow";
 import { WeekPicker, MonthPicker } from "@/app/(client)/b/[slug]/slot-calendar";
-import { getDictionary, fill } from "@/lib/i18n";
-
-const t = getDictionary();
+import { fill } from "@/lib/i18n";
+import { useT } from "@/lib/i18n/context";
 const TZ = "Europe/Brussels";
 
 function slotLabel(iso: string): string {
@@ -58,6 +57,7 @@ export function ManageBooking({
   whenText: string;
   cancellationWindowHours: number;
 }) {
+  const t = useT();
   const serviceCsv = serviceIds.join(",");
   const [mode, setMode] = useState<"view" | "confirm-cancel" | "reschedule">("view");
   const [cancelState, cancelAction, cancelPending] = useActionState<

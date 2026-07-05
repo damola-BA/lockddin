@@ -1,8 +1,19 @@
 import { en } from "./en";
+import { fr } from "./fr";
+import { nl } from "./nl";
+import { de } from "./de";
 
-// Beta: EN only. The provider's stored language will pick the dictionary
-// here once FR/NL exist; every UI string must come through t() from day one.
-const dictionaries = { en } as const;
+// Provider-chosen language (providers.language). Each non-EN dictionary spreads
+// `en` and overrides the sections translated so far, so any untranslated string
+// safely falls back to English. Every UI string must come through t().
+const dictionaries = { en, fr, nl, de } as const;
+
+export const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "fr", label: "Français" },
+  { code: "nl", label: "Nederlands" },
+  { code: "de", label: "Deutsch" },
+] as const;
 
 export type Dictionary = typeof en;
 

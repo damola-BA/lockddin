@@ -2,11 +2,10 @@ import { Check, Mail } from "lucide-react";
 import { getProviderBySlug } from "@/lib/booking/slots";
 import { createAdminClient } from "@/lib/db/admin";
 import { getDictionary, fill } from "@/lib/i18n";
+import { LocaleProvider } from "@/lib/i18n/context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { storageUrl } from "@/lib/storage-url";
 import { BookingFlow } from "./booking-flow";
-
-const t = getDictionary();
 
 // The public booking page (F5). Warm paper, no account, must feel instant.
 export default async function BookingPage({
@@ -16,6 +15,8 @@ export default async function BookingPage({
 }) {
   const { slug } = await params;
   const provider = await getProviderBySlug(slug);
+  // Client-facing pages render in the provider's chosen language.
+  const t = getDictionary(provider?.language);
 
   if (!provider) {
     return (
@@ -56,6 +57,7 @@ export default async function BookingPage({
   });
 
   return (
+    <LocaleProvider locale={provider.language}>
     <div className="min-h-dvh bg-canvas text-ink">
       <div className="lg:mx-auto lg:max-w-[1140px] lg:px-7 lg:py-9">
         {/* Editorial split — a brand stage beside the booking flow. On phone the
@@ -123,6 +125,7 @@ export default async function BookingPage({
         </div>
       </div>
     </div>
+    </LocaleProvider>
   );
 }
 

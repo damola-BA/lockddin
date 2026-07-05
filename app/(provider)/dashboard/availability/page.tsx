@@ -40,7 +40,7 @@ export default async function AvailabilityPage() {
   const { data: provider } = await supabase
     .from("providers")
     .select(
-      "timezone, schedule_type, booking_window, cancellation_window_hours, min_lead_time_minutes, global_buffer_minutes, business_name, provider_name",
+      "timezone, schedule_type, booking_window, cancellation_window_hours, min_lead_time_minutes, global_buffer_minutes, business_name, provider_name, language",
     )
     .eq("id", user.id)
     .single();
@@ -109,6 +109,7 @@ export default async function AvailabilityPage() {
         upcoming={upcoming}
         rules={rules}
         services={services ?? []}
+        language={provider.language ?? "en"}
       />
     </WorkstationShell>
   );

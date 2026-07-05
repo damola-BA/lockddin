@@ -25,6 +25,7 @@ import { updateBookingRules, type SettingsState } from "@/lib/dashboard/settings
 import { BlocksEditor, type Block } from "@/app/(provider)/dashboard/schedule/blocks-editor";
 import { HoursMode } from "@/components/provider/hours-mode";
 import { AppearanceSetting } from "@/components/provider/appearance-setting";
+import { LanguageSetting } from "@/components/provider/language-setting";
 import { getDictionary, fill } from "@/lib/i18n";
 import type {
   AvailabilityRules,
@@ -61,6 +62,7 @@ export function AvailabilityClient({
   upcoming,
   rules,
   services,
+  language,
 }: {
   timezone: string;
   today: string;
@@ -68,6 +70,7 @@ export function AvailabilityClient({
   upcoming: UpcomingChange[];
   rules: AvailabilityRules;
   services: Service[];
+  language: string;
 }) {
   // The mode is decided at onboarding (and changed only in Settings) — there's
   // no toggle here. Each mode gets its own focused dashboard.
@@ -118,6 +121,13 @@ export function AvailabilityClient({
       )}
 
       <BookingRules rules={rules} />
+
+      {/* Language — the provider's client-facing language. */}
+      <section className="mt-7">
+        <h2 className="font-serif text-[19px] font-semibold">{t.settings.languageTitle}</h2>
+        <p className="mb-1 text-[13px] text-ink-3">{t.settings.languageIntro}</p>
+        <LanguageSetting current={language} />
+      </section>
 
       {/* Appearance — a persisted light/dark preference for this device. */}
       <section className="mt-7">
