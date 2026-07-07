@@ -6,10 +6,8 @@ import { CANCEL_REASONS } from "@/lib/dashboard/cancel-reasons";
 import { fill } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/context";
 import type { DayBooking } from "@/lib/dashboard/queries";
+import { euros } from "@/lib/format";
 
-function euros(cents: number): string {
-  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
-}
 
 // All of the day's bookings with an inline cancel (reason → email).
 export function DayBookingsList({ bookings }: { bookings: DayBooking[] }) {

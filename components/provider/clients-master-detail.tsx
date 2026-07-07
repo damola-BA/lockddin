@@ -1,5 +1,6 @@
 import { ChevronLeft, Search, Star, Users } from "lucide-react";
 import { getServerDict } from "@/lib/i18n/server";
+import { initials } from "@/lib/format";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import type { ClientListRow } from "@/lib/dashboard/queries";
 
@@ -18,16 +19,6 @@ function tintFor(id: string) {
   return TINTS[h % TINTS.length];
 }
 
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? "")
-      .join("") || "?"
-  );
-}
 
 export function Avatar({
   id,

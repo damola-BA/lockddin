@@ -32,6 +32,7 @@ import {
 import { StepSpine } from "@/components/provider/ui";
 import { fill, formatDuration, type Dictionary } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/context";
+import { euros } from "@/lib/format";
 
 type Service = {
   id: string;
@@ -52,9 +53,6 @@ const spine = (t: Dictionary) => [
   { key: "details", label: t.client.stepDetails },
 ];
 
-function euros(cents: number): string {
-  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
-}
 
 function slotDay(iso: string): string {
   return new Intl.DateTimeFormat("en-BE", {

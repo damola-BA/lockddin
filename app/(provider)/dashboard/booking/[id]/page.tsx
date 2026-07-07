@@ -5,10 +5,8 @@ import { getProviderContext, getBookingDetail } from "@/lib/dashboard/queries";
 import { WorkstationShell } from "@/components/provider/workstation-shell";
 import { Avatar } from "@/components/provider/clients-master-detail";
 import { BookingActions } from "./booking-actions";
+import { euros } from "@/lib/format";
 
-function euros(cents: number): string {
-  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
-}
 
 export default async function BookingDetailPage({
   params,

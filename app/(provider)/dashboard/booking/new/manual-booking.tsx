@@ -12,6 +12,7 @@ import {
 import { formatDuration } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/context";
 import { StepSpine } from "@/components/provider/ui";
+import { euros } from "@/lib/format";
 
 const TZ = "Europe/Brussels";
 
@@ -22,9 +23,6 @@ type Service = {
   price_cents: number;
 };
 
-function euros(cents: number): string {
-  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
-}
 
 export function ManualBooking({ services }: { services: Service[] }) {
   const t = useT();
@@ -42,16 +40,26 @@ export function ManualBooking({ services }: { services: Service[] }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const serviceCsv = picked.map((s) => s.id).join(",");
   const totalPrice = picked.reduce((n, s) => n + s.price_cents, 0);
   const totalDuration = picked.reduce((n, s) => n + s.duration_minutes, 0);
 
-  useEffect(() => {
-    if (!date || picked.length === 0) return;
+  // Slots depend on the service set + date; both change only through the two
+  // controls below, so reload from their handlers (no effect needed).
+  function reloadSlots(nextPicked: Service[], nextDate: string) {
     setSlots(null);
     setSlot(null);
-    manualSlots(picked.map((s) => s.id), date).then(setSlots);
-  }, [date, serviceCsv]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!nextDate || nextPicked.length === 0) return;
+    manualSlots(nextPicked.map((s) => s.id), nextDate).then(setSlots);
+  }
+  function toggleService(s: Service, on: boolean) {
+    const next = on ? picked.filter((x) => x.id !== s.id) : [...picked, s];
+    setPicked(next);
+    if (date) reloadSlots(next, date);
+  }
+  function changeDate(next: string) {
+    setDate(next);
+    reloadSlots(picked, next);
+  }
 
   // ── Step 1: client ──────────────────────────────────────────────────
   if (!client) {
@@ -84,9 +92,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() =>
-                    setPicked(on ? picked.filter((x) => x.id !== s.id) : [...picked, s])
-                  }
+                  onClick={() => toggleService(s, on)}
                   className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left ${
                     on ? "border-accent bg-surface" : "border-line bg-surface"
                   }`}
@@ -112,7 +118,7 @@ export function ManualBooking({ services }: { services: Service[] }) {
               <input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => changeDate(e.target.value)}
                 className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink"
               />
             </div>

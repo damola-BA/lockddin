@@ -27,42 +27,46 @@ type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 export function ProfileDetails({ initial }: { initial: Initial }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
+  // Leave edit mode once a save lands (revalidation refreshes `initial`).
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(
-    updateProfileSettings,
+    async (prev, formData) => {
+      const result = await updateProfileSettings(prev, formData);
+      if (result.ok) setEditing(false);
+      return result;
+    },
     {},
   );
   const [slug, setSlug] = useState(initial.slug);
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Leave edit mode once a save lands (revalidation refreshes `initial`).
-  useEffect(() => {
-    if (state.ok) setEditing(false);
-  }, [state.ok]);
+  // Cancel any in-flight availability check on unmount.
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
 
-  useEffect(() => {
-    if (!editing) return;
+  // Real-time availability as they type — driven by the input, not an effect.
+  function changeSlug(raw: string) {
+    const next = normalizeSlug(raw);
+    setSlug(next);
     clearTimeout(debounceRef.current);
-    if (!slug) {
+    if (!next) {
       setSlugStatus("idle");
       return;
     }
-    if (slug === initial.slug) {
+    if (next === initial.slug) {
       setSlugStatus("available");
       return;
     }
     setSlugStatus("checking");
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/slug-check?slug=${encodeURIComponent(slug)}`);
+        const res = await fetch(`/api/slug-check?slug=${encodeURIComponent(next)}`);
         const body: { valid: boolean; available: boolean } = await res.json();
         setSlugStatus(!body.valid ? "invalid" : body.available ? "available" : "taken");
       } catch {
         setSlugStatus("idle");
       }
     }, 350);
-    return () => clearTimeout(debounceRef.current);
-  }, [slug, initial.slug, editing]);
+  }
 
   if (!editing) {
     return (
@@ -125,7 +129,7 @@ export function ProfileDetails({ initial }: { initial: Initial }) {
               id="slug"
               name="slug"
               value={slug}
-              onChange={(e) => setSlug(normalizeSlug(e.target.value))}
+              onChange={(e) => changeSlug(e.target.value)}
               required
               className="w-full bg-transparent py-3 text-base text-ink focus:outline-none"
             />
@@ -168,7 +172,9 @@ export function ProfileDetails({ initial }: { initial: Initial }) {
           <button
             type="button"
             onClick={() => {
+              clearTimeout(debounceRef.current);
               setSlug(initial.slug);
+              setSlugStatus("idle");
               setEditing(false);
             }}
             className="text-sm font-semibold text-ink-3"

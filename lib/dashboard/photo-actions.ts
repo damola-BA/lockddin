@@ -43,10 +43,7 @@ export async function recordBanner(
   return { ok: true };
 }
 
-export async function deleteBanner(
-  _prev: unknown,
-  _formData: FormData,
-): Promise<{ error?: string; ok?: true }> {
+export async function deleteBanner(): Promise<{ error?: string; ok?: true }> {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "unauthenticated" };

@@ -13,6 +13,7 @@ import { useT } from "@/lib/i18n/context";
 import { Label, TextInput, ErrorText } from "@/components/provider/ui";
 import { ServicePhotoGrid } from "@/components/provider/service-photos";
 import { storageUrl } from "@/lib/storage-url";
+import { euros } from "@/lib/format";
 
 // Diagonal-hatch placeholder for a service with no photo yet (matches handoff).
 const HATCH =
@@ -30,9 +31,6 @@ export type Service = {
   photos: string[];
 };
 
-function euros(cents: number): string {
-  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
-}
 
 function ServiceForm({
   service,

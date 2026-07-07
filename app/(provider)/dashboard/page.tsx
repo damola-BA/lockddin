@@ -14,6 +14,7 @@ import { VerifyBanner } from "@/components/provider/verify-banner";
 import { WorkstationShell, SETTINGS_HREF } from "@/components/provider/workstation-shell";
 import { formatDuration, fill } from "@/lib/i18n";
 import { getServerDict } from "@/lib/i18n/server";
+import { euros } from "@/lib/format";
 import {
   getProviderContext,
   getDayBookings,
@@ -31,9 +32,6 @@ import {
   type DayTimeline,
 } from "@/lib/dashboard/queries";
 
-function euros(cents: number): string {
-  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
-}
 
 function hhmm(min: number): string {
   return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
@@ -187,8 +185,10 @@ async function DayView({
 }) {
   const t = await getServerDict();
   const bookings = await getDayBookings(provider, date);
-  const stats = await getDayStats(provider, date, bookings);
-  const timeline = await getDayTimeline(provider, date, bookings);
+  const [stats, timeline] = await Promise.all([
+    getDayStats(provider, date, bookings),
+    getDayTimeline(provider, date, bookings),
+  ]);
 
   // The booking happening right now (today only) — promoted to a hero card.
   const current =
@@ -560,19 +560,19 @@ async function WeekView({
 }) {
   const t = await getServerDict();
   const weekStart = weekStartOf(date);
-  const days = await getWeekSummary(provider, weekStart);
   const today = todayLocal(provider.timezone);
 
   // Open/closed marking per day. The week can straddle two months, so merge the
   // status maps for each month it touches (mirrors the engine's mode rule).
   const lastDate = addDays(weekStart, 6);
   const months = [...new Set([weekStart.slice(0, 7), lastDate.slice(0, 7)])];
-  const statusMaps = await Promise.all(
-    months.map((ym) => {
+  const [days, ...statusMaps] = await Promise.all([
+    getWeekSummary(provider, weekStart),
+    ...months.map((ym) => {
       const [yy, mm] = ym.split("-").map(Number);
       return getMonthDayStatus(provider, yy, mm - 1);
     }),
-  );
+  ]);
   const status = new Map<string, { open: boolean; count: number; full: boolean }>();
   statusMaps.forEach((mp) => mp.forEach((v, k) => status.set(k, v)));
 
@@ -848,8 +848,10 @@ async function MonthView({
   const [y, m] = date.split("-").map(Number);
   const year = y;
   const month = m - 1;
-  const status = await getMonthDayStatus(provider, year, month);
-  const summary = await getMonthSummary(provider, year, month);
+  const [status, summary] = await Promise.all([
+    getMonthDayStatus(provider, year, month),
+    getMonthSummary(provider, year, month),
+  ]);
   const today = todayLocal(provider.timezone);
 
   // Quiet open days = open, nothing booked, today onward — worth promoting.

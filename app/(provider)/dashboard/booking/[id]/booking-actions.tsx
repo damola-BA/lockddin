@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { CalendarCheck } from "lucide-react";
 import {
   providerCancelBooking,
@@ -267,12 +267,13 @@ function RescheduleForm({
   const [picked, setPicked] = useState<string | null>(null);
   const serviceCsv = serviceIds.join(",");
 
-  useEffect(() => {
-    if (!date) return;
+  // Date changes only through the picker below — fetch from the handler.
+  function changeDate(next: string) {
+    setDate(next);
     setSlots(null);
     setPicked(null);
-    rescheduleSlots(providerId, serviceIds, date).then(setSlots);
-  }, [date, providerId, serviceCsv]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (next) rescheduleSlots(providerId, serviceIds, next).then(setSlots);
+  }
 
   return (
     <form action={action} className="mt-6 space-y-4">
@@ -289,7 +290,7 @@ function RescheduleForm({
       <input
         type="date"
         value={date}
-        onChange={(e) => setDate(e.target.value)}
+        onChange={(e) => changeDate(e.target.value)}
         className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-ink"
       />
 

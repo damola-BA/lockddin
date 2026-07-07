@@ -13,12 +13,10 @@ import {
 } from "@/components/provider/clients-master-detail";
 import { CopyEmail } from "@/components/provider/copy-email";
 import { DeleteClient } from "./delete-client";
+import { euros } from "@/lib/format";
 
 const REGULAR_THRESHOLD = 8;
 
-function euros(cents: number): string {
-  return `€${(cents / 100).toFixed(2).replace(".", ",")}`;
-}
 
 export default async function ClientDetailPage({
   params,

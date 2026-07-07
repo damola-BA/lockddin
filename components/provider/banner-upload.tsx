@@ -7,17 +7,8 @@ import { recordBanner, deleteBanner } from "@/lib/dashboard/photo-actions";
 import { uploadToWorkPhotos } from "@/lib/upload-photo";
 import { storageUrl } from "@/lib/storage-url";
 import { useT } from "@/lib/i18n/context";
+import { initials } from "@/lib/format";
 
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? "")
-      .join("") || "·"
-  );
-}
 
 // Profile banner hero — the full-width image (or branded gradient) with the
 // business identity overlaid: avatar, name, city, and a live indicator. Doubles
@@ -61,7 +52,7 @@ export function BannerUpload({
   function handleDelete() {
     setError(null);
     startTransition(async () => {
-      await deleteBanner({}, new FormData());
+      await deleteBanner();
       router.refresh();
     });
   }
@@ -111,7 +102,7 @@ export function BannerUpload({
             className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-[3px] font-serif text-[21px] font-semibold sm:h-[72px] sm:w-[72px] sm:text-2xl"
             style={{ background: "#e7eef6", color: "#3a6ea5", borderColor: "var(--canvas)" }}
           >
-            {initials(providerName)}
+            {initials(providerName, "·")}
           </span>
           <div className="min-w-0 pb-0.5">
             <h1 className="truncate font-serif text-[22px] font-semibold text-white [text-shadow:0_1px_16px_rgba(20,12,8,.55)] sm:text-[27px]">

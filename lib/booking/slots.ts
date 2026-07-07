@@ -153,15 +153,22 @@ export async function getEarliestSlots(
 ): Promise<PublicSlot[]> {
   const days = await getBookableDays(provider, now);
   const out: PublicSlot[] = [];
-  for (const date of days) {
-    if (out.length >= minimum) break;
-    const slots = await getDayAvailability({
-      providerId: provider.id,
-      serviceIds,
-      date,
-      now,
-    });
-    out.push(...publicSlots(slots)); // never truncate mid-day
+  // Compute a week of days at a time (in parallel) instead of one-by-one:
+  // when the nearest days are fully booked this walks far into the window,
+  // and serial round-trips made "Soonest" crawl. Results are still consumed
+  // in day order and never truncated mid-day (DD05 + DD24 unchanged).
+  const CHUNK = 7;
+  for (let i = 0; i < days.length && out.length < minimum; i += CHUNK) {
+    const chunk = days.slice(i, i + CHUNK);
+    const perDay = await Promise.all(
+      chunk.map((date) =>
+        getDayAvailability({ providerId: provider.id, serviceIds, date, now }),
+      ),
+    );
+    for (const slots of perDay) {
+      if (out.length >= minimum) break;
+      out.push(...publicSlots(slots)); // never truncate mid-day
+    }
   }
   return out;
 }

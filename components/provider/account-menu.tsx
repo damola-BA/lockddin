@@ -5,17 +5,8 @@ import Link from "next/link";
 import { LogOut, Settings as SettingsIcon, User } from "lucide-react";
 import { signOut } from "@/lib/auth/actions";
 import { useT } from "@/lib/i18n/context";
+import { initials } from "@/lib/format";
 
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? "")
-      .join("") || "?"
-  );
-}
 
 // Avatar + account dropdown (desktop top bar). Clicking the avatar opens a panel
 // with the provider's identity, a link into their profile/settings, and sign out

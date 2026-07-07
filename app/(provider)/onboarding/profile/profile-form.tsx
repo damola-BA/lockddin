@@ -29,29 +29,33 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [slugStatus, setSlugStatus] = useState<SlugStatus>("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Real-time availability as they type (F2).
-  useEffect(() => {
+  // Cancel any in-flight availability check on unmount.
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  // Real-time availability as they type (F2) — driven by the input itself.
+  function changeSlug(raw: string) {
+    const next = normalizeSlug(raw);
+    setSlug(next);
     clearTimeout(debounceRef.current);
-    if (!slug) {
+    if (!next) {
       setSlugStatus("idle");
       return;
     }
-    if (slug === initial?.slug) {
+    if (next === initial?.slug) {
       setSlugStatus("available"); // their own current slug
       return;
     }
     setSlugStatus("checking");
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/slug-check?slug=${encodeURIComponent(slug)}`);
+        const res = await fetch(`/api/slug-check?slug=${encodeURIComponent(next)}`);
         const body: { valid: boolean; available: boolean } = await res.json();
         setSlugStatus(!body.valid ? "invalid" : body.available ? "available" : "taken");
       } catch {
         setSlugStatus("idle");
       }
     }, 350);
-    return () => clearTimeout(debounceRef.current);
-  }, [slug, initial?.slug]);
+  }
 
   return (
     <main className="mx-auto w-full max-w-md px-5 py-8">
@@ -99,7 +103,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
               id="slug"
               name="slug"
               value={slug}
-              onChange={(e) => setSlug(normalizeSlug(e.target.value))}
+              onChange={(e) => changeSlug(e.target.value)}
               required
               className="w-full bg-transparent py-3 text-base font-semibold text-ink focus:outline-none"
             />

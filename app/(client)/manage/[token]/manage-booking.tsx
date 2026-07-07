@@ -83,17 +83,6 @@ export function ManageBooking({
   const bookableSet = new Set(bookableDays);
   const lastBookable = bookableDays.length ? bookableDays[bookableDays.length - 1] : today;
 
-  function openView(next: "soonest" | "week" | "month") {
-    setView(next);
-    setDayDate(null);
-    setDaySlots(null);
-    if (next !== "soonest" && !anchor) setAnchor(today);
-  }
-  function pickDay(date: string) {
-    setDayDate(date);
-    void loadDay(date);
-  }
-
   const loadSlots = useCallback(async () => {
     setSlots(null);
     const res = await fetch(`/api/b/${slug}/slots?service=${serviceCsv}`, {
@@ -116,6 +105,17 @@ export function ManageBooking({
     },
     [slug, serviceCsv],
   );
+
+  function openView(next: "soonest" | "week" | "month") {
+    setView(next);
+    setDayDate(null);
+    setDaySlots(null);
+    if (next !== "soonest" && !anchor) setAnchor(today);
+  }
+  function pickDay(date: string) {
+    setDayDate(date);
+    void loadDay(date);
+  }
 
   useEffect(() => {
     if (mode === "reschedule" && slots === null) void loadSlots();
